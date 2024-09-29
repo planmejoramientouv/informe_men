@@ -3,6 +3,7 @@ import { decodeToken } from 'react-jwt';
 import Cookies from 'js-cookie';
 
 const _get_auth = (loader) => {
+    console.log(process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,'a')
     try {
         google.accounts.id.initialize({
             client_id: process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,

@@ -14,14 +14,23 @@ import Typography from '@mui/material/Typography'
 import { Grid2 } from '@mui/material'
 import useStyles from '../../../../css/sing-in/sing-in'
 
+// Fecth
+import { getAllowedUser } from '../../../../hooks/fecth/handlers/handlers'
+
 export default () => {
     const classes = useStyles();
 
     const [isLoad, setIsLoad] = React.useState(false)
     const [hydrated, setHydrated] = React.useState(false);
 
+    const getUserAllowed = async () => {
+        let allowedUser = await getAllowedUser()
+        console.log(allowedUser, 'aaaaaa')
+    } 
+
     React.useEffect(() => {
         setHydrated(true);
+        getUserAllowed()
     }, []);
 
     if (!hydrated) return null;  

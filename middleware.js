@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function middleware(request) {
     const { pathname } = request.nextUrl;
 
-    if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return NextResponse.next();
+    if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/assets')) return NextResponse.next();
     
     const protectedRoutes = [
         '/login',
