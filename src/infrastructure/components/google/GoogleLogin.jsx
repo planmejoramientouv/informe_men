@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 const _get_auth = (loader) => {
     try {
         google.accounts.id.initialize({
-            client_id: '273121662645-779bflr2qqhih1qblrdp35v8nr7fiplp.apps.googleusercontent.com',
+            client_id: process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,
             callback: (response) => handleCredentialResponse(response, loader),
         });
 

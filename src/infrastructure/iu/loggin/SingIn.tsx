@@ -43,9 +43,7 @@ export default () => {
                     <Typography classes={{ root: classes.titleSingIn }}>
                         Inicia Sesión
                     </Typography>
-                    <GoogleLogin
-                        setIsLoad={setIsLoad}
-                    />
+                    <GoogleLogin setIsLoad={setIsLoad} />
                 </Grid2>
             </section>
         </main>
