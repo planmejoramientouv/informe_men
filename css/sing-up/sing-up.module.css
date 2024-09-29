@@ -1,0 +1,55 @@
+
+.container-sing-up {
+    place-content: center;
+    height: calc(100vh - 7em);
+}
+
+.container-form-sign-up {
+    max-width: 400px;
+    width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+    /* border: 1px solid #ccc; */
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    max-height: 500px;
+}
+
+.container-form-sign-up label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+  
+.container-form-sign-up input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+  
+.container-form-sign-up button[type="submit"] {
+    text-align: center;
+}
+  
+.container-form-sign-up button[type="submit"] {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+}
+  
+.container-form-sign-up button[type="submit"] button:hover {
+    background-color: #0056b3;
+}
+
+.container-button-up {
+    display: flex;
+    justify-content: center;
+    margin: auto;
+    padding-top: 20px;
+}

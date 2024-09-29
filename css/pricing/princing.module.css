@@ -1,0 +1,30 @@
+
+
+.container-pricing {
+    display: grid;
+    grid-auto-rows: auto;
+    grid-template-columns: repeat(auto-fit, minmax( min(100%, 20em), 1fr));
+    width: 100%;
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.container-pricing section {
+    border-radius: 4px;
+    height: calc(100vh - (7em + 40px));
+    max-width: 600px;
+    max-height: 900px;
+    padding: 20px;
+    width: 90%;
+    margin: auto;
+    background-color: rgb(177, 153, 196);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.container-pricing section:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-10px);
+}
