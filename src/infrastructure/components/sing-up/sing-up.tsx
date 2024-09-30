@@ -43,12 +43,6 @@ export default () => {
           <input type="password" id="confirmPassword" name="confirmPassword" required />
         </div>
         <div>
-          <GoogleLogin
-            isLogin={isLogin}
-            setData={setData}
-            setIsLoad={setIsLoad}
-            setIsLogin={setIsLogin}
-          />
         </div>
         <div className={styles['container-button-up']}>
           <button type="submit">Create Account</button>
