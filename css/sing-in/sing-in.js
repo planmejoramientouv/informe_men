@@ -18,7 +18,10 @@ export default makeStyles(() => ({
         flexDirection: 'column',
         alignItems: 'center',
         height: '100%',
-        width: 'calc(100% - 370px)'
+        width: 'calc(100% - 370px)',
+        '@media(max-width: 800px)': {
+            width: '70%'
+        }
     },
     containerLogin: {
         display: 'flex', 
@@ -45,6 +48,9 @@ export default makeStyles(() => ({
         '& > h2': {
             fontWeight: 'bold',
             color: 'var(--red-univalle)',
+            '@media(max-width: 800px)': {
+                fontSize: '1.8em'
+            }
         }
     }
 }));

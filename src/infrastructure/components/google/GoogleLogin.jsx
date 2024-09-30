@@ -1,13 +1,24 @@
 import React, { useEffect } from 'react';
 import { decodeToken } from 'react-jwt';
+import CryptoJS from 'crypto-js';
 import Cookies from 'js-cookie';
+import LoadingButton from '@mui/lab/LoadingButton';
+import { useRouter } from 'next/router';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Snackbar from '@mui/material/Snackbar';
 
-const _get_auth = (loader) => {
-    console.log(process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,'a')
+// Hoosk
+import { useGlobalState } from '../../../../hooks/context'
+import Show from '../../../../share/utils/Show';
+
+const secretKey = process.env.NEXT_PUBLIC_SECRET_KEY;
+
+const _get_auth = (loader, data, router, setOpen) => {
     try {
         google.accounts.id.initialize({
             client_id: process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,
-            callback: (response) => handleCredentialResponse(response, loader),
+            callback: (response) => handleCredentialResponse(response, loader, data, router, setOpen),
         });
 
         google.accounts.id.renderButton(
@@ -16,41 +27,55 @@ const _get_auth = (loader) => {
         );
 
         google.accounts.id.prompt();
-        //const _container_button = document.getElementById('section-button-google');
-        //_container_button.classList.remove('_display_none');
     } catch (error) {
         console.log('error', error);
     }
 };
 
 const have_permission = ({ data, dataToken }) => {
-    // Implement your permission logic here
+    console.log(dataToken, data)
+    if (data?.length < 0) return false
+    return data.filter(item => String(item?.email) === String(dataToken?.email)).length > 0
 };
 
-const handleCredentialResponse = async (response, loader) => {
+const handleCredentialResponse = async (response, loader, data, router, setOpen) => {
+    loader(true);
     try {
-        loader(true);
+        const decodedToken = decodeToken(response.credential);        
+        const havePermission = have_permission({ data: data?.users || [], dataToken: decodedToken })
 
-        const decodedToken = decodeToken(response.credential);
-
-        // const result = await getData('USERS');
-        // const data = await getDataLoggued();
-
-        if (false) {
-            Cookies.set('token', decodedToken, { expires: 5 });
-            if (data) {
-                loader(false);
-            }
-        } else {
-            loader(false);
-            alert('No tienes permiso para acceder');
+        if (havePermission) {
+            Cookies.set('auth', havePermission , { expires: 4 })
+            const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
+                img: decodedToken.picture,
+                name: `${decodedToken.name}`
+            }), secretKey).toString();
+            Cookies.set('data', encryptedData, { expires: 4 });
+            router.push('/');
+        }
+        else {
+            setOpen(true)
         }
     } catch (error) {
         console.log('error', error);
     }
+
+    setTimeout(() => {
+        loader(false)
+    }, 2000)
 };
 
-const GoogleLogin = ({ setIsLoad }) => {
+export default () => {
+    const router = useRouter();
+
+    const { globalState } = useGlobalState()
+    const [isload, setIsLoad] =  React.useState(false)
+    const [open, setOpen] = React.useState(false)
+
+    const handleClose = () => {
+        setOpen(false)
+    }
+
     useEffect(() => {
         const _root = document.querySelector('body');
         const script_id = document.getElementById('google-login');
@@ -64,14 +89,34 @@ const GoogleLogin = ({ setIsLoad }) => {
         _script.async = true;
         _script.id = 'google-login';
         _script.defer = true;
-        _root.appendChild(_script);
+        _root.appendChild(_script, globalState);
 
         _script.onload = () => {
-            _get_auth(setIsLoad);
+            _get_auth(setIsLoad, globalState.data,router, setOpen);
         };
-    }, [setIsLoad]);
+    }, [isload, globalState.data]);
 
-    return <div id="buttonDiv"></div>;
+    return (
+        <>
+            <Show when={isload}>
+                <LoadingButton loading variant="outlined" sx={{width: '190px'}}>
+                    Submit
+                </LoadingButton>
+            </Show>
+            <Show when={!isload}>
+                <div id="buttonDiv" />
+            </Show>
+            <Box sx={{ width: 500 }}>
+                <Snackbar
+                    autoHideDuration={6000}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    open={open}
+                    onClose={handleClose}
+                    key={2}
+                >
+                   <Alert severity="error">No Tienes Acceso</Alert> 
+                </Snackbar>
+            </Box>
+        </>
+    )
 };
-
-export default GoogleLogin;

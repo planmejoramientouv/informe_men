@@ -24,5 +24,6 @@ export async function middleware(request) {
 
 async function checkAuthentication(request) {
   const token = request.cookies.get('auth');
+  console.log(token,'token')
   return token ? true : false;
 }

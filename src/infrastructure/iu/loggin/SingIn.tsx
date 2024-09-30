@@ -14,23 +14,37 @@ import Typography from '@mui/material/Typography'
 import { Grid2 } from '@mui/material'
 import useStyles from '../../../../css/sing-in/sing-in'
 
+// Hoosk
+import { useGlobalState } from '../../../../hooks/context'
+
 // Fecth
 import { getAllowedUser } from '../../../../hooks/fecth/handlers/handlers'
 
 export default () => {
     const classes = useStyles();
-
+    const { setGlobalState } = useGlobalState()
+    
     const [isLoad, setIsLoad] = React.useState(false)
     const [hydrated, setHydrated] = React.useState(false);
 
     const getUserAllowed = async () => {
         let allowedUser = await getAllowedUser()
-        console.log(allowedUser, 'aaaaaa')
+        if (allowedUser?.data.length > 0) {
+            setGlobalState((prev) => ({
+                ...prev,
+                data: {
+                    users: allowedUser?.data ?? []
+                }
+            }))
+        } 
     } 
+
+    React.useMemo(() => {
+        getUserAllowed()
+    },[])
 
     React.useEffect(() => {
         setHydrated(true);
-        getUserAllowed()
     }, []);
 
     if (!hydrated) return null;  
@@ -52,7 +66,7 @@ export default () => {
                     <Typography classes={{ root: classes.titleSingIn }}>
                         Inicia Sesión
                     </Typography>
-                    <GoogleLogin setIsLoad={setIsLoad} />
+                    <GoogleLogin />
                 </Grid2>
             </section>
         </main>
