@@ -23,7 +23,6 @@ export default () => {
             <input type="password" id="password" name="password" required />
           </div>
           <div>
-            <GoogleLogin />
           </div>
           <div>
             <button type="submit">Submit</button>

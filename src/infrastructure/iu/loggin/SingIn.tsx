@@ -24,7 +24,6 @@ export default () => {
     const classes = useStyles();
     const { setGlobalState } = useGlobalState()
     
-    const [isLoad, setIsLoad] = React.useState(false)
     const [hydrated, setHydrated] = React.useState(false);
 
     const getUserAllowed = async () => {
