@@ -1,29 +1,24 @@
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
- * @copyright:  2024 
+ * @copyright: 2024 
 */
 
-const 
-    methodPut = 'PUT',
-    methodPost = 'POST',
-    methodGet = 'GET';
+const methodPut = 'PUT';
+const methodPost = 'POST';
+const methodGet = 'GET';
 
 /**
- *  General Estruture HTTP REQUEST POST
+ * General Structure HTTP REQUEST POST
  * 
  * @param {*} param0 
  * @returns 
  */
-export const fetchPostGeneral = ({
-    dataSend,
-    urlEndPoint
-}) =>
-{
+export const fetchPostGeneral = ({ dataSend, urlEndPoint }) => {
     return fetchGeneral({
-        dataSend: dataSend,
-        urlEndPoint: urlEndPoint,
+        dataSend,
+        urlEndPoint,
         type: methodPost     
-    })
+    });
 }
 
 /**
@@ -32,32 +27,25 @@ export const fetchPostGeneral = ({
  * @param {*} param0 
  * @returns 
  */
-export const fetchPutGeneral = ({
-    dataSend,
-    urlEndPoint
-}) => {
+export const fetchPutGeneral = ({ dataSend, urlEndPoint }) => {
     return fetchGeneral({
-        dataSend: dataSend,
-        urlEndPoint: urlEndPoint,
+        dataSend,
+        urlEndPoint,
         type: methodPut    
-    })
+    });
 };
 
 /**
- * General Structure HTTP REQUEST PUT
+ * General Structure HTTP REQUEST GET
  * 
  * @param {*} param0 
  * @returns 
  */
-export const fetchGetGeneral = ({
-    dataSend,
-    urlEndPoint
-}) => {
+export const fetchGetGeneral = ({ urlEndPoint }) => {
     return fetchGeneral({
-        dataSend: dataSend,
-        urlEndPoint: urlEndPoint,
+        urlEndPoint,
         type: methodGet  
-    })
+    });
 }
 
 /**
@@ -73,17 +61,22 @@ const fetchGeneral = async ({
 }) => {
     let response = null
     try {
-        response = await fetch(urlEndPoint, {
+        const options = {
             method: type,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(dataSend),
-        });
+        };
 
+        if (type === methodPost || type === methodPut) {
+            options.body = JSON.stringify(dataSend);
+        }
+
+        response = await fetch(urlEndPoint, options);
         return await response.json();
+        
     } catch (error) {
         console.log(error);
     }
     return response
-};
+}
