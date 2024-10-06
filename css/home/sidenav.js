@@ -15,9 +15,12 @@ export default makeStyles(() => ({
         }
     },
     closeNav: {
-        position: 'absolute',
+        display: 'block',
+        position: 'fixed',
         left: 0,
         bottom: 0,
+        right: 0,
+        top: 0,
         width: '100%',
         height: '100vh',
         zIndex: '999',

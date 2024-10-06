@@ -5,14 +5,16 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import { Button, Grid2, IconButton } from "@mui/material";
-import useStyles from '../../../../css/home/sidenav'; import Show from "../../../../share/utils/Show";
+import useStyles from '../../../../css/home/sidenav'; 
+import Show from "../../../../share/utils/Show";
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
 export default () => {
     const classes = useStyles();
-    const [state, setState] = React.useState({ left: true });
+    const [state, setState] = React.useState({ left: !(window.innerWidth <= 700) });
     const [hydrated, setHydrated] = React.useState(false);
+    const [hash, setHash] = React.useState("");
 
     const handlerCloseNav = () => {
         setHydrated(!hydrated)
@@ -20,8 +22,15 @@ export default () => {
 
     window.addEventListener('resize', () => {
         const width_ = window.innerWidth
-        if (width_ <= 700) handlerCloseNav()
+        setHydrated(!(width_ <= 700))
     })
+
+    const handlerSelected = (text: string): boolean => {
+        let selected: boolean = false
+        if (`#${text}` === hash.toUpperCase()) selected = true
+
+        return selected
+    }
 
     const toggleDrawer =
         (anchor: Anchor, open: boolean) =>
@@ -45,9 +54,9 @@ export default () => {
             onKeyDown={toggleDrawer(anchor, false)}
         >
             <List>
-                {['RRC', 'RAAC'].map((text, index) => (
+                {['INICIO','RRC', 'RAAC'].map((text, index) => (
                     <ListItem key={text} disablePadding>
-                        <ListItemButton>
+                        <ListItemButton selected={handlerSelected(text)}>
                             <ListItemText primary={text} />
                         </ListItemButton>
                     </ListItem>
@@ -58,6 +67,7 @@ export default () => {
 
     React.useEffect(() => {
         setHydrated(true);
+        setHash(window.location.hash);
     }, []);
 
     return (
@@ -67,7 +77,7 @@ export default () => {
                     <img src="/assets/img/hamburger.svg" />
                 </IconButton>
                 <Show when={hydrated}>
-                    <Button  onClick={handlerCloseNav} className={classes.closeNav} />
+                    <a onClick={handlerCloseNav} className={classes.closeNav} />
                 </Show>
             </Grid2>
             <Show when={hydrated}>

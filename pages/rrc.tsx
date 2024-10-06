@@ -6,14 +6,19 @@ import React from "react"
 
 // Components
 import Header from "../src/infrastructure/components/Header";
-import { Box } from "@mui/material";
+import Form from "../src/infrastructure/iu/Forms/Form";
 
 // Home
 export default () => {
+
+    React.useEffect(() => {
+        window.location.hash = "#rrc";
+    }, []);
+
     return (
         <main className="root-container">
             <Header />
-            <Box sx={{width: 500, height: 500}} />
+            <Form />
         </main>
     )
 }

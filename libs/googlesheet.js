@@ -32,6 +32,31 @@ export const getPermission = async (hojaCalculo) => {
         spreadsheetId_: SPREADSHEET_ID,
         defaultSheet: 'PERMISOS'
     });
-    console.log(response, "response")
     return response
 };
+
+export const getFieldRRC = async (hojaCalculo) => {
+    const response = await GetDataSheet({
+        hojaCalculo,
+        spreadsheetId_: SPREADSHEET_ID,
+        defaultSheet: 'Datos Generales RRC'
+    });
+
+    if (response?.length < 0) return []
+
+    const regex = /^\d+-\s*$/;
+
+    const containers = response.filter((item) => {
+        return regex.test(item?.groups_fields);
+    });
+
+    const groups = containers.map(element => {
+        const groupWithoutDash = element?.groups_fields.replace("-", "");
+    
+        return response.filter(items => 
+            items?.groups_fields.replace("-", "") === groupWithoutDash
+        );
+    }) ?? [];
+
+    return groups
+}
