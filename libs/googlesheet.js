@@ -53,9 +53,12 @@ export const getFieldRRC = async (hojaCalculo) => {
     const groups = containers.map(element => {
         const groupWithoutDash = element?.groups_fields.replace("-", "");
     
-        return response.filter(items => 
-            items?.groups_fields.replace("-", "") === groupWithoutDash
-        );
+        return { 
+            data: response.filter(items => 
+                    items?.groups_fields.replace("-", "") === groupWithoutDash
+                 ),
+            primary: element
+        }
     }) ?? [];
 
     return groups

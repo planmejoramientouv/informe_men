@@ -1,4 +1,4 @@
-import { getPermission, getFieldRRC } from '../../libs/googlesheet';
+import { getFieldRRC } from '../../libs/googlesheet';
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {

@@ -27,6 +27,7 @@ export default makeStyles(() => ({
         }
     },
     FormItems: {
+        padding: '30px',
         height: '90%',
         overflow: 'auto'
     },

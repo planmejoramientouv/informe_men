@@ -7,6 +7,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { Button, Grid2, IconButton } from "@mui/material";
 import useStyles from '../../../../css/home/sidenav'; 
 import Show from "../../../../share/utils/Show";
+import { useRouter } from 'next/router';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
@@ -15,6 +16,7 @@ export default () => {
     const [state, setState] = React.useState({ left: !(window.innerWidth <= 700) });
     const [hydrated, setHydrated] = React.useState(false);
     const [hash, setHash] = React.useState("");
+    const router = useRouter();
 
     const handlerCloseNav = () => {
         setHydrated(!hydrated)
@@ -54,10 +56,10 @@ export default () => {
             onKeyDown={toggleDrawer(anchor, false)}
         >
             <List>
-                {['INICIO','RRC', 'RAAC'].map((text, index) => (
-                    <ListItem key={text} disablePadding>
-                        <ListItemButton selected={handlerSelected(text)}>
-                            <ListItemText primary={text} />
+                {[{text: 'INICIO' , route: '/'},{text: 'RRC' , route: '/rrc'}, {text: 'RAAC' , route: '/rrc'}].map((item, index) => (
+                    <ListItem key={index} disablePadding>
+                        <ListItemButton onClick={() => router.push(item.route)} selected={handlerSelected(item.text)}>
+                            <ListItemText primary={item.text} />
                         </ListItemButton>
                     </ListItem>
                 ))}
