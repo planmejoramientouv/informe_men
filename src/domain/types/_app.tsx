@@ -1,7 +1,7 @@
 export type GlobalState = {
     isLoad: boolean,
     isLogged: boolean,
-    data: {}
+    data: any
 }
 
 export type TypeGlobalState = {

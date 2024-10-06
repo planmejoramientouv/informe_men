@@ -131,15 +131,4 @@ const renderField = (fieldType,labelText,value) => {
       default:
         return null;
     }
-  };
-
-const FormularioDinamico = ({ a, labelText, value, handleChange }) => {
-  
-
-
-  return (
-    <div>
-      {renderField(fieldTranslate[a])}
-    </div>
-  );
 };
