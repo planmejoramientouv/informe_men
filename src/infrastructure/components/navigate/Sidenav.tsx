@@ -23,8 +23,7 @@ export default () => {
     }
 
     window.addEventListener('resize', () => {
-        const width_ = window.innerWidth
-        setHydrated(!(width_ <= 700))
+        setHydrated(!(window.innerWidth <= 700))
     })
 
     const handlerSelected = (text: string): boolean => {
@@ -68,7 +67,7 @@ export default () => {
     );
 
     React.useEffect(() => {
-        setHydrated(true);
+        setHydrated(!(window.innerWidth <= 700));
         setHash(window.location.hash);
     }, []);
 

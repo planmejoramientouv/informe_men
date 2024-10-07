@@ -27,22 +27,23 @@ export default () => {
     const [hydrated, setHydrated] = React.useState(false);
 
     const getUserAllowed = async () => {
-        let allowedUser = await getAllowedUser()
-        if (allowedUser?.data.length > 0) {
-            setGlobalState((prev) => ({
-                ...prev,
-                data: {
-                    users: allowedUser?.data ?? []
-                }
-            }))
-        } 
+        try {
+            let allowedUser = await getAllowedUser()
+            if (allowedUser?.data.length > 0) {
+                setGlobalState((prev) => ({
+                    ...prev,
+                    data: {
+                        users: allowedUser?.data ?? []
+                    }
+                }))
+            } 
+        } catch (e) {
+            console.log(e)
+        }
     } 
 
-    React.useMemo(() => {
-        getUserAllowed()
-    },[])
-
     React.useEffect(() => {
+        getUserAllowed()
         setHydrated(true);
     }, []);
 

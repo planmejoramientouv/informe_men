@@ -2,14 +2,14 @@ import { makeStyles } from '@mui/styles';
 
 export default makeStyles(() => ({
     containerNav: {
-        position: 'absolute',
+        position: 'fixed',
         left: 0,
         bottom: 0,
-        height: 'calc(100vh - 80px)',
+        minHeight: 'calc(100vh - 80px)',
         padding: '6px',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
         '@media (max-width: 700px)': {
-            height: '100vh',
+            minHeight: '100vh',
             zIndex: '9999',
             background: 'white',
         }
@@ -22,7 +22,7 @@ export default makeStyles(() => ({
         right: 0,
         top: 0,
         width: '100%',
-        height: '100vh',
+        minHeight: '100vh',
         zIndex: '999',
         background: 'rgba(2,2,2,0.5)'
     },

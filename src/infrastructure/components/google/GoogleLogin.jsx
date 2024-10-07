@@ -33,7 +33,6 @@ const _get_auth = (loader, data, router, setOpen) => {
 };
 
 const have_permission = ({ data, dataToken }) => {
-    console.log(dataToken, data)
     if (data?.length < 0) return false
     return data.filter(item => String(item?.email) === String(dataToken?.email)).length > 0
 };
@@ -42,8 +41,7 @@ const handleCredentialResponse = async (response, loader, data, router, setOpen)
     loader(true);
     try {
         const decodedToken = decodeToken(response.credential);        
-        const havePermission = have_permission({ data: data?.users || [], dataToken: decodedToken })
-
+        const havePermission = have_permission({ data: data || [], dataToken: decodedToken })
         if (havePermission) {
             Cookies.set('auth', havePermission , { expires: 4 })
             const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
@@ -71,12 +69,18 @@ export default () => {
     const { globalState } = useGlobalState()
     const [isload, setIsLoad] =  React.useState(false)
     const [open, setOpen] = React.useState(false)
+    const [data, setData] = React.useState([])
 
     const handleClose = () => {
         setOpen(false)
     }
 
     useEffect(() => {
+        setData(globalState.data.users || [])
+    },[globalState.data])
+
+    useEffect(() => {
+        if (data?.length <= 0 || isload) return
         const _root = document.querySelector('body');
         const script_id = document.getElementById('google-login');
 
@@ -92,9 +96,10 @@ export default () => {
         _root.appendChild(_script, globalState);
 
         _script.onload = () => {
-            _get_auth(setIsLoad, globalState.data,router, setOpen);
+            console.log(data,"data")
+            _get_auth(setIsLoad, data,router, setOpen);
         };
-    }, [isload, globalState.data]);
+    }, [isload, data]);
 
     return (
         <>

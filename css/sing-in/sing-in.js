@@ -8,7 +8,7 @@ export default makeStyles(() => ({
     },
     containerLogo: {
         display: 'flex',
-        height: '100%',
+        minHeight: '100%',
         background: 'var(--red-univalle)',
         width: '30%',
         maxWidth: '370px'
@@ -19,7 +19,7 @@ export default makeStyles(() => ({
         alignItems: 'center',
         height: '100%',
         width: 'calc(100% - 370px)',
-        '@media(max-width: 800px)': {
+        '@media(max-width: 900px)': {
             width: '70%'
         }
     },
@@ -47,8 +47,9 @@ export default makeStyles(() => ({
         height: '30%',
         '& > h2': {
             fontWeight: 'bold',
+            textAlign: 'center',
             color: 'var(--red-univalle)',
-            '@media(max-width: 800px)': {
+            '@media(max-width: 900px)': {
                 fontSize: '1.8em'
             }
         }

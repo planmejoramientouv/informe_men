@@ -44,11 +44,20 @@ export default () => {
         router.push('/login')
     }
 
+    const init_ = () => {
+        try {
+            const encryptedData = Cookies.get('data');
+            if (encryptedData === null) return
+            const decryptedData = JSON.parse(CryptoJS?.AES?.decrypt(encryptedData, secretKey).toString(CryptoJS.enc.Utf8) || '{}');
+            setData(decryptedData)
+            setHydrated(true)
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     React.useEffect(() => {
-        const encryptedData = Cookies.get('data');
-        const decryptedData = JSON.parse(CryptoJS.AES.decrypt(encryptedData, secretKey).toString(CryptoJS.enc.Utf8) || '{}');
-        setData(decryptedData)
-        setHydrated(true)
+        init_()
     }, [])
 
     return (
