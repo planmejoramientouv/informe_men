@@ -38,5 +38,39 @@ export default makeStyles(() => ({
         alignItems: 'center',
         height: '10%',
         width: '100%'
+    },
+    containerFormSection: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '20px',
+    },
+    inputText: {
+        margin: '10px 0px',  
+        width: '45%',
+        color: '#222',
+        '& input': {
+            height: '1em !important',
+            padding: '25px !important'
+        },
+        '@media (max-width: 700px)': {
+            width: '100%',
+            '& input': {
+                height: '1em !important',
+                padding: '20px !important'
+            }
+        },
+        '& label': {
+            fontWeight: 'bold',
+        }
+    },
+    titleInputs: { 
+        color: '#222', 
+        textTransform: 'uppercase', 
+        fontSize: '1.5em !important', 
+        fontWeight: '700 !important',
+        marginTop: '20px !important',
+        '@media (max-width: 700px)': {
+            fontSize: '1.2em !important',
+        }
     }
 }));

@@ -21,10 +21,11 @@ import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { Typography, TextField, TextareaAutosize, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
+import { Typography, TextField, TextareaAutosize, MenuItem, FormControl, InputLabel, Select, Grid2 } from '@mui/material';
 
 // Def
 export default () => {
+  const classes = useStyles();
     const [formData, setFormData] = React.useState([])
     const { globalState } = useGlobalState()
 
@@ -45,6 +46,8 @@ export default () => {
 }
 
 const printAccordion = (element, index) => {
+    const classes = useStyles();
+
     return (
         <React.Fragment key={index}>
             <Accordion>
@@ -56,7 +59,9 @@ const printAccordion = (element, index) => {
                     <b>{element?.primary?.variables}</b>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <For func={printFields} list={element.data} />
+                   <Grid2 className={classes.containerFormSection}>
+                      <For func={printFields} list={element.data} />
+                   </Grid2>
                 </AccordionDetails>
             </Accordion>
         </React.Fragment>
@@ -75,6 +80,7 @@ const fieldTraslate = {
 }
 
 const printFields = (element, index) => {
+    console.log(element)
     return (
         <React.Fragment key={index}>
             {renderField(
@@ -87,24 +93,40 @@ const printFields = (element, index) => {
 }
 
 const renderField = (fieldType,labelText,value) => {
-    console.log(fieldType, labelText)
+    const classes = useStyles();
+
+    const [value_, setValue] = React.useState('');
+
+    const handleChange = (event) => {
+      setValue(event.target.value);
+    };
+
     switch (fieldType) {
       case "h1":
-        return <Typography variant="h1" sx={{ color: '#222', textTransform: 'uppercase', fontSize: '2em' , fontWeight: '700'}}>{labelText}</Typography>;
+        return (
+            <Grid2 sx={{width: '100%'}}>
+              <Typography 
+                variant="h1"
+                className={classes.titleInputs}
+                >
+                {labelText}
+              </Typography>
+            </Grid2>
+        );
 
       case "text":
         return (
-          <TextField
-            sx={{ margin: '10px 0px'}}
-            label={labelText} 
-            value={value} 
-            fullWidth 
-          />
+            <TextField
+              variant="outlined"
+              className={classes.inputText}
+              label={labelText} 
+              defaultValue={value} 
+            />
         );
 
       case "textArea":
         return (
-          <FormControl fullWidth sx={{ margin: '10px 0px'}}>
+          <FormControl sx={{ margin: '10px 0px'}}>
             <label>{labelText}</label>
             <TextareaAutosize
               minRows={3}
@@ -116,14 +138,16 @@ const renderField = (fieldType,labelText,value) => {
 
       case "select":
         return (
-          <FormControl fullWidth sx={{ margin: '10px 0px'}}>
+          <FormControl className={classes.inputText}>
             <InputLabel>{labelText}</InputLabel>
             <Select
-              value={value}
+                value={value}
+                onChange={handleChange}
             >
-              <MenuItem value="opcion1">Opción 1</MenuItem>
-              <MenuItem value="opcion2">Opción 2</MenuItem>
-              <MenuItem value="opcion3">Opción 3</MenuItem>
+              <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
+              <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>
+              <MenuItem value="Aceptable (C)">Aceptable (C)</MenuItem>
+              <MenuItem value="Insatisfactorio (D)">Insatisfactorio (D)</MenuItem>
             </Select>
           </FormControl>
         );
