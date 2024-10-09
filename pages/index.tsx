@@ -6,6 +6,7 @@ import React from "react"
 
 // Components
 import Header from "../src/infrastructure/components/Header";
+import Panel from "../src/infrastructure/iu/Panel/Panel"
 import { Box } from "@mui/material";
 
 // Home
@@ -13,7 +14,7 @@ export default () => {
     return (
         <main className="root-container">
             <Header />
-            <Box sx={{width: 500, height: 500}} />
+            <Panel />
         </main>
     )
 }

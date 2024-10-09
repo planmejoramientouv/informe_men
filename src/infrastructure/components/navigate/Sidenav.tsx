@@ -55,7 +55,7 @@ export default () => {
             onKeyDown={toggleDrawer(anchor, false)}
         >
             <List>
-                {[{text: 'INICIO' , route: '/'},{text: 'RRC' , route: '/rrc'}, {text: 'RAAC' , route: '/rrc'}].map((item, index) => (
+                {[{text: 'INICIO' , route: '/'},{text: 'RRC' , route: '/rrc'}, {text: 'RAAC' , route: '/raac'}].map((item, index) => (
                     <ListItem key={index} disablePadding>
                         <ListItemButton onClick={() => router.push(item.route)} selected={handlerSelected(item.text)}>
                             <ListItemText primary={item.text} />

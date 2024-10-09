@@ -63,7 +63,6 @@ export default () => {
     return (
         <Show when={hydrated}>
             <header className={styles.header}>
-                <Sidenav />
                 <div className={`${styles['container-logo']} ${classes.hiddentMobile}`}>
                     <img onClick={() => router.push('/')} src={'/assets/img/logo-univalle.png'} alt='logo' />
                 </div>

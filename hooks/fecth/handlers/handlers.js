@@ -1,4 +1,4 @@
-import { API_GET_ALLOWED_USER , API_GET_RRC_FORM } from "../const/api"
+import { API_GET_ALLOWED_USER , API_GET_RRC_FORM,  API_GET_TABLE} from "../const/api"
 import { fetchGetGeneral } from "../fecth"
 
 export const getAllowedUser = () => {
@@ -10,5 +10,11 @@ export const getAllowedUser = () => {
 export const getFormRRC = ()=> {
     return fetchGetGeneral({
         urlEndPoint: API_GET_RRC_FORM
+    })
+}
+
+export const getDataTable = () => {
+    return fetchGetGeneral({
+        urlEndPoint: API_GET_TABLE
     })
 }

@@ -63,3 +63,13 @@ export const getFieldRRC = async (hojaCalculo) => {
 
     return groups
 }
+
+export const getDataTable = async ({ sheetId, gid }) => {
+    if (sheetId === '' ||  gid === '') return []
+    if (sheetId === null || gid === null) return []
+    const response = await GetDataSheet({
+        gid,
+        spreadsheetId_: sheetId,
+        defaultSheet: 'Hoja 1'
+    });
+}

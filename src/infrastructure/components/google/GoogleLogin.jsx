@@ -10,15 +10,16 @@ import Snackbar from '@mui/material/Snackbar';
 
 // Hoosk
 import { useGlobalState } from '../../../../hooks/context'
+import { ROL_ALLOWED_SISTEM, ROL_ADMIN_SISTEM } from '../../../../libs/utils/const'
 import Show from '../../../../share/utils/Show';
 
 const secretKey = process.env.NEXT_PUBLIC_SECRET_KEY;
 
-const _get_auth = (loader, data, router, setOpen) => {
+const _get_auth = (loader, data, router, setOpen, setErrorText) => {
     try {
         google.accounts.id.initialize({
             client_id: process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,
-            callback: (response) => handleCredentialResponse(response, loader, data, router, setOpen),
+            callback: (response) => handleCredentialResponse(response, loader, data, router, setOpen, setErrorText),
         });
 
         google.accounts.id.renderButton(
@@ -34,24 +35,54 @@ const _get_auth = (loader, data, router, setOpen) => {
 
 const have_permission = ({ data, dataToken }) => {
     if (data?.length < 0) return false
-    return data.filter(item => String(item?.email) === String(dataToken?.email)).length > 0
+    
+    // Regex
+    const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
+    
+    // Validate user and rol
+    const isUserActive = data.find(item => String(item?.email) === String(dataToken?.email))
+    const isAdmin = ROL_ADMIN_SISTEM.includes(isUserActive?.rol)
+    const hasUrl = (isUserActive?.url_exel ?? '').match(regex) !== null
+    const hasUrlDoc = isAdmin || hasUrl
+    
+    return {
+        response: isUserActive?.id && hasUrlDoc,
+        hasUrl: !hasUrl && !(isUserActive?.id),
+        userFound: isUserActive
+    }
 };
 
-const handleCredentialResponse = async (response, loader, data, router, setOpen) => {
+const handleCredentialResponse = async (response, loader, data, router, setOpen, setErrorText) => {
     loader(true);
     try {
         const decodedToken = decodeToken(response.credential);        
         const havePermission = have_permission({ data: data || [], dataToken: decodedToken })
-        if (havePermission) {
+        if (havePermission.response) {
+            const currentRol = havePermission?.userFound?.rol
+            const currentProcess = havePermission?.userFound?.proceso
+
+            // Set Cookie
             Cookies.set('auth', havePermission , { expires: 4 })
             const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
                 img: decodedToken.picture,
-                name: `${decodedToken.name}`
+                name: `${decodedToken.name}`,
+                rol: havePermission.userFound?.rol,
+                nivel: havePermission.userFound?.nivel,
+                programa: havePermission.userFound?.programa,
+                email: decodedToken.email
             }), secretKey).toString();
             Cookies.set('data', encryptedData, { expires: 4 });
-            router.push('/');
+
+            if (ROL_ALLOWED_SISTEM.includes(currentRol)) {
+                router.push('/');
+            }
+
+            if (currentProcess === 'RRC') router.push('/rrc');
+            if (currentProcess === 'RAAC') router.push('/raac');
         }
         else {
+            const textError = havePermission.hasUrl ? 'No Tienes Acceso' : 'El programa no tiene informe'
+            setErrorText(textError)
             setOpen(true)
         }
     } catch (error) {
@@ -70,6 +101,7 @@ export default () => {
     const [isload, setIsLoad] =  React.useState(false)
     const [open, setOpen] = React.useState(false)
     const [data, setData] = React.useState([])
+    const [errorText, setErrorText] = React.useState('No Tienes Acceso')
 
     const handleClose = () => {
         setOpen(false)
@@ -96,8 +128,7 @@ export default () => {
         _root.appendChild(_script, globalState);
 
         _script.onload = () => {
-            console.log(data,"data")
-            _get_auth(setIsLoad, data,router, setOpen);
+            _get_auth(setIsLoad, data,router, setOpen, setErrorText);
         };
     }, [isload, data]);
 
@@ -119,7 +150,7 @@ export default () => {
                     onClose={handleClose}
                     key={2}
                 >
-                   <Alert severity="error">No Tienes Acceso</Alert> 
+                   <Alert severity="error">{errorText}</Alert> 
                 </Snackbar>
             </Box>
         </>
