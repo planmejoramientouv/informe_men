@@ -47,11 +47,21 @@ export default () => {
 
 const printAccordion = (element, index) => {
   const classes = useStyles();
+  const [expanded, setExpanded] = React.useState(false);
+
+  const handleToggleAccordion = () => {
+    setExpanded(!expanded);
+  };
+
+  const handleCloseAccordion = (e) => {
+    e.stopPropagation(); // Evita que se propague el evento de clic y reaccione de forma indeseada
+    setExpanded(false);  // Cierra el acordeón
+  };
 
   return (
     <React.Fragment key={index}>
-      <Show when={firstLevelPermission}>
-        <Accordion>
+      <Show when={firstLevelPermission()}>
+        <Accordion expanded={expanded} onChange={handleToggleAccordion}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1-content"
@@ -60,8 +70,11 @@ const printAccordion = (element, index) => {
             <b>{element?.primary?.variables}</b>
           </AccordionSummary>
           <AccordionDetails>
+            <a className={classes.containerCloseButtom} onClick={handleCloseAccordion} />
             <Grid2 className={classes.containerFormSection}>
-              <For func={printFields} list={element.data} />
+              <Grid2 className={classes.listFormSection}>
+                <For func={printFields} list={element.data} />
+              </Grid2>
             </Grid2>
           </AccordionDetails>
         </Accordion>
@@ -84,7 +97,7 @@ const fieldTraslate = {
 const printFields = (element, index) => {
   return (
     <React.Fragment key={index}>
-      <Show when={firstLevelPermission}>
+      <Show when={firstLevelPermission()}>
         {renderField(
           fieldTraslate[element.tipo],
           element.texto,
@@ -141,7 +154,7 @@ const renderField = (fieldType, labelText, value) => {
 
     case "select":
       return (
-        <FormControl className={classes.inputText}>
+        <FormControl sx={{zIndex: 9999}} className={classes.inputText}>
           <InputLabel>{labelText}</InputLabel>
           <Select
             value={value_}
@@ -160,6 +173,6 @@ const renderField = (fieldType, labelText, value) => {
   }
 };
 
-const firstLevelPermission = () => {
+const firstLevelPermission = (): boolean => {
   return true
 }

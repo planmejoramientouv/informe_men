@@ -14,7 +14,7 @@ import { useGlobalState } from '../../../../hooks/context'
 import { ROL_DIRECTOR, ROL_ADMIN_SISTEM } from '../../../../libs/utils/const'
 
 // Hooks
-import { getCookieData } from '../../../../libs/utils/utils'
+import { getCookieData, setCookieRRC } from '../../../../libs/utils/utils'
 
 // Fecth
 import { getAllowedUser } from '../../../../hooks/fecth/handlers/handlers'
@@ -29,11 +29,13 @@ import { Grid2, Typography } from '@mui/material'
 // Regex
 const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
 
+import { useRouter } from 'next/router';
+
 export default () => {
     const classes = useStyles()
     const { globalState } = useGlobalState()
 
-    const [cookieData, setCookieData] = React.useState({})
+    const [cookieData, setCookieData] = React.useState({} as any)
     const [data, setData] =  React.useState([])
     const [dataFor, setDataFor] =  React.useState([])
 
@@ -75,32 +77,53 @@ export default () => {
     React.useMemo(optionToPrint, [data])
 
     React.useEffect(() => {
-        const cookie_ = getCookieData()
+        const cookie_ = getCookieData('data')
         getUserAllowed()
         setCookieData(cookie_)
     },[])
 
     return (
-        <React.Fragment>
-            <Show when={dataFor.length > 0}>
+        <Show when={dataFor.length > 0}>
+            <React.Fragment>
                 <Grid2 className={classes.containerTitlePanel}>
                     <Typography variant="h2">Programas con procesos activos en RRC 0 RAAC:</Typography>
                 </Grid2>
                 <Grid2 className={classes.containerForPanel}>
                     <For func={printActions} list={dataFor}  />
                 </Grid2>
-            </Show>            
-        </React.Fragment>
+            </React.Fragment>
+        </Show>            
     )
 }
 
 const printActions = (element, index) => {
     const classes = useStyles()
+    const router = useRouter();
+
+    const handlerClick = (element) => {
+        const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
+        const matches = (element?.url_exel ?? '').match(regex);
+
+        if (matches) {
+            const sheetId = matches[1];
+            const gid = matches[2];
+            console.log(element, sheetId)
+            setCookieRRC({
+                sheetId: sheetId,
+                programa: element.programa,
+                proceso: element.proceso,
+                gid: gid,
+                nameCookie: 'rrc'
+            })
+            
+            router.push(`/${(element.proceso).toLowerCase()}`)
+        }
+    }
 
     return (
         <React.Fragment key={index}>
-            <Grid2 className={classes.forItemsPanel} key={index}>
-                <Typography variant="span">
+            <Grid2 onClick={() => handlerClick(element)} className={classes.forItemsPanel} key={index}>
+                <Typography variant="h2">
                     {`${element?.programa} - ${element?.proceso}`}
                 </Typography>
             </Grid2>

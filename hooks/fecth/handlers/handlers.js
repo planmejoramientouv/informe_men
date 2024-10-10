@@ -7,9 +7,9 @@ export const getAllowedUser = () => {
     })
 }
 
-export const getFormRRC = ()=> {
+export const getFormRRC = ({ sheetId, gid }) => {
     return fetchGetGeneral({
-        urlEndPoint: API_GET_RRC_FORM
+        urlEndPoint: `${API_GET_RRC_FORM}?sheetId=${sheetId}&gid=${gid}`
     })
 }
 

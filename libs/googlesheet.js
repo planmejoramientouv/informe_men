@@ -35,9 +35,9 @@ export const getPermission = async (hojaCalculo) => {
     return response
 };
 
-export const getFieldRRC = async (hojaCalculo) => {
+export const getFieldRRC = async ({ sheetId, gid}) => {
     const response = await GetDataSheet({
-        hojaCalculo,
+        gid,
         spreadsheetId_: SPREADSHEET_ID,
         defaultSheet: 'Datos Generales RRC'
     });

@@ -29,8 +29,18 @@ export const sheetValuesToObject = (sheetValues, headers) => {
     return peopleWithHeadings;
 }
 
-export const getCookieData = () => {
-  const encryptedData = Cookies.get('data');
+export const getCookieData = (cookieName) => {
+  const encryptedData = Cookies.get(cookieName);
   if (encryptedData === null) return {}
   return JSON.parse(CryptoJS?.AES?.decrypt(encryptedData, secretKey).toString(CryptoJS.enc.Utf8) || '{}');
+}
+
+export const setCookieRRC = ({sheetId, programa, proceso, gid, nameCookie}) => {
+    const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
+        sheetId: sheetId,
+        programa: programa,
+        proceso: proceso,
+        gid: gid
+    }), secretKey).toString();
+    Cookies.set(nameCookie, encryptedData, { expires: 4 });
 }

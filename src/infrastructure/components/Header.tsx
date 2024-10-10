@@ -63,7 +63,7 @@ export default () => {
     return (
         <Show when={hydrated}>
             <header className={styles.header}>
-                <div className={`${styles['container-logo']} ${classes.hiddentMobile}`}>
+                <div className={`${styles['container-logo']}`}>
                     <img onClick={() => router.push('/')} src={'/assets/img/logo-univalle.png'} alt='logo' />
                 </div>
                 <div>

@@ -11,6 +11,9 @@ import Snackbar from '@mui/material/Snackbar';
 // Hoosk
 import { useGlobalState } from '../../../../hooks/context'
 import { ROL_ALLOWED_SISTEM, ROL_ADMIN_SISTEM } from '../../../../libs/utils/const'
+import { setCookieRRC } from '../../../../libs/utils/utils'
+
+
 import Show from '../../../../share/utils/Show';
 
 const secretKey = process.env.NEXT_PUBLIC_SECRET_KEY;
@@ -48,7 +51,8 @@ const have_permission = ({ data, dataToken }) => {
     return {
         response: isUserActive?.id && hasUrlDoc,
         hasUrl: !hasUrl && !(isUserActive?.id),
-        userFound: isUserActive
+        userFound: isUserActive,
+        urlData: (isUserActive?.url_exel ?? '').match(regex)
     }
 };
 
@@ -60,7 +64,9 @@ const handleCredentialResponse = async (response, loader, data, router, setOpen,
         if (havePermission.response) {
             const currentRol = havePermission?.userFound?.rol
             const currentProcess = havePermission?.userFound?.proceso
-
+            const sheetId = havePermission.urlData[1] ?? ''
+            const gid = havePermission.urlData[2] ?? ''
+            
             // Set Cookie
             Cookies.set('auth', havePermission , { expires: 4 })
             const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
@@ -75,10 +81,17 @@ const handleCredentialResponse = async (response, loader, data, router, setOpen,
 
             if (ROL_ALLOWED_SISTEM.includes(currentRol)) {
                 router.push('/');
+                return;
             }
 
-            if (currentProcess === 'RRC') router.push('/rrc');
-            if (currentProcess === 'RAAC') router.push('/raac');
+            setCookieRRC({
+                sheetId: sheetId,
+                programa: havePermission.userFound?.programa,
+                proceso: currentProcess,
+                gid: gid,
+                nameCookie: (currentProcess).toLowerCase()
+            })
+            router.push(`/${(currentProcess).toLowerCase()}`)
         }
         else {
             const textError = havePermission.hasUrl ? 'No Tienes Acceso' : 'El programa no tiene informe'

@@ -15,11 +15,11 @@ export default makeStyles(() => ({
     },
     containerFields: {
         display: 'flex',
-        flexDirection: 'column',
+        flexWrap: 'wrap',
         borderRadius: '8px',
         padding: '20px',
         width: '95%',
-        height: '90%',
+        maxHeight: '100%',
         background: 'white',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
         '@media (max-width: 700px)': {
@@ -27,9 +27,18 @@ export default makeStyles(() => ({
         }
     },
     FormItems: {
+        display: 'flex',
+        flexWrap: 'wrap',
         padding: '30px',
-        height: '90%',
-        overflow: 'auto'
+        overflow: 'auto',
+        '& div.MuiAccordion-root': {
+            width: '170px',
+            height: '170px',
+            margin: '10px 20px',
+            '& div.MuiAccordionSummary-root': {
+                height: '100%'
+            }
+        }
     },
     actions: {
         padding: '15px',
@@ -39,9 +48,30 @@ export default makeStyles(() => ({
         height: '10%',
         width: '100%'
     },
+    containerCloseButtom: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right:  0,
+        background: 'rgba(2,2,2,0.5)',
+        zIndex: 999,
+        cursor: 'pointer'
+    },
     containerFormSection: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right:  0,
+        zIndex: 1000,
+        width: '85%',
+        margin: 'auto',
         display: 'flex',
         flexWrap: 'wrap',
+        padding: '25px',
+        background: 'white',
+        overflow: 'auto',
         gap: '20px',
     },
     inputText: {
@@ -86,6 +116,14 @@ export default makeStyles(() => ({
             }   
         }
     },
+    listFormSection: {
+        width: '100%',
+        display: 'flex',
+        flexWrap: 'wrap',
+        height: 'min-content',
+        gap: '20px',
+        marginTop: '20px',
+    },
     containerPanel: {
         display: 'flex',
         flexDirection: 'column',
@@ -124,8 +162,22 @@ export default makeStyles(() => ({
         height: '160px',
         padding: '10px',
         borderRadius: '4px',
-        background: 'var(--red-univalle)',
-        color: 'white',
-        cursor: 'pointer'
+        boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
+        color: '#222',
+        cursor: 'pointer',
+        '& h2': {
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 3,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            color: '#222', 
+            textTransform: 'uppercase', 
+            fontSize: '13px !important', 
+            fontWeight: '700 !important',
+            '@media (max-width: 700px)': {
+                fontSize: '10px !important',
+            }   
+        }
     }
 }));

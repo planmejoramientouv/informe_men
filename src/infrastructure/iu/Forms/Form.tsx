@@ -36,11 +36,11 @@ export default () => {
                             <Grid2 className={classes.FormItems}>
                                 <FormFields />
                             </Grid2>
-                            <Grid2 className={classes.actions}>
+                            {/* <Grid2 className={classes.actions}>
                                 <Button  type="submit" sx={{ background: 'var(--red-univalle)' }} variant="contained" disableElevation>
                                     Guardar
                                 </Button>
-                            </Grid2>
+                            </Grid2> */}
                         </Grid2>
                     </Box>
                 </Show>

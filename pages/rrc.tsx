@@ -12,12 +12,19 @@ import Form from "../src/infrastructure/iu/Forms/Form"
 import { useGlobalState } from '../hooks/context'
 import { getFormRRC } from '../hooks/fecth/handlers/handlers'
 
+// Hooks
+import { getCookieData, setCookieRRC } from '../libs/utils/utils'
+
 // Home
 export default () => {
     const { setGlobalState } = useGlobalState()
+    const [dataCookie, setDataCookie] = React.useState({} as any)
 
-    const getDataRRC = async () => {
-        const response = await getFormRRC()
+    const getDataRRC = async ({sheetId, gid}) => {
+        const response = await getFormRRC({
+            sheetId: sheetId,
+            gid: gid
+        })
         if (response?.data.length > 0) {
             setGlobalState((prev) => ({
                 ...prev,
@@ -28,10 +35,23 @@ export default () => {
         } 
     }
 
+    const getDataCookie = () =>  {
+        const rcc_ = getCookieData('rrc')
+        setDataCookie(rcc_)
+    }
+
     React.useEffect(() => {
         window.location.hash = "#rrc";
-        getDataRRC()
+        getDataCookie()
     }, []);
+
+    React.useEffect(() => {
+        if (!dataCookie.sheetId) return 
+        getDataRRC({
+            sheetId: dataCookie.sheetId,
+            gid: dataCookie.gid
+        })
+    }, [dataCookie]);
 
     return (
         <main className="root-container">
