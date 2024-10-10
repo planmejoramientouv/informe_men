@@ -35,6 +35,11 @@ export default makeStyles(() => ({
             width: '170px',
             height: '170px',
             margin: '10px 20px',
+            '&:hover': {
+                // transform: 'scale(1.05)',
+                boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
+                backgroundColor: '#f0f0f0',
+            },
             '& div.MuiAccordionSummary-root': {
                 height: '100%'
             }
@@ -94,7 +99,7 @@ export default makeStyles(() => ({
         }
     },
     titleInputs: { 
-        color: '#222', 
+        color: '#5f5b5b', 
         textTransform: 'uppercase', 
         fontSize: '1.5em !important', 
         fontWeight: '700 !important',
@@ -163,21 +168,34 @@ export default makeStyles(() => ({
         padding: '10px',
         borderRadius: '4px',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
-        color: '#222',
         cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
+            backgroundColor: '#f0f0f0',
+        },
         '& h2': {
             display: '-webkit-box',
             WebkitBoxOrient: 'vertical',
             WebkitLineClamp: 3,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            color: '#222', 
-            textTransform: 'uppercase', 
-            fontSize: '13px !important', 
+            color: '#5f5b5b',
+            textTransform: 'uppercase',
+            fontSize: '13px !important',
             fontWeight: '700 !important',
+            transition: 'color 0.3s ease',
             '@media (max-width: 700px)': {
                 fontSize: '10px !important',
-            }   
+            },
+        },
+        '&:hover h2': {
+            color: 'var(--red-univalle)',
         }
+    },
+    ColapsableTwo: {
+        width: '100%',
+        marginBottom: '20px'
     }
 }));

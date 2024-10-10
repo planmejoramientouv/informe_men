@@ -45,17 +45,18 @@ export default () => {
   )
 }
 
+// Print Accordion
 const printAccordion = (element, index) => {
   const classes = useStyles();
   const [expanded, setExpanded] = React.useState(false);
-
+  console.log(element)
   const handleToggleAccordion = () => {
     setExpanded(!expanded);
   };
 
   const handleCloseAccordion = (e) => {
-    e.stopPropagation(); // Evita que se propague el evento de clic y reaccione de forma indeseada
-    setExpanded(false);  // Cierra el acordeón
+    e.stopPropagation()
+    setExpanded(false)
   };
 
   return (
@@ -73,6 +74,14 @@ const printAccordion = (element, index) => {
             <a className={classes.containerCloseButtom} onClick={handleCloseAccordion} />
             <Grid2 className={classes.containerFormSection}>
               <Grid2 className={classes.listFormSection}>
+              <Grid2 className={classes.ColapsableTwo}>
+            <Typography
+            variant="h1"
+            className={classes.titleInputs}
+          >
+            {element?.primary?.texto}
+          </Typography>
+        </Grid2>
                 <For func={printFields} list={element.data} />
               </Grid2>
             </Grid2>
@@ -167,6 +176,19 @@ const renderField = (fieldType, labelText, value) => {
           </Select>
         </FormControl>
       );
+
+    case "Colapsable2":
+      return(
+        <Grid2 className={classes.ColapsableTwo}>
+            <hr />
+            <Typography
+            variant="h1"
+            className={classes.titleInputs}
+          >
+            {labelText}
+          </Typography>
+        </Grid2>
+      )
 
     default:
       return null;

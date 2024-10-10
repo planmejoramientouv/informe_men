@@ -64,7 +64,7 @@ export default () => {
         <Show when={hydrated}>
             <header className={styles.header}>
                 <div className={`${styles['container-logo']}`}>
-                    <img onClick={() => router.push('/')} src={'/assets/img/logo-univalle.png'} alt='logo' />
+                    <img src={'/assets/img/logo-univalle.png'} alt='logo' />
                 </div>
                 <div>
                     <Grid2 sx={{ display: 'flex', alignItems: 'center', maxHeight: '50px' }}>

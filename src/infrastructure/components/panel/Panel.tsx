@@ -86,7 +86,7 @@ export default () => {
         <Show when={dataFor.length > 0}>
             <React.Fragment>
                 <Grid2 className={classes.containerTitlePanel}>
-                    <Typography variant="h2">Programas con procesos activos en RRC 0 RAAC:</Typography>
+                    <Typography variant="h2">Programas con procesos activos</Typography>
                 </Grid2>
                 <Grid2 className={classes.containerForPanel}>
                     <For func={printActions} list={dataFor}  />

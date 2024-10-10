@@ -35,7 +35,7 @@ export default makeStyles(() => ({
         margin: 'auto',
         maxWidth: '70%',
         height: '470px',
-        overflow: 'hidden'
+        overflow: 'hidden',
     },
     titleSingIn: {
         fontSize: '1.5em !important',
@@ -43,14 +43,15 @@ export default makeStyles(() => ({
     },
     containerTitlePrimary: {
         display: 'grid',
-        placeContent: 'center',
-        height: '30%',
+        placeContent: 'end',
+        height: '40%',
         '& > h2': {
             fontWeight: 'bold',
             textAlign: 'center',
             color: 'var(--red-univalle)',
             '@media(max-width: 900px)': {
-                fontSize: '1.8em'
+                fontSize: '1.3em',
+                height: '50%'
             }
         }
     }

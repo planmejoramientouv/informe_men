@@ -59,7 +59,10 @@ export default () => {
             <section className={classes.containerContent}>
                 <Grid2 className={classes.containerTitlePrimary}>
                     <Typography variant="h1" component="h2">
-                        DACA UNIVALLE
+                        Esquema - Procesos de Calidad
+                    </Typography>
+                    <Typography variant="h1" component="h2">
+                        Universidad del Valle
                     </Typography>
                 </Grid2>
                 <Grid2 className={classes.containerLogin}>
