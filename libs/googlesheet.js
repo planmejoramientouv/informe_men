@@ -38,7 +38,7 @@ export const getPermission = async (hojaCalculo) => {
 export const getFieldRRC = async ({ sheetId, gid}) => {
     const response = await GetDataSheet({
         gid,
-        spreadsheetId_: SPREADSHEET_ID,
+        spreadsheetId_: sheetId,
         defaultSheet: 'Datos Generales RRC'
     });
 
@@ -72,4 +72,45 @@ export const getDataTable = async ({ sheetId, gid }) => {
         spreadsheetId_: sheetId,
         defaultSheet: 'Hoja 1'
     });
+}
+
+export const updateDataField = async ({ data, sheetId, gid }) =>  {
+    try {
+        console.log(data,sheetId,gid)
+        if (data.length <= 0) return false
+    
+        const arrayIdAvailables = data.map((item) => item.id)
+        console.log(arrayIdAvailables)
+        const existingData  = await GetDataSheet({
+            gid,
+            spreadsheetId_: sheetId,
+            defaultSheet: 'Datos Generales RRC'
+        });
+    
+        const updateItems = existingData.filter((item, index) => {
+            if (arrayIdAvailables.includes(item.id)) {
+                const updatedData = data.find((d) => d.id === item.id);
+
+                const rowIndex = index + 2;
+                const range = `G${rowIndex}`;
+
+                console.log(`Actualizando fila ${rowIndex}, columna G con el valor: ${updatedData.valor}`);
+
+                const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+                return sheets.spreadsheets.values.update({
+                    spreadsheetId: sheetId,
+                    range: range,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [[updatedData?.valor  ?? '']]
+                    }
+                });
+            }
+        })
+    
+        return true
+    } catch (e) {
+        console.log(e)
+        return false
+    }
 }

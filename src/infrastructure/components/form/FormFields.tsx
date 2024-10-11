@@ -21,7 +21,14 @@ import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { Typography, TextField, TextareaAutosize, MenuItem, FormControl, InputLabel, Select, Grid2 } from '@mui/material';
+import { Button, Typography, TextField, TextareaAutosize, MenuItem, FormControl, InputLabel, Select, Grid2 } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Snackbar from '@mui/material/Snackbar';
+
+// Fecth
+import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Def
 export default () => {
@@ -31,7 +38,6 @@ export default () => {
 
   React.useEffect(() => {
     if (globalState.data?.formdata?.length > 0) {
-      console.log(globalState.data?.formdata)
       setFormData(globalState.data?.formdata)
     }
   }, [globalState])
@@ -49,15 +55,50 @@ export default () => {
 const printAccordion = (element, index) => {
   const classes = useStyles();
   const [expanded, setExpanded] = React.useState(false);
-  console.log(element)
+  const [dataSheet,setDataSheet] = React.useState({} as any)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [open, setOpen] = React.useState(false)
+  const [isSuccess, setSuccess] = React.useState(false)
+  const [errorText, setErrorText] = React.useState('Guardado Exitoso')
+  const { globalState } = useGlobalState()
+
   const handleToggleAccordion = () => {
     setExpanded(!expanded);
   };
+
+  const submit = async (data) => {
+    setIsLoading(true)
+    const response  = await updateDataTable({
+      sheetId: dataSheet.sheetId,
+      gid: dataSheet.gid,
+      data: data
+    })
+
+    if (response?.data) {
+      setOpen(true)
+      setSuccess(response.data)
+      setErrorText(response.data? 'Guardado Exitoso' : 'Error al Guardar')
+    }
+    setIsLoading(false)
+  }
 
   const handleCloseAccordion = (e) => {
     e.stopPropagation()
     setExpanded(false)
   };
+
+  const handleClose = () => {
+      setOpen(false)
+  }
+
+  React.useEffect(() => {
+    if (globalState.data?.sheetId) {
+      setDataSheet({
+        sheetId: globalState.data?.sheetId,
+        gid: globalState.data?.gid
+      })
+    }
+  }, [globalState])
 
   return (
     <React.Fragment key={index}>
@@ -74,16 +115,33 @@ const printAccordion = (element, index) => {
             <a className={classes.containerCloseButtom} onClick={handleCloseAccordion} />
             <Grid2 className={classes.containerFormSection}>
               <Grid2 className={classes.listFormSection}>
-              <Grid2 className={classes.ColapsableTwo}>
-            <Typography
-            variant="h1"
-            className={classes.titleInputs}
-          >
-            {element?.primary?.texto}
-          </Typography>
-        </Grid2>
+                <Grid2 className={classes.ColapsableTwo}>
+                  <Typography
+                      variant="h1"
+                      className={classes.titleInputs}>
+                      {element?.primary?.texto}
+                  </Typography>
+                </Grid2>
                 <For func={printFields} list={element.data} />
               </Grid2>
+              <Button 
+                  disabled={isLoading}  
+                  onClick={() => submit(element.data)} 
+                  variant="contained" 
+                  className={classes.buttonSave}>
+                 {!isLoading ? 'Guardar' : 'Actualizando'}
+              </Button>
+              <Box sx={{ width: 500 }}>
+                <Snackbar
+                    autoHideDuration={6000}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    open={open}
+                    onClose={handleClose}
+                    key={2}
+                >
+                   <Alert severity={isSuccess? "success" : "error"}>{errorText}</Alert> 
+                </Snackbar>
+            </Box>
             </Grid2>
           </AccordionDetails>
         </Accordion>
@@ -110,21 +168,27 @@ const printFields = (element, index) => {
         {renderField(
           fieldTraslate[element.tipo],
           element.texto,
-          element.valor
+          element.valor,
+          element
         )}
       </Show>
     </React.Fragment>
   )
 }
 
-const renderField = (fieldType, labelText, value) => {
+const renderField = (fieldType, labelText, value, element) => {
   const classes = useStyles();
 
   const [value_, setValue] = React.useState('');
 
   const handleChange = (event) => {
+    element.valor = event.target.value
     setValue(event.target.value);
   };
+
+  const handlerTextField = (event) => {
+    element.valor = event.target.value
+  }
 
   switch (fieldType) {
     case "h1":
@@ -144,6 +208,7 @@ const renderField = (fieldType, labelText, value) => {
         <TextField
           variant="outlined"
           className={classes.inputText}
+          onInput={handlerTextField}
           label={labelText}
           defaultValue={value}
         />
@@ -156,6 +221,7 @@ const renderField = (fieldType, labelText, value) => {
           <TextareaAutosize
             minRows={3}
             value={value}
+            onInput={handlerTextField}
             style={{ width: '100%' }}
           />
         </FormControl>

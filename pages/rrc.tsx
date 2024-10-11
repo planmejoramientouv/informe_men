@@ -29,7 +29,9 @@ export default () => {
             setGlobalState((prev) => ({
                 ...prev,
                 data: {
-                    formdata: response?.data ?? []
+                    formdata: response?.data ?? [],
+                    sheetId: sheetId,
+                    gid: gid
                 }
             }))
         } 

@@ -197,5 +197,9 @@ export default makeStyles(() => ({
     ColapsableTwo: {
         width: '100%',
         marginBottom: '20px'
+    },
+    buttonSave: {
+        backgroundColor: 'var(--red-univalle) !important',
+        height: '49px'
     }
 }));
