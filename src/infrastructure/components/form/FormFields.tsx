@@ -108,6 +108,7 @@ const printAccordion = (element, index) => {
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1-content"
             id="panel1-header"
+            sx={{ background: '#a9a9a9'}}
           >
             <b>{element?.primary?.variables}</b>
           </AccordionSummary>

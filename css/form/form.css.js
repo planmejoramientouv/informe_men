@@ -167,13 +167,14 @@ export default makeStyles(() => ({
         height: '160px',
         padding: '10px',
         borderRadius: '4px',
+        background: '#a9a9a9',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         '&:hover': {
             transform: 'scale(1.05)',
             boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
-            backgroundColor: '#f0f0f0',
+            backgroundColor: '#a9a9a9',
         },
         '& h2': {
             display: '-webkit-box',
@@ -181,7 +182,7 @@ export default makeStyles(() => ({
             WebkitLineClamp: 3,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            color: '#5f5b5b',
+            color: '#fff',
             textTransform: 'uppercase',
             fontSize: '13px !important',
             fontWeight: '700 !important',
@@ -191,7 +192,7 @@ export default makeStyles(() => ({
             },
         },
         '&:hover h2': {
-            color: 'var(--red-univalle)',
+            color: '#fff',
         }
     },
     ColapsableTwo: {

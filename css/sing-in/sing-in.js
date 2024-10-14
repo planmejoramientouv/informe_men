@@ -15,11 +15,12 @@ export default makeStyles(() => ({
     },
     containerContent: {
         display: 'flex',
+        padding: '20px',
         flexDirection: 'column',
         alignItems: 'center',
         height: '100%',
         width: 'calc(100% - 370px)',
-        '@media(max-width: 900px)': {
+        '@media(max-width: 1400px)': {
             width: '70%'
         }
     },
@@ -49,6 +50,9 @@ export default makeStyles(() => ({
             fontWeight: 'bold',
             textAlign: 'center',
             color: 'var(--red-univalle)',
+            '@media(max-width: 1400px)': {
+                fontSize: '4em',
+            },
             '@media(max-width: 900px)': {
                 fontSize: '1.3em',
                 height: '50%'

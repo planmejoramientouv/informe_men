@@ -35,12 +35,13 @@ export const getCookieData = (cookieName) => {
   return JSON.parse(CryptoJS?.AES?.decrypt(encryptedData, secretKey).toString(CryptoJS.enc.Utf8) || '{}');
 }
 
-export const setCookieRRC = ({sheetId, programa, proceso, gid, nameCookie}) => {
+export const setCookieRRC = ({sheetId, programa, proceso, gid, year, nameCookie}) => {
     const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
         sheetId: sheetId,
         programa: programa,
         proceso: proceso,
-        gid: gid
+        gid: gid,
+        year: year,
     }), secretKey).toString();
     Cookies.set(nameCookie, encryptedData, { expires: 4 });
 }

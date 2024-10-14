@@ -89,7 +89,9 @@ const handleCredentialResponse = async (response, loader, data, router, setOpen,
                 programa: havePermission.userFound?.programa,
                 proceso: currentProcess,
                 gid: gid,
-                nameCookie: (currentProcess).toLowerCase()
+                rol: havePermission.userFound?.rol,
+                year: havePermission.userFound?.year,
+                nameCookie: (currentProcess).toLowerCase(),
             })
             router.push(`/${(currentProcess).toLowerCase()}`)
         }

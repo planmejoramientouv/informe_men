@@ -43,7 +43,6 @@ export default () => {
     }
 
     React.useEffect(() => {
-        window.location.hash = "#rrc";
         getDataCookie()
     }, []);
 

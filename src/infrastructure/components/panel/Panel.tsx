@@ -107,12 +107,13 @@ const printActions = (element, index) => {
         if (matches) {
             const sheetId = matches[1];
             const gid = matches[2];
-            console.log(element, sheetId)
+            console.log(element, sheetId, "sssss")
             setCookieRRC({
                 sheetId: sheetId,
                 programa: element.programa,
                 proceso: element.proceso,
                 gid: gid,
+                year: element.year,
                 nameCookie: 'rrc'
             })
             
@@ -124,7 +125,7 @@ const printActions = (element, index) => {
         <React.Fragment key={index}>
             <Grid2 onClick={() => handlerClick(element)} className={classes.forItemsPanel} key={index}>
                 <Typography variant="h2">
-                    {`${element?.programa} - ${element?.proceso}`}
+                    {`${element?.programa} - ${element?.proceso} ${element?.year}`}
                 </Typography>
             </Grid2>
         </React.Fragment>
