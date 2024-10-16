@@ -135,7 +135,7 @@ const printLabelsTabs = (element, index) => {
     const classes = useStyles();
     function a11yProps(index: number) {
       return {
-        id: index,
+        id: `${index}`,
         'aria-controls': `${index}`,
       };
     }
@@ -288,12 +288,12 @@ const renderField = (fieldType, labelText, value, element) => {
     case "textArea":
       return (
         <FormControl sx={{ margin: '10px 0px', width: '100%' }}>
-          <label sx={{ marginBottom:'10px'}} ><b>{labelText}</b></label>
+          <label><b>{labelText}</b></label>
           <TextareaAutosize
             minRows={3}
             value={valueTextArea}
             onInput={handlerTextField}
-            style={{ MaxWidth: '100%' }}
+            style={{ maxWidth: '100%' }}
           />
         </FormControl>
       );
