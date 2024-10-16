@@ -151,6 +151,7 @@ const printLabelsTabs = (element, index) => {
 
 // Print Accordion
 const printAccordion = (element, index) => {
+  console.log(element,'element')
   const classes = useStyles();
   const [dataSheet,setDataSheet] = React.useState({} as any)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -202,13 +203,15 @@ const printAccordion = (element, index) => {
                 </Grid2>
                 <For func={printFields} list={element.data} />
               </Grid2>
-              <Button 
-                  disabled={isLoading}  
-                  onClick={() => submit(element.data)} 
-                  variant="contained" 
-                  className={classes.buttonSave}>
-                 {!isLoading ? 'Guardar' : 'Actualizando'}
-              </Button>
+              <Grid2 className={classes.centerButton}>
+                  <Button 
+                      disabled={isLoading}  
+                      onClick={() => submit(element.data)} 
+                      variant="contained" 
+                      className={classes.buttonSave}>
+                    {!isLoading ? 'Guardar' : 'Actualizando'}
+                  </Button>
+              </Grid2>
               <Box sx={{ width: 500 }}>
                 <Snackbar
                     autoHideDuration={6000}
@@ -242,10 +245,10 @@ const printFields = (element, index) => {
 }
 
 const renderField = (fieldType, labelText, value, element) => {
-  console.log(fieldType,"Textarea", element)
   const classes = useStyles();
 
   const [value_, setValue] = React.useState('');
+  const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
 
   const handleChange = (event) => {
     element.valor = event.target.value
@@ -253,7 +256,9 @@ const renderField = (fieldType, labelText, value, element) => {
   };
 
   const handlerTextField = (event) => {
-    element.valor = event.target.value
+    const newValue = event.target.value;
+    element.valor = newValue
+    setValueTextArea(newValue);
   }
 
   switch (fieldType) {
@@ -282,13 +287,13 @@ const renderField = (fieldType, labelText, value, element) => {
 
     case "textArea":
       return (
-        <FormControl sx={{ margin: '10px 0px' }}>
-          <label><b>{labelText}</b></label>
+        <FormControl sx={{ margin: '10px 0px', width: '100%' }}>
+          <label sx={{ marginBottom:'10px'}} ><b>{labelText}</b></label>
           <TextareaAutosize
             minRows={3}
-            value={value}
+            value={valueTextArea}
             onInput={handlerTextField}
-            style={{ width: '100%' }}
+            style={{ MaxWidth: '100%' }}
           />
         </FormControl>
       );

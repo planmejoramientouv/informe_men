@@ -189,8 +189,9 @@ export default makeStyles(() => ({
         marginBottom: '20px'
     },
     buttonSave: {
+        margin: 'auto',
         backgroundColor: 'var(--red-univalle) !important',
-        height: '49px'
+        height: '40px'
     },
     containerBox: {
         '& > div > div': {
@@ -200,6 +201,18 @@ export default makeStyles(() => ({
     containerTab: {
         width: '170px',
         height: '170px',
-        backgroundColor: '#c3c3c3 !important'
+        borderRadius: '8px',
+        backgroundColor: '#c3c3c3 !important',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            transform: 'scale(1.05)',
+            boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
+            backgroundColor: '#c3c3c3',
+        }
+    },
+    centerButton: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '20px',
     }
 }));
