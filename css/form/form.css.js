@@ -19,20 +19,23 @@ export default makeStyles(() => ({
         borderRadius: '8px',
         padding: '20px',
         width: '95%',
-        maxHeight: '100%',
         background: 'white',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
-        '@media (max-width: 700px)': {
-       
-        }
     },
     FormItems: {
+        display: 'flex',
+        gap: '20px',
+        flexWrap: 'wrap',
+        padding: '30px',
+        overflow: 'auto',
+    },
+    FormItemsMobile: {
         display: 'flex',
         flexWrap: 'wrap',
         padding: '30px',
         overflow: 'auto',
         '& div.MuiAccordion-root': {
-            width: '170px',
+            width: '100%',
             height: '170px',
             margin: '10px 20px',
             '&:hover': {
@@ -64,20 +67,6 @@ export default makeStyles(() => ({
         cursor: 'pointer'
     },
     containerFormSection: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        right:  0,
-        zIndex: 1000,
-        width: '85%',
-        margin: 'auto',
-        display: 'flex',
-        flexWrap: 'wrap',
-        padding: '25px',
-        background: 'white',
-        overflow: 'auto',
-        gap: '20px',
     },
     inputText: {
         margin: '10px 0px',  
@@ -167,14 +156,14 @@ export default makeStyles(() => ({
         height: '160px',
         padding: '10px',
         borderRadius: '4px',
-        background: '#a9a9a9',
+        background: '#c3c3c3',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         '&:hover': {
             transform: 'scale(1.05)',
             boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
-            backgroundColor: '#a9a9a9',
+            backgroundColor: '#c3c3c3',
         },
         '& h2': {
             display: '-webkit-box',
@@ -202,5 +191,15 @@ export default makeStyles(() => ({
     buttonSave: {
         backgroundColor: 'var(--red-univalle) !important',
         height: '49px'
+    },
+    containerBox: {
+        '& > div > div': {
+            gap: '20px'
+        }
+    },
+    containerTab: {
+        width: '170px',
+        height: '170px',
+        backgroundColor: '#c3c3c3 !important'
     }
 }));

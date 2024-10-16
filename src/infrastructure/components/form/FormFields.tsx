@@ -27,44 +27,137 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Snackbar from '@mui/material/Snackbar';
 
+// Tabs
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import PropTypes from 'prop-types';
+
 // Fecth
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Def
 export default () => {
-  const classes = useStyles();
-  const [formData, setFormData] = React.useState([])
-  const { globalState } = useGlobalState()
+    const classes = useStyles();
+    const [formData, setFormData] = React.useState([])
+    const [sizeRows, setSizeRows] = React.useState([])
+    const [sizeColums, setSizeColumns] = React.useState(0)
+    const { globalState } = useGlobalState()
 
-  React.useEffect(() => {
-    if (globalState.data?.formdata?.length > 0) {
-      setFormData(globalState.data?.formdata)
+    window.addEventListener("resize", function (event) {
+        getRowsAndColumns()
+    });
+
+    const getRowsAndColumns = () => {
+        const array_ = []
+        const width_ = window.innerWidth
+        const sizeBox = (width_ * 92.92) / 100
+        const sizeColumns =  Math.floor((sizeBox + 20) / 210)
+        const sizeRows = Math.ceil(formData.length / sizeColumns)
+
+        for (let i = 0; i < sizeRows; i++) {
+          array_.push({
+            data:  formData.slice(i * sizeColumns,(sizeColumns * (i+1)))
+          })
+        }
+
+        setSizeRows(array_)
+        setSizeColumns(sizeColumns)
     }
-  }, [globalState])
+
+    React.useEffect(() => {
+      if (formData.length <= 0) return
+      getRowsAndColumns()
+    },[formData])
+
+    React.useEffect(() => {
+      if (globalState.data?.formdata?.length > 0) {
+        setFormData(globalState.data?.formdata)
+      }
+    }, [globalState])
+
+    return (
+      <React.Fragment>
+        <Show when={formData.length > 0}>
+            <For func={printRowsAccordion} list={sizeRows} />
+        </Show>
+      </React.Fragment>
+    )
+}
+
+function CustomTabPanel(props) {
+  const { children, value, index, ...other } = props;
 
   return (
-    <React.Fragment>
-      <Show when={formData.length > 0}>
-        <For func={printAccordion} list={formData} />
-      </Show>
-    </React.Fragment>
-  )
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`${index}`}
+      aria-labelledby={`${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+const printRowsAccordion = (element, index) => {
+    const classes = useStyles();
+    const [value, setValue] = React.useState(-1);
+
+    const handleChange = (e) => {
+      const newValue = e.target.getAttribute('aria-controls')
+      setValue(Number(newValue));
+    };
+
+    const printBodyTab = (element, index) => {
+        return (
+          <CustomTabPanel value={value} index={index} key={index}>
+            {printAccordion(element,index)}
+          </CustomTabPanel>
+        )
+    }
+
+    return (
+      <React.Fragment key={index}>
+          <Box sx={{ width: '100%', typography: 'body1' }}>
+            <Box>
+              <Tabs className={classes.containerBox} value={value} onClick={handleChange} aria-label="basic tabs example">
+                  <For func={printLabelsTabs} list={element?.data} />
+              </Tabs>
+            </Box>
+          </Box>
+          <For func={printBodyTab} list={element?.data} />
+      </React.Fragment>
+    )
+}
+
+const printLabelsTabs = (element, index) => {
+    const classes = useStyles();
+    function a11yProps(index: number) {
+      return {
+        id: index,
+        'aria-controls': `${index}`,
+      };
+    }
+
+    return (
+      <React.Fragment key={index}>
+        <Show when={firstLevelPermission()}>
+          <Tab className={classes.containerTab} label={element?.primary?.variables} {...a11yProps(index)} />
+        </Show>
+      </React.Fragment>
+    )
 }
 
 // Print Accordion
 const printAccordion = (element, index) => {
   const classes = useStyles();
-  const [expanded, setExpanded] = React.useState(false);
   const [dataSheet,setDataSheet] = React.useState({} as any)
   const [isLoading, setIsLoading] = React.useState(false)
   const [open, setOpen] = React.useState(false)
   const [isSuccess, setSuccess] = React.useState(false)
   const [errorText, setErrorText] = React.useState('Guardado Exitoso')
   const { globalState } = useGlobalState()
-
-  const handleToggleAccordion = () => {
-    setExpanded(!expanded);
-  };
 
   const submit = async (data) => {
     setIsLoading(true)
@@ -82,11 +175,6 @@ const printAccordion = (element, index) => {
     setIsLoading(false)
   }
 
-  const handleCloseAccordion = (e) => {
-    e.stopPropagation()
-    setExpanded(false)
-  };
-
   const handleClose = () => {
       setOpen(false)
   }
@@ -103,18 +191,7 @@ const printAccordion = (element, index) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
-        <Accordion expanded={expanded} onChange={handleToggleAccordion}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1-content"
-            id="panel1-header"
-            sx={{ background: '#a9a9a9'}}
-          >
-            <b>{element?.primary?.variables}</b>
-          </AccordionSummary>
-          <AccordionDetails>
-            <a className={classes.containerCloseButtom} onClick={handleCloseAccordion} />
-            <Grid2 className={classes.containerFormSection}>
+          <Grid2 className={classes.containerFormSection}>
               <Grid2 className={classes.listFormSection}>
                 <Grid2 className={classes.ColapsableTwo}>
                   <Typography
@@ -142,24 +219,11 @@ const printAccordion = (element, index) => {
                 >
                    <Alert severity={isSuccess? "success" : "error"}>{errorText}</Alert> 
                 </Snackbar>
-            </Box>
+              </Box>
             </Grid2>
-          </AccordionDetails>
-        </Accordion>
       </Show>
     </React.Fragment>
   )
-}
-
-const fieldTraslate = {
-  "Titulo1": "h1",
-  "Campo": "text",
-  "TextArea": "textArea",
-  "Colapsable2": "Colapsable2",
-  "GradoCumplimiento": "GradoCumplimiento",
-  "Criterio": "select",
-  "TablaExtra": "TablaExtra",
-  "ConclusionCondicion": "ConclusionCondicion"
 }
 
 const printFields = (element, index) => {
@@ -178,6 +242,7 @@ const printFields = (element, index) => {
 }
 
 const renderField = (fieldType, labelText, value, element) => {
+  console.log(fieldType,"Textarea", element)
   const classes = useStyles();
 
   const [value_, setValue] = React.useState('');
@@ -218,7 +283,7 @@ const renderField = (fieldType, labelText, value, element) => {
     case "textArea":
       return (
         <FormControl sx={{ margin: '10px 0px' }}>
-          <label>{labelText}</label>
+          <label><b>{labelText}</b></label>
           <TextareaAutosize
             minRows={3}
             value={value}
@@ -230,7 +295,7 @@ const renderField = (fieldType, labelText, value, element) => {
 
     case "select":
       return (
-        <FormControl sx={{zIndex: 9999}} className={classes.inputText}>
+        <FormControl className={classes.inputText}>
           <InputLabel>{labelText}</InputLabel>
           <Select
             value={value_}
@@ -265,3 +330,20 @@ const renderField = (fieldType, labelText, value, element) => {
 const firstLevelPermission = (): boolean => {
   return true
 }
+
+const fieldTraslate = {
+  "Titulo1": "h1",
+  "Campo": "text",
+  "TextArea": "textArea",
+  "Colapsable2": "Colapsable2",
+  "GradoCumplimiento": "GradoCumplimiento",
+  "Criterio": "select",
+  "TablaExtra": "TablaExtra",
+  "ConclusionCondicion": "ConclusionCondicion"
+}
+
+CustomTabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.number.isRequired,
+  value: PropTypes.number.isRequired,
+};
