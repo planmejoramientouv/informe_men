@@ -26,6 +26,7 @@ export default () => {
             gid: gid
         })
         if (response?.data.length > 0) {
+            console.log(response)
             setGlobalState((prev) => ({
                 ...prev,
                 data: {

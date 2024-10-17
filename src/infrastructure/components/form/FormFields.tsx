@@ -151,7 +151,6 @@ const printLabelsTabs = (element, index) => {
 
 // Print Accordion
 const printAccordion = (element, index) => {
-  console.log(element,'element')
   const classes = useStyles();
   const [dataSheet,setDataSheet] = React.useState({} as any)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -233,12 +232,18 @@ const printFields = (element, index) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
-        {renderField(
-          fieldTraslate[element.tipo],
-          element.texto,
-          element.valor,
-          element
-        )}
+        <Show when={!element.typeComponent}>
+            {renderField(
+              fieldTraslate[element.tipo],
+              element.texto,
+              element.valor,
+              element
+            )}
+        </Show>
+
+        <Show when={element.typeComponent}>
+            {renderFieldColapsable(element)}
+        </Show>
       </Show>
     </React.Fragment>
   )
@@ -260,6 +265,7 @@ const renderField = (fieldType, labelText, value, element) => {
     element.valor = newValue
     setValueTextArea(newValue);
   }
+
 
   switch (fieldType) {
     case "h1":
@@ -314,23 +320,46 @@ const renderField = (fieldType, labelText, value, element) => {
         </FormControl>
       );
 
-    case "Colapsable2":
-      return(
-        <Grid2 className={classes.ColapsableTwo}>
-            <hr />
-            <Typography
-            variant="h1"
-            className={classes.titleInputs}
-          >
-            {labelText}
-          </Typography>
-        </Grid2>
-      )
-
     default:
       return null;
   }
 };
+
+const renderFieldColapsable = (element) => {
+    return (
+      <React.Fragment>
+        <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel1-content"
+              id="panel1-header"
+            >
+              <Typography>Accordion 1</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography>
+                  <For func={renderColapsable} list={element.data} />
+              </Typography>
+            </AccordionDetails>
+        </Accordion>
+      </React.Fragment>
+    )
+}
+
+const renderColapsable = (element, index) => {
+  return (
+    <React.Fragment key={index}>
+      <Show when={firstLevelPermission()}>
+        {renderField(
+          fieldTraslate[element.tipo],
+          element.texto,
+          element.valor,
+          element
+        )}
+      </Show>
+    </React.Fragment>
+  )
+}
 
 const firstLevelPermission = (): boolean => {
   return true

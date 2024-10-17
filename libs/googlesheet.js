@@ -51,12 +51,22 @@ export const getFieldRRC = async ({ sheetId, gid}) => {
     });
 
     const groups = containers.map(element => {
-        const groupWithoutDash = element?.groups_fields.replace("-", "");
-    
+        const groupWithoutDash = Number(element?.groups_fields.replace("-", ""));
+        let dataFilter = []
+        let data_ = response.filter(items => {
+            const groupId = Number(items?.groups_fields.replace("-", "")) 
+            return (
+                groupWithoutDash >= Math.floor(groupId) &&
+                groupWithoutDash < (Math.floor(groupId) + 1)
+            )
+        })
+
+        if (data_.length > 0) {
+            dataFilter = addSubGroups(groupWithoutDash,data_, dataFilter)
+        }
+
         return { 
-            data: response.filter(items => 
-                    items?.groups_fields.replace("-", "") === groupWithoutDash
-                 ),
+            data: dataFilter,
             primary: element
         }
     }) ?? [];
@@ -76,11 +86,9 @@ export const getDataTable = async ({ sheetId, gid }) => {
 
 export const updateDataField = async ({ data, sheetId, gid }) =>  {
     try {
-        console.log(data,sheetId,gid)
         if (data.length <= 0) return false
     
         const arrayIdAvailables = data.map((item) => item.id)
-        console.log(arrayIdAvailables)
         const existingData  = await GetDataSheet({
             gid,
             spreadsheetId_: sheetId,
@@ -114,3 +122,35 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
         return false
     }
 }
+
+
+const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
+    let list = []
+    let listDiferentGroup = data_.reduce((arr, current) => {
+        const groupId = Number(current?.groups_fields.replace("-", "")) 
+        if (!arr.includes(groupId)) arr.push(groupId)
+        return arr
+    }, list)
+    
+    dataFilter = data_.filter(items => {
+        const groupId = Number(items?.groups_fields.replace("-", "")) 
+        return (groupWithoutDash === groupId)
+    })
+    
+    listDiferentGroup = listDiferentGroup.filter(item => item !== groupWithoutDash)
+    listDiferentGroup.map((item) => {
+        return {
+            data: data_.filter((items) => {
+                const groupId = Number(items?.groups_fields.replace("-", ""))
+                return groupId === item
+            })
+        }
+    }).map((item) => {
+        dataFilter.push({
+            typeComponent: 'colapsable',
+            data: item.data
+        })
+    })
+
+    return dataFilter
+} 
