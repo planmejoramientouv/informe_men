@@ -232,6 +232,7 @@ const printFields = (element, index) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
+        <>
         <Show when={!element.typeComponent}>
             {renderField(
               fieldTraslate[element.tipo],
@@ -244,6 +245,7 @@ const printFields = (element, index) => {
         <Show when={element.typeComponent}>
             {renderFieldColapsable(element)}
         </Show>
+        </>
       </Show>
     </React.Fragment>
   )
@@ -319,6 +321,11 @@ const renderField = (fieldType, labelText, value, element) => {
           </Select>
         </FormControl>
       );
+    
+    case "tabla_aspectos":  
+      return (
+        <h1>{labelText}</h1>
+      );
 
     default:
       return null;
@@ -326,6 +333,7 @@ const renderField = (fieldType, labelText, value, element) => {
 };
 
 const renderFieldColapsable = (element) => {
+    const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
     return (
       <React.Fragment>
         <Accordion>
@@ -334,7 +342,7 @@ const renderFieldColapsable = (element) => {
               aria-controls="panel1-content"
               id="panel1-header"
             >
-              <Typography>Accordion 1</Typography>
+              <Typography>{colapsable2?.texto}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Typography>
@@ -373,7 +381,8 @@ const fieldTraslate = {
   "GradoCumplimiento": "GradoCumplimiento",
   "Criterio": "select",
   "TablaExtra": "TablaExtra",
-  "ConclusionCondicion": "ConclusionCondicion"
+  "ConclusionCondicion": "ConclusionCondicion",
+  "tabla_aspectos": "tabla_aspectos"
 }
 
 CustomTabPanel.propTypes = {
