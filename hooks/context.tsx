@@ -13,7 +13,8 @@ export const GlobalStateProvider = ({ children }) => {
   const [globalState, setGlobalState] = useState<GlobalState>({
      isLoad: false,
      isLogged: false,
-     data: {}
+     data: {},
+     fieldForm: []
   });
 
   return (

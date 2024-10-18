@@ -27,6 +27,15 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Snackbar from '@mui/material/Snackbar';
 
+// Table
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+
 // Tabs
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -253,7 +262,6 @@ const printFields = (element, index) => {
 
 const renderField = (fieldType, labelText, value, element) => {
   const classes = useStyles();
-
   const [value_, setValue] = React.useState('');
   const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
 
@@ -295,7 +303,7 @@ const renderField = (fieldType, labelText, value, element) => {
 
     case "textArea":
       return (
-        <FormControl sx={{ margin: '10px 0px', width: '100%' }}>
+        <FormControl className={classes.containerTextArea}>
           <label><b>{labelText}</b></label>
           <TextareaAutosize
             minRows={3}
@@ -323,9 +331,7 @@ const renderField = (fieldType, labelText, value, element) => {
       );
     
     case "tabla_aspectos":  
-      return (
-        <h1>{labelText}</h1>
-      );
+      return (printTableAspctos(element));
 
     default:
       return null;
@@ -333,21 +339,21 @@ const renderField = (fieldType, labelText, value, element) => {
 };
 
 const renderFieldColapsable = (element) => {
+    const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
+    
     return (
       <React.Fragment>
-        <Accordion>
+        <Accordion className={classes.containerAccordion}>
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
               aria-controls="panel1-content"
               id="panel1-header"
             >
-              <Typography>{colapsable2?.texto}</Typography>
+              <Typography><b>{colapsable2?.texto}</b></Typography>
             </AccordionSummary>
-            <AccordionDetails>
-              <Typography>
+            <AccordionDetails className={classes.containerDetailsAccordion}>
                   <For func={renderColapsable} list={element.data} />
-              </Typography>
             </AccordionDetails>
         </Accordion>
       </React.Fragment>
@@ -372,6 +378,51 @@ const renderColapsable = (element, index) => {
 const firstLevelPermission = (): boolean => {
   return true
 }
+
+function createData(
+  content: string
+) {
+  return { content };
+}
+
+
+const printTableAspctos = (element) => {
+  const { globalState, setGlobalState } = useGlobalState()
+
+  React.useEffect(() => {
+    let array = globalState.fieldForm
+    array.push(createData(element.texto))
+    setGlobalState((prev) => ({
+      ...prev,
+      fieldForm: array
+  }))
+  },[element])
+
+  return (
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>{element?.variables}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {globalState?.fieldForm?.length > 0 && globalState?.fieldForm.map((row, index) => (
+              <TableRow
+                key={index}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.content}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+    </TableContainer>
+  )
+}
+
 
 const fieldTraslate = {
   "Titulo1": "h1",

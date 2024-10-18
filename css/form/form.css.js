@@ -28,6 +28,9 @@ export default makeStyles(() => ({
         flexWrap: 'wrap',
         padding: '30px',
         overflow: 'auto',
+        '& >  div[role="tabpanel"]': {
+            width: 'calc(100% - 100px)'
+        }
     },
     FormItemsMobile: {
         display: 'flex',
@@ -214,5 +217,30 @@ export default makeStyles(() => ({
         display: 'flex',
         justifyContent: 'center',
         padding: '20px',
+    },
+    containerTextArea: {
+        width: '100%',
+        maxWidth: '100%',
+        '& > textarea': {
+            padding: '20px',
+            minHeight: '100px',
+            maxHeight: '150px',
+            overflow: 'auto'
+        },
+        overflow: 'auto'
+    },
+    containerAccordion: {
+        width: '100%',
+        '& div.MuiTableContainer-root': {
+            display: 'none', // Ocultar todos los contenedores inicialmente
+          },
+          '& div.MuiTableContainer-root:nth-of-type(1)': {
+            display: 'block', // Mostrar solo el primer contenedor
+        },
+    },
+    containerDetailsAccordion: {
+        display: 'flex',
+        gap: '30px',
+        flexDirection: 'column'
     }
 }));
