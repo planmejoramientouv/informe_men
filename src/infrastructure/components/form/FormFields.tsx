@@ -209,7 +209,7 @@ const printAccordion = (element, index) => {
                       {element?.primary?.texto}
                   </Typography>
                 </Grid2>
-                <For func={printFields} list={element.data} />
+                <For func={printFields} list={element.data} shared={element.data}/>
               </Grid2>
               <Grid2 className={classes.centerButton}>
                   <Button 
@@ -237,7 +237,7 @@ const printAccordion = (element, index) => {
   )
 }
 
-const printFields = (element, index) => {
+const printFields = (element, index, shared) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
@@ -247,12 +247,13 @@ const printFields = (element, index) => {
               fieldTraslate[element.tipo],
               element.texto,
               element.valor,
-              element
+              element,
+              shared
             )}
         </Show>
 
         <Show when={element.typeComponent}>
-            {renderFieldColapsable(element)}
+            {renderFieldColapsable(element, shared)}
         </Show>
         </>
       </Show>
@@ -260,7 +261,7 @@ const printFields = (element, index) => {
   )
 }
 
-const renderField = (fieldType, labelText, value, element) => {
+const renderField = (fieldType, labelText, value, element, shared) => {
   const classes = useStyles();
   const [value_, setValue] = React.useState('');
   const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
@@ -331,14 +332,16 @@ const renderField = (fieldType, labelText, value, element) => {
       );
     
     case "tabla_aspectos":  
-      return (printTableAspctos(element));
+      return (printTableAspectos(element));
 
+    case "Tabla_criterios":  
+      return (printTableCriterios(element, shared));
     default:
       return null;
   }
 };
 
-const renderFieldColapsable = (element) => {
+const renderFieldColapsable = (element,shared) => {
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
     
@@ -353,14 +356,14 @@ const renderFieldColapsable = (element) => {
               <Typography><b>{colapsable2?.texto}</b></Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.containerDetailsAccordion}>
-                  <For func={renderColapsable} list={element.data} />
+                  <For func={renderColapsable} list={element.data} shared={shared}/>
             </AccordionDetails>
         </Accordion>
       </React.Fragment>
     )
 }
 
-const renderColapsable = (element, index) => {
+const renderColapsable = (element, index, shared) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
@@ -368,7 +371,8 @@ const renderColapsable = (element, index) => {
           fieldTraslate[element.tipo],
           element.texto,
           element.valor,
-          element
+          element,
+          shared
         )}
       </Show>
     </React.Fragment>
@@ -385,17 +389,19 @@ function createData(
   return { content };
 }
 
-
-const printTableAspctos = (element) => {
+const printTableAspectos = (element) => {
   const { globalState, setGlobalState } = useGlobalState()
 
   React.useEffect(() => {
     let array = globalState.fieldForm
-    array.push(createData(element.texto))
-    setGlobalState((prev) => ({
-      ...prev,
-      fieldForm: array
-  }))
+    let isRepeat = array.find( (item) => item.content === element.texto )
+    if (!isRepeat) {
+      array.push(createData(element.texto))
+      setGlobalState((prev) => ({
+        ...prev,
+        fieldForm: array
+      }))
+    } 
   },[element])
 
   return (
@@ -423,6 +429,81 @@ const printTableAspctos = (element) => {
   )
 }
 
+const printTableCriterios = (element,shared) => {
+  const classes = useStyles();
+  const [value_, setValue] = React.useState('');
+  const [printFields, setPrintFields] = React.useState([])
+  const { globalState, setGlobalState } = useGlobalState()
+
+  const handleChange = (event) => {
+    element.valor = event.target.value
+    setValue(event.target.value);
+  };
+
+  React.useEffect(() => {
+    const filterOptions = shared.filter( (item) => item?.typeComponent)
+
+    if (filterOptions?.length > 0) {
+      const response = filterOptions.map((item) => {
+        return item.data.find((subItem) => subItem.tipo === 'Colapsable2')
+      })
+      console.log(response)
+      setPrintFields(response)
+    }
+  },[shared])
+
+  return (
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Criterio</TableCell>
+              <TableCell>Grado de Cumplimiento</TableCell>
+              <TableCell>Calificación</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {printFields?.length > 0 && printFields.map((row, index) => (
+              <TableRow
+                key={index}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row?.texto}
+                </TableCell>
+                <TableCell component="th" scope="row">
+                <FormControl className={classes.inputText}>
+                  <InputLabel>Grado de Cumplimiento</InputLabel>
+                  <Select
+                    value={value_}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
+                    <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>
+                    <MenuItem value="Aceptable (C)">Aceptable (C)</MenuItem>
+                    <MenuItem value="Insatisfactorio (D)">Insatisfactorio (D)</MenuItem>
+                  </Select>
+                </FormControl>
+                </TableCell>
+                <TableCell component="th" scope="row">
+                <TextField
+                    id="outlined-number"
+                    type="number"
+                    slotProps={{
+                      inputLabel: {
+                        shrink: true,
+                      },
+                    }}
+                />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+    </TableContainer>
+  )
+}
+
 
 const fieldTraslate = {
   "Titulo1": "h1",
@@ -433,7 +514,8 @@ const fieldTraslate = {
   "Criterio": "select",
   "TablaExtra": "TablaExtra",
   "ConclusionCondicion": "ConclusionCondicion",
-  "tabla_aspectos": "tabla_aspectos"
+  "tabla_aspectos": "tabla_aspectos",
+  "Tabla_criterios": "Tabla_criterios"
 }
 
 CustomTabPanel.propTypes = {
