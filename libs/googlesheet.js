@@ -126,6 +126,7 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
 
 const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
     let list = []
+    let index = 0
     let listDiferentGroup = data_.reduce((arr, current) => {
         const groupId = Number(current?.groups_fields.replace("-", "")) 
         if (!arr.includes(groupId)) arr.push(groupId)
@@ -143,13 +144,17 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
             data: data_.filter((items) => {
                 const groupId = Number(items?.groups_fields.replace("-", ""))
                 return groupId === item
+            }),
+            index: data_.findIndex(items => {
+                const groupId = Number(items?.groups_fields.replace("-", ""))
+                return groupId === item
             })
         }
     }).map((item) => {
-        dataFilter.push({
+        dataFilter.splice(item.index, 0, {
             typeComponent: 'colapsable',
             data: item.data
-        })
+        });
     })
 
     return dataFilter

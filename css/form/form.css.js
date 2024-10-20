@@ -29,7 +29,8 @@ export default makeStyles(() => ({
         padding: '30px',
         overflow: 'auto',
         '& >  div[role="tabpanel"]': {
-            width: 'calc(100% - 100px)'
+            width: '100%',
+            boxShadow: '0 4px 8px rgba(219, 219, 219, 0.9)'
         }
     },
     FormItemsMobile: {
@@ -232,15 +233,31 @@ export default makeStyles(() => ({
     containerAccordion: {
         width: '100%',
         '& div.MuiTableContainer-root': {
-            display: 'none', // Ocultar todos los contenedores inicialmente
+            display: 'none',
           },
           '& div.MuiTableContainer-root:nth-of-type(1)': {
-            display: 'block', // Mostrar solo el primer contenedor
+            display: 'block',
         },
     },
     containerDetailsAccordion: {
         display: 'flex',
         gap: '30px',
         flexDirection: 'column'
+    },
+    containerTextAreaNew: {
+        width: '100%',
+        '& > div > div.ql-container': {
+            minHeight: '200px'
+        }
+    },
+    selectInTable:  {
+        width: '90%',
+        margin: '0 auto'
+    },
+    inputNumberInTable: {
+        width: '90%',
+        '& input': {
+            height: '56px',
+        }
     }
 }));

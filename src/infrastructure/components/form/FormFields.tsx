@@ -41,8 +41,18 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import PropTypes from 'prop-types';
 
+// Quicks
+import dynamic from 'next/dynamic'; // Importación dinámica
+import 'react-quill/dist/quill.snow.css'; // Tema por defecto
+
+// Carga ReactQuill solo en el cliente
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+
 // Fecth
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
+
+// Global Const
+const ASPECTS_TABLE = "tabla_aspectos"
 
 // Def
 export default () => {
@@ -83,6 +93,17 @@ export default () => {
         setFormData(globalState.data?.formdata)
       }
     }, [globalState])
+
+    const [isClient, setIsClient] = React.useState(false);
+
+    // Efecto para asegurarse de que estamos en el cliente
+    React.useEffect(() => {
+      setIsClient(true);
+    }, []);
+  
+    if (!isClient) {
+      return null; // Evita la renderización en el servidor
+    }
 
     return (
       <React.Fragment>
@@ -265,7 +286,7 @@ const renderField = (fieldType, labelText, value, element, shared) => {
   const classes = useStyles();
   const [value_, setValue] = React.useState('');
   const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
-
+  
   const handleChange = (event) => {
     element.valor = event.target.value
     setValue(event.target.value);
@@ -277,6 +298,9 @@ const renderField = (fieldType, labelText, value, element, shared) => {
     setValueTextArea(newValue);
   }
 
+  React.useEffect(() => {
+    element.valor = valueTextArea
+  },[valueTextArea])
 
   switch (fieldType) {
     case "h1":
@@ -304,15 +328,10 @@ const renderField = (fieldType, labelText, value, element, shared) => {
 
     case "textArea":
       return (
-        <FormControl className={classes.containerTextArea}>
-          <label><b>{labelText}</b></label>
-          <TextareaAutosize
-            minRows={3}
-            value={valueTextArea}
-            onInput={handlerTextField}
-            style={{ maxWidth: '100%' }}
-          />
-        </FormControl>
+        <Grid2 className={classes.containerTextAreaNew}>
+            <label><b>{labelText}</b></label>
+            <ReactQuill value={valueTextArea} onChange={setValueTextArea} />
+        </Grid2>
       );
 
     case "select":
@@ -332,7 +351,7 @@ const renderField = (fieldType, labelText, value, element, shared) => {
       );
     
     case "tabla_aspectos":  
-      return (printTableAspectos(element));
+      return (printTableAspectos(element, shared));
 
     case "Tabla_criterios":  
       return (printTableCriterios(element, shared));
@@ -389,20 +408,22 @@ function createData(
   return { content };
 }
 
-const printTableAspectos = (element) => {
+const printTableAspectos = (element, shared) => {
   const { globalState, setGlobalState } = useGlobalState()
+  const [printFields, setPrintFields] = React.useState([])
 
   React.useEffect(() => {
-    let array = globalState.fieldForm
-    let isRepeat = array.find( (item) => item.content === element.texto )
-    if (!isRepeat) {
-      array.push(createData(element.texto))
-      setGlobalState((prev) => ({
-        ...prev,
-        fieldForm: array
-      }))
-    } 
-  },[element])
+    const filterOptions = shared.filter((item) => item?.typeComponent)
+      console.log(filterOptions,"aaa",shared, "filterOptons")
+    if (filterOptions?.length > 0) {
+        if (filterOptions?.length > 0) {
+          const response = filterOptions.map((item) => {
+            return item.data.find((subItem) => subItem.tipo === ASPECTS_TABLE)
+          })
+          setPrintFields(response)
+        }
+    }
+  },[shared])
 
   return (
       <TableContainer component={Paper}>
@@ -413,13 +434,13 @@ const printTableAspectos = (element) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {globalState?.fieldForm?.length > 0 && globalState?.fieldForm.map((row, index) => (
+            {printFields?.length > 0 && printFields?.map((row, index) => (
               <TableRow
                 key={index}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
-                  {row.content}
+                  {row?.texto}
                 </TableCell>
               </TableRow>
             ))}
@@ -431,7 +452,7 @@ const printTableAspectos = (element) => {
 
 const printTableCriterios = (element,shared) => {
   const classes = useStyles();
-  const [value_, setValue] = React.useState('');
+  const [value_, setValue] = React.useState(element?.valor || '');
   const [printFields, setPrintFields] = React.useState([])
   const { globalState, setGlobalState } = useGlobalState()
 
@@ -441,13 +462,12 @@ const printTableCriterios = (element,shared) => {
   };
 
   React.useEffect(() => {
-    const filterOptions = shared.filter( (item) => item?.typeComponent)
+    const filterOptions = shared.filter((item) => item?.typeComponent)
 
     if (filterOptions?.length > 0) {
       const response = filterOptions.map((item) => {
         return item.data.find((subItem) => subItem.tipo === 'Colapsable2')
       })
-      console.log(response)
       setPrintFields(response)
     }
   },[shared])
@@ -457,9 +477,9 @@ const printTableCriterios = (element,shared) => {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>Criterio</TableCell>
-              <TableCell>Grado de Cumplimiento</TableCell>
-              <TableCell>Calificación</TableCell>
+              <TableCell sx={{ width: '33.3%'}}>Criterio</TableCell>
+              <TableCell sx={{ width: '33.3%'}}>Grado de Cumplimiento</TableCell>
+              <TableCell sx={{ width: '33.3%'}}>Calificación</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -472,7 +492,7 @@ const printTableCriterios = (element,shared) => {
                   {row?.texto}
                 </TableCell>
                 <TableCell component="th" scope="row">
-                <FormControl className={classes.inputText}>
+                <FormControl className={classes.selectInTable}>
                   <InputLabel>Grado de Cumplimiento</InputLabel>
                   <Select
                     value={value_}
@@ -487,7 +507,7 @@ const printTableCriterios = (element,shared) => {
                 </TableCell>
                 <TableCell component="th" scope="row">
                 <TextField
-                    id="outlined-number"
+                    className={classes.inputNumberInTable}
                     type="number"
                     slotProps={{
                       inputLabel: {
