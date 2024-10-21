@@ -35,7 +35,7 @@ export default makeStyles(() => ({
     containerImg: {
         margin: 'auto',
         maxWidth: '70%',
-        height: '470px',
+        height: '286px',
         overflow: 'hidden',
     },
     titleSingIn: {

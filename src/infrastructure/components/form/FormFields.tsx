@@ -334,22 +334,21 @@ const renderField = (fieldType, labelText, value, element, shared) => {
         </Grid2>
       );
 
-    case "select":
+    case "TableExtra":
       return (
-        <FormControl className={classes.inputText}>
-          <InputLabel>{labelText}</InputLabel>
-          <Select
-            value={value_}
-            onChange={handleChange}
-          >
-            <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
-            <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>
-            <MenuItem value="Aceptable (C)">Aceptable (C)</MenuItem>
-            <MenuItem value="Insatisfactorio (D)">Insatisfactorio (D)</MenuItem>
-          </Select>
-        </FormControl>
-      );
-    
+        <Grid2 sx={{width: '100%'}}>
+          <label><b>{labelText}</b></label>
+          <Grid2 className={classes.iframe}>
+              <iframe
+                src={element?.valor}
+                width="100%"
+                height="400"
+                frameBorder="0"
+              />
+          </Grid2>
+        </Grid2>
+    );
+
     case "tabla_aspectos":  
       return (printTableAspectos(element, shared));
 
@@ -414,12 +413,11 @@ const printTableAspectos = (element, shared) => {
 
   React.useEffect(() => {
     const filterOptions = shared.filter((item) => item?.typeComponent)
-      console.log(filterOptions,"aaa",shared, "filterOptons")
     if (filterOptions?.length > 0) {
         if (filterOptions?.length > 0) {
           const response = filterOptions.map((item) => {
-            return item.data.find((subItem) => subItem.tipo === ASPECTS_TABLE)
-          })
+            return item.data.filter((subItem) => subItem.tipo === ASPECTS_TABLE)
+          }).flat();
           setPrintFields(response)
         }
     }
@@ -430,7 +428,7 @@ const printTableAspectos = (element, shared) => {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>{element?.variables}</TableCell>
+              <TableCell><b>{element?.variables}</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -466,8 +464,8 @@ const printTableCriterios = (element,shared) => {
 
     if (filterOptions?.length > 0) {
       const response = filterOptions.map((item) => {
-        return item.data.find((subItem) => subItem.tipo === 'Colapsable2')
-      })
+        return item.data.filter((subItem) => subItem.tipo === 'Colapsable2')
+      }).flat();
       setPrintFields(response)
     }
   },[shared])
@@ -477,20 +475,23 @@ const printTableCriterios = (element,shared) => {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '33.3%'}}>Criterio</TableCell>
-              <TableCell sx={{ width: '33.3%'}}>Grado de Cumplimiento</TableCell>
-              <TableCell sx={{ width: '33.3%'}}>Calificación</TableCell>
+              <TableCell sx={{ width: '33.3%'}}><b>Criterio</b></TableCell>
+              <TableCell sx={{ width: '33.3%'}}><b>Grado de Cumplimiento</b></TableCell>
+              <TableCell sx={{ width: '33.3%'}}><b>Calificación</b></TableCell>
             </TableRow>
           </TableHead>
+          {/* FILAS */}
           <TableBody>
             {printFields?.length > 0 && printFields.map((row, index) => (
               <TableRow
                 key={index}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
+                {/* Tr */}
                 <TableCell component="th" scope="row">
                   {row?.texto}
                 </TableCell>
+
                 <TableCell component="th" scope="row">
                 <FormControl className={classes.selectInTable}>
                   <InputLabel>Grado de Cumplimiento</InputLabel>
@@ -505,6 +506,7 @@ const printTableCriterios = (element,shared) => {
                   </Select>
                 </FormControl>
                 </TableCell>
+
                 <TableCell component="th" scope="row">
                 <TextField
                     className={classes.inputNumberInTable}
@@ -532,10 +534,10 @@ const fieldTraslate = {
   "Colapsable2": "Colapsable2",
   "GradoCumplimiento": "GradoCumplimiento",
   "Criterio": "select",
-  "TablaExtra": "TablaExtra",
   "ConclusionCondicion": "ConclusionCondicion",
   "tabla_aspectos": "tabla_aspectos",
-  "Tabla_criterios": "Tabla_criterios"
+  "Tabla_criterios": "Tabla_criterios",
+  "TablaExtra": "TableExtra"
 }
 
 CustomTabPanel.propTypes = {

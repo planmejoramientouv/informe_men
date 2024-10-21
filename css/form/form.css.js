@@ -242,7 +242,8 @@ export default makeStyles(() => ({
     containerDetailsAccordion: {
         display: 'flex',
         gap: '30px',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        overflow: 'hidden'
     },
     containerTextAreaNew: {
         width: '100%',
@@ -258,6 +259,16 @@ export default makeStyles(() => ({
         width: '90%',
         '& input': {
             height: '56px',
+        }
+    },
+    iframe: {
+        borderRadius: '5px',
+        border: '2px solid #222',
+        height: '400px',
+        width: '100%',
+        overflow: 'hidden',
+        '& iframe': {
+            marginTop: '-140px',
         }
     }
 }));
