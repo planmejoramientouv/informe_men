@@ -56,7 +56,6 @@ const ASPECTS_TABLE = "tabla_aspectos"
 
 // Def
 export default () => {
-    const classes = useStyles();
     const [formData, setFormData] = React.useState([])
     const [sizeRows, setSizeRows] = React.useState([])
     const [sizeColums, setSizeColumns] = React.useState(0)
@@ -93,18 +92,7 @@ export default () => {
         setFormData(globalState.data?.formdata)
       }
     }, [globalState])
-
-    const [isClient, setIsClient] = React.useState(false);
-
-    // Efecto para asegurarse de que estamos en el cliente
-    React.useEffect(() => {
-      setIsClient(true);
-    }, []);
   
-    if (!isClient) {
-      return null; // Evita la renderización en el servidor
-    }
-
     return (
       <React.Fragment>
         <Show when={formData.length > 0}>
@@ -136,7 +124,7 @@ const printRowsAccordion = (element, index) => {
 
     const handleChange = (e) => {
       const newValue = e.target.getAttribute('aria-controls')
-      setValue(Number(newValue));
+      setValue(Number(newValue) === value? -1 : Number(newValue));
     };
 
     const printBodyTab = (element, index) => {
@@ -169,11 +157,11 @@ const printLabelsTabs = (element, index) => {
         'aria-controls': `${index}`,
       };
     }
-
+    console.log(element,"element")
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission()}>
-          <Tab className={classes.containerTab} label={element?.primary?.variables} {...a11yProps(index)} />
+          <Tab sx={{ backgroundImage: `url(${element?.primary?.img}) !important`}} className={classes.containerTab} label={element?.primary?.variables} {...a11yProps(index)} />
         </Show>
       </React.Fragment>
     )
@@ -221,7 +209,7 @@ const printAccordion = (element, index) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
-          <Grid2 className={classes.containerFormSection}>
+          <Grid2>
               <Grid2 className={classes.listFormSection}>
                 <Grid2 className={classes.ColapsableTwo}>
                   <Typography
@@ -416,7 +404,11 @@ const printTableAspectos = (element, shared) => {
     if (filterOptions?.length > 0) {
         if (filterOptions?.length > 0) {
           const response = filterOptions.map((item) => {
-            return item.data.filter((subItem) => subItem.tipo === ASPECTS_TABLE)
+            return item.data.filter((subItem) => { 
+              return (subItem.tipo === ASPECTS_TABLE && 
+                      subItem.groups_fields === element.groups_fields
+              ) 
+            })
           }).flat();
           setPrintFields(response)
         }
@@ -450,25 +442,69 @@ const printTableAspectos = (element, shared) => {
 
 const printTableCriterios = (element,shared) => {
   const classes = useStyles();
-  const [value_, setValue] = React.useState(element?.valor || '');
+  const [values, setValues] = React.useState([])
+  const [valueNumbers, setValueNumbers] = React.useState([])
   const [printFields, setPrintFields] = React.useState([])
+  const [stateInputs, setStateInput] = React.useState({
+     valuesSelect: [],
+     valuesNumber: []
+  })
   const { globalState, setGlobalState } = useGlobalState()
 
-  const handleChange = (event) => {
-    element.valor = event.target.value
-    setValue(event.target.value);
+  const handleChange = (event,index,type) => {
+    const filterCriterios = shared.filter((item) => item?.typeComponent)
+    const rowSelected = printFields[index]
+
+    filterCriterios.forEach((item) => {
+       const filter = item.data.filter((element_) => {
+          return (
+            String(element_?.groups_fields) === String(rowSelected?.groups_fields)
+          ) 
+       })
+       const elementSelect = filter.find(item => item.tipo === type)
+       if (elementSelect !== undefined) {
+          elementSelect.valor = event.target.value
+       }
+    })
+
+    if (type === 'select') {
+      const newValues = [...values];
+      newValues[index] = event.target.value;
+      setValues(newValues);
+    }
+    
+    if (type === 'number') {
+      const newValueNumbers = [...valueNumbers];
+      newValueNumbers[index] = event.target.value;
+      setValueNumbers(newValueNumbers);
+    }
   };
+
+  const filterDataInit = (data_, type) => {
+    return data_.map((item) => {
+      return item.data.filter((subItem) => subItem.tipo === type)
+    }).flat();
+  }
 
   React.useEffect(() => {
     const filterOptions = shared.filter((item) => item?.typeComponent)
 
     if (filterOptions?.length > 0) {
-      const response = filterOptions.map((item) => {
-        return item.data.filter((subItem) => subItem.tipo === 'Colapsable2')
-      }).flat();
+      setStateInput({
+        valuesSelect: filterDataInit(filterOptions,'select'),
+        valuesNumber: filterDataInit(filterOptions,'number')
+      })
+
+      const response = filterDataInit(filterOptions,'Colapsable2')
       setPrintFields(response)
     }
   },[shared])
+
+  React.useEffect(() => {
+    if (stateInputs?.valuesNumber?.length <= 0) return
+    setValues(stateInputs.valuesSelect.map((row) => row?.valor || ''));
+    setValueNumbers(stateInputs.valuesNumber.map((row) => row?.valor || null));
+  },[stateInputs])
 
   return (
       <TableContainer component={Paper}>
@@ -496,8 +532,8 @@ const printTableCriterios = (element,shared) => {
                 <FormControl className={classes.selectInTable}>
                   <InputLabel>Grado de Cumplimiento</InputLabel>
                   <Select
-                    value={value_}
-                    onChange={handleChange}
+                    value={values[index] || ''}
+                    onChange={(e) => handleChange(e, index,'select')}
                   >
                     <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
                     <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>
@@ -511,6 +547,8 @@ const printTableCriterios = (element,shared) => {
                 <TextField
                     className={classes.inputNumberInTable}
                     type="number"
+                    value={valueNumbers[index]}
+                    onChange={(e) => handleChange(e, index,'number')}
                     slotProps={{
                       inputLabel: {
                         shrink: true,

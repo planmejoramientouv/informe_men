@@ -86,6 +86,7 @@ export const getDataTable = async ({ sheetId, gid }) => {
 
 export const updateDataField = async ({ data, sheetId, gid }) =>  {
     try {
+        data = addSubComponents(data)
         if (data.length <= 0) return false
     
         const arrayIdAvailables = data.map((item) => item.id)
@@ -94,7 +95,6 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
             spreadsheetId_: sheetId,
             defaultSheet: 'Datos Generales RRC'
         });
-    
         const updateItems = existingData.filter((item, index) => {
             if (arrayIdAvailables.includes(item.id)) {
                 const updatedData = data.find((d) => d.id === item.id);
@@ -123,6 +123,17 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
     }
 }
 
+const addSubComponents = (data) => {
+    const filterCriterios = data.filter((item) => item?.typeComponent);
+    if (filterCriterios?.length > 0) {
+        filterCriterios.forEach((item) => {
+            if (item?.data && Array.isArray(item.data)) {
+                data = [...data, ...item.data];
+            }
+        });
+    }
+    return data;
+};
 
 const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
     let list = []
@@ -145,15 +156,16 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
                 const groupId = Number(items?.groups_fields.replace("-", ""))
                 return groupId === item
             }),
-            index: data_.findIndex(items => {
+            groups_fields: data_.find(items => {
                 const groupId = Number(items?.groups_fields.replace("-", ""))
                 return groupId === item
-            })
+            })?.groups_fields
         }
     }).map((item) => {
-        dataFilter.splice(item.index, 0, {
+        dataFilter.push({
             typeComponent: 'colapsable',
-            data: item.data
+            data: item.data,
+            groups_fields: item.groups_fields
         });
     })
 
