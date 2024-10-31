@@ -18,7 +18,7 @@ export default makeStyles(() => ({
         flexWrap: 'wrap',
         borderRadius: '8px',
         padding: '20px',
-        maxWidth: '1240px',
+        maxWidth: '1162px',
         width: '95%',
         background: 'white',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
@@ -27,11 +27,12 @@ export default makeStyles(() => ({
         display: 'flex',
         gap: '20px',
         flexWrap: 'wrap',
-        padding: '30px',
         overflow: 'auto',
         '& >  div[role="tabpanel"]': {
             width: '100%',
-            boxShadow: '0 4px 8px rgba(219, 219, 219, 0.9)'
+            '& > div.MuiBox-root': {
+                padding: 'unset',
+            }
         }
     },
     FormItemsMobile: {
@@ -92,10 +93,30 @@ export default makeStyles(() => ({
             fontWeight: 'bold',
         }
     },
-    titleInputs: { 
+    titlePrimary: { 
         color: '#5f5b5b', 
         textTransform: 'uppercase', 
         fontSize: '1.5em !important', 
+        fontWeight: '700 !important',
+        marginTop: '20px !important',
+        '@media (max-width: 700px)': {
+            fontSize: '1.2em !important',
+        }
+    },
+    titleInputs: { 
+        color: '#5f5b5b', 
+        textTransform: 'uppercase', 
+        fontSize: '1.1em !important', 
+        fontWeight: '700 !important',
+        marginTop: '20px !important',
+        '@media (max-width: 700px)': {
+            fontSize: '1.2em !important',
+        }
+    },
+    titleSecundaryInputs: { 
+        color: '#5f5b5b', 
+        textTransform: 'uppercase', 
+        fontSize: '1em !important', 
         fontWeight: '700 !important',
         marginTop: '20px !important',
         '@media (max-width: 700px)': {
@@ -120,7 +141,7 @@ export default makeStyles(() => ({
         display: 'flex',
         flexWrap: 'wrap',
         height: 'min-content',
-        gap: '20px',
+        gap: '40px',
         marginTop: '20px',
     },
     containerPanel: {
@@ -201,6 +222,9 @@ export default makeStyles(() => ({
     containerBox: {
         '& > div > div': {
             gap: '20px'
+        },
+        '& > div > span.MuiTabs-indicator': {
+            display: 'none !important'
         }
     },
     containerTab: {
@@ -213,6 +237,7 @@ export default makeStyles(() => ({
         backgroundSize: 'cover !important',
         backgroundPosition: 'center !important',
         transition: 'all 0.3s ease',
+        opacity: '0.4 !important',
         '&:hover': {
             transform: 'scale(1.05)',
             boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
@@ -236,6 +261,7 @@ export default makeStyles(() => ({
         overflow: 'auto'
     },
     containerAccordion: {
+        padding: '5px',
         width: '100%',
         '& div.MuiTableContainer-root': {
             display: 'none',
@@ -275,5 +301,13 @@ export default makeStyles(() => ({
         '& iframe': {
             marginTop: '-140px',
         }
+    },
+    tabContentPanel: {
+        borderRadius: '4px',
+        boxShadow: '0 4px 8px rgba(219, 219, 219, 0.9)',
+        padding: '24px',
+    },
+    clickedButton: {
+        opacity: '0.7 !important',
     }
 }));

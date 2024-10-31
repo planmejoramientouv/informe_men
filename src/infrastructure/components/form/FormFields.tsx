@@ -67,7 +67,9 @@ export default () => {
 
     const getRowsAndColumns = () => {
         const array_ = []
-        const width_ = window.innerWidth
+        const widthCurrent = window.innerWidth
+        const maxWidth_ = (widthCurrent - 1240) >= 0 ? widthCurrent - 1360 : 0 
+        const width_ = widthCurrent - maxWidth_
         const sizeBox = (width_ * 92.92) / 100
         const sizeColumns =  Math.floor((sizeBox + 20) / 210)
         const sizeRows = Math.ceil(formData.length / sizeColumns)
@@ -140,16 +142,16 @@ const printRowsAccordion = (element, index) => {
           <Box sx={{ width: '100%', typography: 'body1' }}>
             <Box>
               <Tabs className={classes.containerBox} value={value} onClick={handleChange} aria-label="basic tabs example">
-                  <For func={printLabelsTabs} list={element?.data} />
+                  <For func={printLabelsTabs} list={element?.data} shared={value}/>
               </Tabs>
             </Box>
           </Box>
-          <For func={printBodyTab} list={element?.data} />
+          <For func={printBodyTab} list={element?.data}/>
       </React.Fragment>
     )
 }
 
-const printLabelsTabs = (element, index) => {
+const printLabelsTabs = (element, index,shared) => {
     const classes = useStyles();
     function a11yProps(index: number) {
       return {
@@ -157,11 +159,23 @@ const printLabelsTabs = (element, index) => {
         'aria-controls': `${index}`,
       };
     }
-    console.log(element,"element")
+
+    const classAssigned = () => {
+      const isClassActive = Number(shared) === index
+      return isClassActive ? `${classes.containerTab} ${classes.clickedButton}` : `${classes.containerTab}` 
+    }
+
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission()}>
-          <Tab sx={{ backgroundImage: `url(${element?.primary?.img}) !important`}} className={classes.containerTab} label={element?.primary?.variables} {...a11yProps(index)} />
+          <Tab 
+              sx={{ 
+                backgroundColor: `${element?.primary?.background} !important`, 
+                backgroundImage: `url(${element?.primary?.img}) !important`
+              }} 
+              className={classAssigned()} 
+              label={element?.primary?.variables} 
+              {...a11yProps(index)} />
         </Show>
       </React.Fragment>
     )
@@ -209,14 +223,15 @@ const printAccordion = (element, index) => {
   return (
     <React.Fragment key={index}>
       <Show when={firstLevelPermission()}>
-          <Grid2>
+          <Grid2 className={classes.tabContentPanel} sx={{ border: `1px solid ${element?.primary?.background}` }}>
               <Grid2 className={classes.listFormSection}>
                 <Grid2 className={classes.ColapsableTwo}>
                   <Typography
                       variant="h1"
-                      className={classes.titleInputs}>
+                      className={classes.titlePrimary}>
                       {element?.primary?.texto}
                   </Typography>
+                  <hr />
                 </Grid2>
                 <For func={printFields} list={element.data} shared={element.data}/>
               </Grid2>
@@ -286,6 +301,10 @@ const renderField = (fieldType, labelText, value, element, shared) => {
     setValueTextArea(newValue);
   }
 
+  const handleIframeLoad = () => {
+    console.log('aaaa 9999')
+  };
+
   React.useEffect(() => {
     element.valor = valueTextArea
   },[valueTextArea])
@@ -303,6 +322,19 @@ const renderField = (fieldType, labelText, value, element, shared) => {
         </Grid2>
       );
 
+    case "h2":
+      return (
+        <Grid2 sx={{ width: '100%' }}>
+            <Typography
+              variant="h2"
+              className={classes.titleInputs}
+            >
+              {labelText}
+            </Typography>
+            <hr />
+        </Grid2>
+      );
+  
     case "text":
       return (
         <TextField
@@ -330,8 +362,9 @@ const renderField = (fieldType, labelText, value, element, shared) => {
               <iframe
                 src={element?.valor}
                 width="100%"
-                height="400"
+                height="400px"
                 frameBorder="0"
+                loading="lazy"
               />
           </Grid2>
         </Grid2>
@@ -362,7 +395,7 @@ const renderFieldColapsable = (element,shared) => {
               <Typography><b>{colapsable2?.texto}</b></Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.containerDetailsAccordion}>
-                  <For func={renderColapsable} list={element.data} shared={shared}/>
+              <For func={renderColapsable} list={element.data} shared={shared}/>
             </AccordionDetails>
         </Accordion>
       </React.Fragment>
@@ -567,6 +600,7 @@ const printTableCriterios = (element,shared) => {
 
 const fieldTraslate = {
   "Titulo1": "h1",
+  "Titulo2": "h2",
   "Campo": "text",
   "TextArea": "textArea",
   "Colapsable2": "Colapsable2",
