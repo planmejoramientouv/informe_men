@@ -219,14 +219,6 @@ export default makeStyles(() => ({
         backgroundColor: 'var(--red-univalle) !important',
         height: '40px'
     },
-    containerBox: {
-        '& > div > div': {
-            gap: '20px'
-        },
-        '& > div > span.MuiTabs-indicator': {
-            display: 'none !important'
-        }
-    },
     containerTab: {
         width: '170px',
         height: '170px',
@@ -237,7 +229,7 @@ export default makeStyles(() => ({
         backgroundSize: 'cover !important',
         backgroundPosition: 'center !important',
         transition: 'all 0.3s ease',
-        opacity: '0.4 !important',
+        opacity: '0.6 !important',
         '&:hover': {
             transform: 'scale(1.05)',
             boxShadow: '0px 6px 35px rgba(0, 0, 0, 0.2)',
@@ -308,6 +300,6 @@ export default makeStyles(() => ({
         padding: '24px',
     },
     clickedButton: {
-        opacity: '0.7 !important',
+        opacity: '0.8 !important',
     }
 }));
