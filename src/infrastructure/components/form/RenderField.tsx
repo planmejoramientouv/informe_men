@@ -12,7 +12,7 @@ import useStyles from '../../../../css/form/form.css.js'
 // Components
 import printTableAspectos from './TableAspectos'
 import printTableCriterios from './TableCriterion'
-
+import Show from '../../../../share/utils/Show'
 
 // Material - IU
 import { Typography, TextField, Grid2 } from '@mui/material';
@@ -29,6 +29,9 @@ import { useGlobalState } from '../../../../hooks/context'
 
 // Fecth
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
+
+// Hooks
+import { getCookieData } from '../../../../libs/utils/utils'
 
 export default (fieldType, labelText, value, element, shared, iframeView) => {
     const classes = useStyles();
@@ -103,15 +106,20 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
             label={labelText}
             onBlur={async () => {await autoSave(element)}}
             defaultValue={value}
+            disabled={!firstLevelPermission(element)}
           />
         );
   
       case "textArea":
         return (
-          <Grid2 className={classes.containerTextAreaNew}>
-              <label><b>{labelText}</b></label>
-              <ReactQuill value={valueTextArea} onChange={setValueTextArea} onBlur={async () => {await autoSave(element)}}/>
-          </Grid2>
+            <Grid2 className={classes.containerTextAreaNew}>
+                <label><b>{labelText}</b></label>
+                <ReactQuill 
+                    value={valueTextArea} 
+                    onChange={setValueTextArea} 
+                    onBlur={async () => {await autoSave(element)}}
+                />
+           </Grid2>
         );
   
       case "TableExtra":
@@ -140,3 +148,11 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
         return null;
     }
 };
+
+/* UTILS */ 
+
+const firstLevelPermission = (element): boolean => {
+  const cookie_ = getCookieData('data')
+  const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
+  return isValidPermision?.includes(element?.permiso)
+}

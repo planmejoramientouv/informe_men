@@ -107,7 +107,7 @@ const printActions = (element, index) => {
         if (matches) {
             const sheetId = matches[1];
             const gid = matches[2];
-            console.log(element, sheetId, "sssss")
+            
             setCookieRRC({
                 sheetId: sheetId,
                 programa: element.programa,

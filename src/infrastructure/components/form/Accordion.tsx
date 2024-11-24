@@ -30,6 +30,9 @@ import { useGlobalState } from '../../../../hooks/context'
 // Fecth
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
+// Hooks
+import { getCookieData } from '../../../../libs/utils/utils'
+
 // Print Accordion
 export default (element, index) => {
     const classes = useStyles();
@@ -46,7 +49,7 @@ export default (element, index) => {
   
     return (
       <React.Fragment key={index}>
-        <Show when={firstLevelPermission(element)}>
+        <Show when={firstLevelPermission(element?.primary)}>
             <Grid2  className={classes.tabContentPanel} sx={{ border: `1px solid ${element?.primary?.background}` }}>
                 <Grid2 className={classes.listFormSection}>
                   <Grid2 className={classes.ColapsableTwo}>
@@ -68,7 +71,7 @@ export default (element, index) => {
 const printFields = (element, index, shared) => {
     return (
       <React.Fragment key={index}>
-        <Show when={firstLevelPermission(element)}>
+        <Show when={true}>
           <>
           <Show when={!element.typeComponent}>
               {renderField(
@@ -138,8 +141,9 @@ const renderColapsable = (element, index, shared) => {
 /* UTILS */ 
 
 const firstLevelPermission = (element): boolean => {
-    console.log(element?.primary?.permiso, "elemet")
-    return false
+    const cookie_ = getCookieData('data')
+    const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
+    return isValidPermision?.includes(element?.permiso)
 }
 
 const fieldTraslate = {

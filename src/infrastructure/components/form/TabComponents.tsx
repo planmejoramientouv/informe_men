@@ -22,11 +22,16 @@ import PropTypes from 'prop-types';
 // Material - IU
 import Box from '@mui/material/Box';
 
+// Hooks
+import { getCookieData, setCookieRRC } from '../../../../libs/utils/utils'
+
 export default (element, index) => {
     const [value, setValue] = React.useState(-1);
 
     const handleChange = (e) => {
       const newValue = e.target.getAttribute('aria-controls')
+      const validate = element?.data[newValue]?.primary ?? ""
+      if (!firstLevelPermission(validate)) return
       setValue(Number(newValue) === value? -1 : Number(newValue));
     };
 
@@ -68,6 +73,22 @@ const printLabelsTabs = (element, index,shared) => {
       return isClassActive ? `${classes.containerTab} ${classes.clickedButton}` : `${classes.containerTab}` 
     }
 
+    const disabledClassSx = () => {
+
+      let additionalStyles = {} as any
+
+      if (!firstLevelPermission(element?.primary)) {
+          additionalStyles.opacity= "0.1 !important"
+          additionalStyles.cursor = "not-allowed"
+      }
+
+      return {
+        ...additionalStyles,
+        backgroundColor: `${element?.primary?.background} !important`, 
+        backgroundImage: `${getUrlBackground()}`,
+      }
+    }
+
     const getUrlBackground = (): string => {
         const hasUrl = `url(${element?.primary?.img}) !important`
         return element?.primary?.img? hasUrl : ''
@@ -75,16 +96,11 @@ const printLabelsTabs = (element, index,shared) => {
 
     return (
       <React.Fragment key={index}>
-        <Show when={firstLevelPermission()}>
           <Tab 
-              sx={{ 
-                backgroundColor: `${element?.primary?.background} !important`, 
-                backgroundImage: `${getUrlBackground()}`
-              }} 
+              sx={disabledClassSx()} 
               className={classAssigned()} 
               label={element?.primary?.variables} 
               {...a11yProps(index)} />
-        </Show>
       </React.Fragment>
     )
 }
@@ -106,9 +122,11 @@ const CustomTabPanel = (props) => {
 }
 
 /* UTILS */ 
-
-const firstLevelPermission = (): boolean => {
-    return true
+/** TODO: QUITAR LA COOKIE DE AQUI PORQUE NO ES EFICIENTE */
+const firstLevelPermission = (element): boolean => {
+    const cookie_ = getCookieData('data')
+    const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
+    return isValidPermision?.includes(element?.permiso)
 }
 
 const styles = {
