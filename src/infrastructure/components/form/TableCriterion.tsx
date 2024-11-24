@@ -22,7 +22,7 @@ import Paper from '@mui/material/Paper';
 import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2 } from '@mui/material';
 
 
-export default (element,shared) => {
+export default (element,shared, onAutoSave) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [valueNumbers, setValueNumbers] = React.useState([])
@@ -45,6 +45,7 @@ export default (element,shared) => {
          const elementSelect = filter.find(item => item.tipo === type)
          if (elementSelect !== undefined) {
             elementSelect.valor = event.target.value
+            onAutoSave(elementSelect)
          }
       })
   

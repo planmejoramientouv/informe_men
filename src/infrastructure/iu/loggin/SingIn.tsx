@@ -29,7 +29,7 @@ export default () => {
     const getUserAllowed = async () => {
         try {
             let allowedUser = await getAllowedUser()
-            if (allowedUser?.data.length > 0) {
+            if (allowedUser?.data?.length > 0) {
                 setGlobalState((prev) => ({
                     ...prev,
                     data: {

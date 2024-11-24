@@ -24,10 +24,17 @@ import 'react-quill/dist/quill.snow.css'; // Tema por defecto
 // Carga ReactQuill solo en el cliente
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
-export default (fieldType, labelText, value, element, shared) => {
+// Hooks
+import { useGlobalState } from '../../../../hooks/context'
+
+// Fecth
+import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
+
+export default (fieldType, labelText, value, element, shared, iframeView) => {
     const classes = useStyles();
     const [value_, setValue] = React.useState('');
     const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
+    const { globalState } = useGlobalState()
 
     const handleChange = (event) => {
       element.valor = event.target.value
@@ -40,10 +47,27 @@ export default (fieldType, labelText, value, element, shared) => {
       setValueTextArea(newValue);
     }
   
+    const autoSave = async (element) => {
+      console.log(element,"elemen")
+      if (element?.valor?.length <= 0) return
+      
+      let data = [element]
+      let dataSheet = globalState.data
+      console.log(data)
+      const response  = await updateDataTable({
+        sheetId: dataSheet.sheetId,
+        gid: dataSheet.gid,
+        data: data
+      })
+
+      if (response?.data)
+          console.log("Guardado Exitoso!!!")
+    }
+
     React.useEffect(() => {
       element.valor = valueTextArea
     },[valueTextArea])
-  
+
     switch (fieldType) {
       case "h1":
         return (
@@ -77,6 +101,7 @@ export default (fieldType, labelText, value, element, shared) => {
             className={classes.inputText}
             onInput={handlerTextField}
             label={labelText}
+            onBlur={async () => {await autoSave(element)}}
             defaultValue={value}
           />
         );
@@ -85,7 +110,7 @@ export default (fieldType, labelText, value, element, shared) => {
         return (
           <Grid2 className={classes.containerTextAreaNew}>
               <label><b>{labelText}</b></label>
-              <ReactQuill value={valueTextArea} onChange={setValueTextArea} />
+              <ReactQuill value={valueTextArea} onChange={setValueTextArea} onBlur={async () => {await autoSave(element)}}/>
           </Grid2>
         );
   
@@ -93,7 +118,7 @@ export default (fieldType, labelText, value, element, shared) => {
         return (
           <Grid2 sx={{width: '100%'}}>
             <label><b>{labelText}</b></label>
-            <Grid2 className={classes.iframe}>
+            <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
                 <iframe
                   src={element?.valor}
                   width="100%"
@@ -109,7 +134,7 @@ export default (fieldType, labelText, value, element, shared) => {
         return (printTableAspectos(element, shared));
   
       case "Tabla_criterios":  
-        return (printTableCriterios(element, shared));
+        return (printTableCriterios(element, shared, autoSave));
         
       default:
         return null;

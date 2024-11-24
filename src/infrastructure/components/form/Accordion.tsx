@@ -40,39 +40,14 @@ export default (element, index) => {
     const [errorText, setErrorText] = React.useState('Guardado Exitoso')
     const { globalState } = useGlobalState()
   
-    const submit = async (data) => {
-      setIsLoading(true)
-      const response  = await updateDataTable({
-        sheetId: dataSheet.sheetId,
-        gid: dataSheet.gid,
-        data: data
-      })
-  
-      if (response?.data) {
-        setOpen(true)
-        setSuccess(response.data)
-        setErrorText(response.data? 'Guardado Exitoso' : 'Error al Guardar')
-      }
-      setIsLoading(false)
-    }
-  
     const handleClose = () => {
         setOpen(false)
     }
   
-    React.useEffect(() => {
-      if (globalState.data?.sheetId) {
-        setDataSheet({
-          sheetId: globalState.data?.sheetId,
-          gid: globalState.data?.gid
-        })
-      }
-    }, [globalState])
-  
     return (
       <React.Fragment key={index}>
-        <Show when={firstLevelPermission()}>
-            <Grid2 className={classes.tabContentPanel} sx={{ border: `1px solid ${element?.primary?.background}` }}>
+        <Show when={firstLevelPermission(element)}>
+            <Grid2  className={classes.tabContentPanel} sx={{ border: `1px solid ${element?.primary?.background}` }}>
                 <Grid2 className={classes.listFormSection}>
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
@@ -84,26 +59,6 @@ export default (element, index) => {
                   </Grid2>
                   <For func={printFields} list={element.data} shared={element.data}/>
                 </Grid2>
-                <Grid2 className={classes.centerButton}>
-                    <Button 
-                        disabled={isLoading}  
-                        onClick={() => submit(element.data)} 
-                        variant="contained" 
-                        className={classes.buttonSave}>
-                      {!isLoading ? 'Guardar' : 'Actualizando'}
-                    </Button>
-                </Grid2>
-                <Box sx={{ width: 500 }}>
-                  <Snackbar
-                      autoHideDuration={6000}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      open={open}
-                      onClose={handleClose}
-                      key={2}
-                  >
-                     <Alert severity={isSuccess? "success" : "error"}>{errorText}</Alert> 
-                  </Snackbar>
-                </Box>
               </Grid2>
         </Show>
       </React.Fragment>
@@ -113,7 +68,7 @@ export default (element, index) => {
 const printFields = (element, index, shared) => {
     return (
       <React.Fragment key={index}>
-        <Show when={firstLevelPermission()}>
+        <Show when={firstLevelPermission(element)}>
           <>
           <Show when={!element.typeComponent}>
               {renderField(
@@ -121,7 +76,8 @@ const printFields = (element, index, shared) => {
                 element.texto,
                 element.valor,
                 element,
-                shared
+                shared,
+                null
               )}
           </Show>
   
@@ -137,10 +93,16 @@ const printFields = (element, index, shared) => {
 const renderFieldColapsable = (element,shared) => {
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
-    
+    const [expanded, setExpanded] = React.useState(false);
+
+    const handleAccordionChange = () => {
+        shared[0].iframeView = !expanded
+        setExpanded(!expanded);
+    }
+
     return (
     <React.Fragment>
-        <Accordion className={classes.containerAccordion}>
+        <Accordion onChange={handleAccordionChange} className={classes.containerAccordion}>
             <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1-content"
@@ -159,13 +121,14 @@ const renderFieldColapsable = (element,shared) => {
 const renderColapsable = (element, index, shared) => {
     return (
         <React.Fragment key={index}>
-        <Show when={firstLevelPermission()}>
+        <Show when={firstLevelPermission(element)}>
             {renderField(
             fieldTraslate[element.tipo],
             element.texto,
             element.valor,
             element,
-            shared
+            shared,
+            shared[0]?.iframeView
             )}
         </Show>
         </React.Fragment>
@@ -174,8 +137,9 @@ const renderColapsable = (element, index, shared) => {
   
 /* UTILS */ 
 
-const firstLevelPermission = (): boolean => {
-    return true
+const firstLevelPermission = (element): boolean => {
+    console.log(element?.primary?.permiso, "elemet")
+    return false
 }
 
 const fieldTraslate = {

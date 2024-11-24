@@ -287,7 +287,7 @@ export default makeStyles(() => ({
     iframe: {
         borderRadius: '5px',
         border: '2px solid #222',
-        height: '400px',
+        minHeight: '400px',
         width: '100%',
         overflow: 'hidden',
         '& iframe': {

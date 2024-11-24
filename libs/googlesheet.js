@@ -95,7 +95,7 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
             spreadsheetId_: sheetId,
             defaultSheet: 'Datos Generales RRC'
         });
-        const updateItems = existingData.filter((item, index) => {
+        const updateItems = existingData.filter(async (item, index) => {
             if (arrayIdAvailables.includes(item.id)) {
                 const updatedData = data.find((d) => d.id === item.id);
 
@@ -105,7 +105,7 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
                 console.log(`Actualizando fila ${rowIndex}, columna G con el valor: ${updatedData.valor}`);
 
                 const sheets = google.sheets({ version: 'v4', auth: jwtClient });
-                return sheets.spreadsheets.values.update({
+                const response = await sheets.spreadsheets.values.update({
                     spreadsheetId: sheetId,
                     range: range,
                     valueInputOption: 'RAW',
@@ -113,6 +113,7 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
                         values: [[updatedData?.valor  ?? '']]
                     }
                 });
+                return response
             }
         })
     
@@ -138,6 +139,7 @@ const addSubComponents = (data) => {
 const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
     let list = []
     let index = 0
+
     let listDiferentGroup = data_.reduce((arr, current) => {
         const groupId = Number(current?.groups_fields.replace("-", "")) 
         if (!arr.includes(groupId)) arr.push(groupId)
@@ -165,9 +167,10 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
         dataFilter.push({
             typeComponent: 'colapsable',
             data: item.data,
+            id: item.data[0]?.id,
             groups_fields: item.groups_fields
         });
     })
 
-    return dataFilter
+    return dataFilter.sort( (a,b) =>  Number(a?.id) - Number(b?.id))
 } 
