@@ -45,7 +45,7 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
     };
   
     const handlerTextField = (event) => {
-      if (firstLevelPermission(element)) return
+      if (!firstLevelPermission(element)) return
       const newValue = event.target.value;
       element.valor = newValue
       setValueTextArea(newValue);

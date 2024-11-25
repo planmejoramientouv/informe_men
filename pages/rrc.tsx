@@ -25,8 +25,8 @@ export default () => {
             sheetId: sheetId,
             gid: gid
         })
-        if (response?.data.length > 0) {
-            console.log(response)
+
+        if (response?.data?.length > 0) {
             setGlobalState((prev) => ({
                 ...prev,
                 data: {

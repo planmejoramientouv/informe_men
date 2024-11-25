@@ -174,3 +174,26 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
 
     return dataFilter.sort( (a,b) =>  Number(a?.id) - Number(b?.id))
 } 
+
+export const generateVarSaveDoc = async ({ sheetId, gid }) => {
+    let response_ = []
+    try {
+        const response = await GetDataSheet({
+            gid,
+            spreadsheetId_: sheetId,
+            defaultSheet: 'Datos Generales RRC'
+        });
+    
+        if (response?.length < 0) return []
+
+        response_ = response.map((rrc) => {
+            return {
+                key: rrc?.variable_en_doc ?? "{{key}}",
+                value: rrc?.valor ?? ""
+            }
+        })
+    } catch (e) {
+        console.log(e)
+    }
+    return response_
+}

@@ -316,5 +316,8 @@ export default makeStyles(() => ({
         overflow: "hidden",
         zIndex: 100,
         cursor: 'not-allowed'
+    },
+    buttonDownloadDocs: {
+        backgroundColor: 'var(--red-univalle) !important',
     }
 }));
