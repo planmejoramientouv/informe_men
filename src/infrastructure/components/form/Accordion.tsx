@@ -124,7 +124,7 @@ const renderFieldColapsable = (element,shared) => {
 const renderColapsable = (element, index, shared) => {
     return (
         <React.Fragment key={index}>
-        <Show when={firstLevelPermission(element)}>
+        {/* <Show when={firstLevelPermission(element)}> */}
             {renderField(
             fieldTraslate[element.tipo],
             element.texto,
@@ -133,7 +133,7 @@ const renderColapsable = (element, index, shared) => {
             shared,
             shared[0]?.iframeView
             )}
-        </Show>
+        {/* </Show> */}
         </React.Fragment>
     )
 }

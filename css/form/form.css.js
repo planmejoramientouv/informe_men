@@ -269,6 +269,7 @@ export default makeStyles(() => ({
         overflow: 'hidden'
     },
     containerTextAreaNew: {
+        position: "relative",
         width: '100%',
         '& > div > div.ql-container': {
             minHeight: '200px'
@@ -301,5 +302,19 @@ export default makeStyles(() => ({
     },
     clickedButton: {
         opacity: '0.8 !important',
+    },
+    disabledTextArea: {
+        opacity: "0.4"
+    },
+    diableBox: {
+        opacity: "0.4",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        zIndex: 100,
+        cursor: 'not-allowed'
     }
 }));

@@ -45,13 +45,13 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
     };
   
     const handlerTextField = (event) => {
+      if (firstLevelPermission(element)) return
       const newValue = event.target.value;
       element.valor = newValue
       setValueTextArea(newValue);
     }
   
     const autoSave = async (element) => {
-      console.log(element,"elemen")
       if (element?.valor?.length <= 0) return
       
       let data = [element]
@@ -65,6 +65,21 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
 
       if (response?.data)
           console.log("Guardado Exitoso!!!")
+    }
+
+    const classDisabledTextArea = () => {
+      let class_ = classes.containerTextAreaNew
+      let hasPermission = firstLevelPermission(element)
+      return hasPermission? class_ : `${class_} ${classes.disabledTextArea}`
+    }
+
+    const classDisabledTableExtra = () => {
+      let class_ = {width: '100%', position: "relative"}
+      let hasPermission = firstLevelPermission(element)
+      let classDisable = { opacity: "0.2"}
+      let diabled = {...{...class_,...classDisable}}
+      console.log(diabled)
+      return hasPermission? class_ : diabled
     }
 
     React.useEffect(() => {
@@ -112,19 +127,22 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
   
       case "textArea":
         return (
-            <Grid2 className={classes.containerTextAreaNew}>
+            <Grid2 className={classDisabledTextArea()}>
                 <label><b>{labelText}</b></label>
                 <ReactQuill 
                     value={valueTextArea} 
                     onChange={setValueTextArea} 
                     onBlur={async () => {await autoSave(element)}}
                 />
+                <Show when={!firstLevelPermission(element)}>
+                  <Grid2 className={classes.diableBox} />
+                </Show>
            </Grid2>
         );
   
       case "TableExtra":
         return (
-          <Grid2 sx={{width: '100%'}}>
+          <Grid2 sx={classDisabledTableExtra()}>
             <label><b>{labelText}</b></label>
             <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
                 <iframe
@@ -135,6 +153,9 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
                   loading="lazy"
                 />
             </Grid2>
+            <Show when={!firstLevelPermission(element)}>
+                  <Grid2 className={classes.diableBox} />
+            </Show>
           </Grid2>
       );
   
@@ -149,7 +170,7 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
     }
 };
 
-/* UTILS */ 
+/* UTILS */
 
 const firstLevelPermission = (element): boolean => {
   const cookie_ = getCookieData('data')

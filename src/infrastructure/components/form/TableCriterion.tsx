@@ -21,6 +21,8 @@ import Paper from '@mui/material/Paper';
 // Material - IU
 import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2 } from '@mui/material';
 
+// Hooks
+import { getCookieData } from '../../../../libs/utils/utils'
 
 export default (element,shared, onAutoSave) => {
     const classes = useStyles();
@@ -117,6 +119,7 @@ export default (element,shared, onAutoSave) => {
                   <FormControl className={classes.selectInTable}>
                     <InputLabel>Grado de Cumplimiento</InputLabel>
                     <Select
+                      disabled={!firstLevelPermission(element)}
                       value={values[index] || ''}
                       onChange={(e) => handleChange(e, index,'select')}
                     >
@@ -130,6 +133,7 @@ export default (element,shared, onAutoSave) => {
   
                   <TableCell component="th" scope="row">
                   <TextField
+                      disabled={!firstLevelPermission(element)}
                       className={classes.inputNumberInTable}
                       type="number"
                       value={valueNumbers[index]}
@@ -147,4 +151,12 @@ export default (element,shared, onAutoSave) => {
           </Table>
       </TableContainer>
     )
-  }
+}
+
+/** UTILS */
+const firstLevelPermission = (element): boolean => {
+  const cookie_ = getCookieData('data')
+  const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
+  console.log(isValidPermision?.includes(element?.permiso),"isValidPermision?.includes(element?.permiso)")
+  return isValidPermision?.includes(element?.permiso)
+}
