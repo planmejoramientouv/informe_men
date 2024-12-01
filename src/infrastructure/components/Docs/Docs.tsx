@@ -20,7 +20,7 @@ import Box from '@mui/material/Box';
 import { Typography, TextField, Grid2, Button } from '@mui/material';
 
 // Fechts
-import { getValuesKey } from '../../../../hooks/fecth/handlers/handlers'
+import { getValuesKey, replacementsDocsKeys, generatePdf } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { getCookieData } from '../../../../libs/utils/utils'
@@ -31,21 +31,21 @@ export default () => {
     const [cookie , setCokkie] = React.useState(null)
     const [loading , setLoading] = React.useState(false)
 
-    const generatePdf = async ({ data_ }) => {
-        const response = await fetch('/api/genDoc', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: data_ }),
-        });
+    // const generatePdf = async ({ data_ }) => {
+    //     const response = await fetch('/api/genDoc', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ data: data_ }),
+    //     });
 
-        if (!response.ok) {
-            throw new Error('Error al generar el PDF');
-        }
+    //     if (!response.ok) {
+    //         throw new Error('Error al generar el PDF');
+    //     }
 
-        return response;
-    };
+    //     return response;
+    // };
 
     const onHandlerClick = async () => {
         setLoading(true)
@@ -54,20 +54,26 @@ export default () => {
             gid: cookie.gid
         })
         
-        const response = await generatePdf({
-            data_: keysValues
+        const responseIdUrl = await generatePdf({
+            data: keysValues,
+            email: cookie.email ?? ""
         })
-        console.log(response,"log")
-        if (response.ok) {
-            const clonedResponse = response.clone();
-            const blob = await clonedResponse.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "documento.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+
+        const remplacements = await replacementsDocsKeys({
+            data: keysValues,
+            newDocId: responseIdUrl.urlDocumento
+        })
+        console.log(responseIdUrl,"log", remplacements)
+        if (remplacements?.status) {
+            // const clonedResponse = response.clone();
+            // const blob = await clonedResponse.blob();
+            // const url = window.URL.createObjectURL(blob);
+            // const a = document.createElement('a');
+            // a.href = url;
+            // a.download = "documento.pdf";
+            // document.body.appendChild(a);
+            // a.click();
+            // document.body.removeChild(a);
         } else {
             console.log('Error al descargar el PDF:');
         }
@@ -79,7 +85,9 @@ export default () => {
 
     React.useEffect(() => {
         if (cookie !== null) return
-        const cookie_ = getCookieData('rrc')
+        const cookie_  = getCookieData('rrc')
+        const dataAuth = getCookieData('data')
+        cookie_.email = dataAuth.email
         setCokkie(cookie_)
     },[cookie])
 

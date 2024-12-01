@@ -23,7 +23,7 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 
 // Hooks
-import { getCookieData, setCookieRRC } from '../../../../libs/utils/utils'
+import { setCookieRRC, firstLevelPermission } from '../../../../libs/utils/utils'
 
 export default (element, index) => {
     const [value, setValue] = React.useState(-1);
@@ -123,11 +123,6 @@ const CustomTabPanel = (props) => {
 
 /* UTILS */ 
 /** TODO: QUITAR LA COOKIE DE AQUI PORQUE NO ES EFICIENTE */
-const firstLevelPermission = (element): boolean => {
-    const cookie_ = getCookieData('data')
-    const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
-    return isValidPermision?.includes(element?.permiso)
-}
 
 const styles = {
     tabs: {

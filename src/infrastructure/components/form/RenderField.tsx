@@ -31,7 +31,7 @@ import { useGlobalState } from '../../../../hooks/context'
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
-import { getCookieData } from '../../../../libs/utils/utils'
+import { firstLevelPermission } from '../../../../libs/utils/utils'
 
 export default (fieldType, labelText, value, element, shared, iframeView) => {
     const classes = useStyles();
@@ -171,9 +171,3 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
 };
 
 /* UTILS */
-
-const firstLevelPermission = (element): boolean => {
-  const cookie_ = getCookieData('data')
-  const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
-  return isValidPermision?.includes(element?.permiso)
-}

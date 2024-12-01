@@ -16,7 +16,7 @@ const jwtClient = new google.auth.JWT(
 const docs = google.docs({ version: 'v1', auth: jwtClient });
 const TEMPLATE_DOC_ID = "1ivvl3lI9iajE1B77TfzngDyBeC3yOwoYqjk1oSloDKo"
 
-export const createDocumentFromTemplate = async ({ dataKey, res }) => {
+export const createDocumentFromTemplatePdf = async ({ dataKey, res }) => {
     try {
         const drive = google.drive({ version: 'v3', auth: jwtClient });
 
@@ -58,11 +58,11 @@ export const createDocumentFromTemplate = async ({ dataKey, res }) => {
                     replacements[item.key] = item.value;
                 }
             });
-
+            console.log(replacements)
             const requests = Object.keys(replacements).map((key) => ({
                 replaceAllText: {
                     containsText: {
-                        text: `{{${key}}}`,
+                        text: `${key}`,
                         matchCase: true,
                     },
                     replaceText: replacements[key],
@@ -107,4 +107,87 @@ export const createDocumentFromTemplate = async ({ dataKey, res }) => {
         console.error('Error al crear el documento:', error);
         throw error;
     }
+}
+
+export const createDocumentFromTemplate = async ({ dataKey, res, email }) => {
+    try {
+        const drive = google.drive({ version: 'v3', auth: jwtClient });
+
+        const response = await drive.files.copy({
+            fileId: TEMPLATE_DOC_ID,
+            requestBody: {
+                name: `Documento generado - ${new Date().toISOString()}`,
+            },
+        });
+
+        const newDocId = response.data.id;
+
+         // Paso 2: Verificar el tipo de archivo
+         const fileMetadata = await drive.files.get({
+            fileId: newDocId,
+            fields: 'mimeType',
+            convert: true,
+        });
+
+        if (fileMetadata.data.mimeType !== 'application/vnd.google-apps.document') {
+            throw new Error(
+                'El archivo copiado no es del tipo Google Docs. Asegúrate de que la plantilla sea compatible.'
+            );
+        }
+
+        await drive.permissions.create({
+            fileId: newDocId,
+            requestBody: {
+                role: 'writer',
+                type: 'user',
+                emailAddress: email,
+            },
+        });
+
+        return res.status(200).json({
+            status: true,
+            urlDocumento: newDocId ?? ""
+        }); 
+
+    } catch (error) {
+        console.error('Error al crear el documento:', error);
+        throw error;
+    }
+}
+
+export const replaceValuesDoc = async ({ dataKey, newDocId }) => {
+    let response = false
+    try {
+        const replacements = {};
+        if (dataKey?.length > 0) {
+            dataKey.forEach(item => {
+                if (item.key && item.value !== undefined) {
+                    replacements[item.key] = item.value;
+                }
+            });
+            const requests = Object.keys(replacements).map((key) => ({
+                replaceAllText: {
+                    containsText: {
+                        text: `${key}`,
+                        matchCase: true,
+                    },
+                    replaceText: replacements[key],
+                },
+            }));
+
+            
+            await docs.documents.batchUpdate({
+                documentId: newDocId,
+                requestBody: {
+                    requests,
+                },
+            });
+
+            response = true
+        }
+    } catch(e) {
+        console.log(e)
+    }
+
+    return response
 }

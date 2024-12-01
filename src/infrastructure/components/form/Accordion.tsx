@@ -31,7 +31,7 @@ import { useGlobalState } from '../../../../hooks/context'
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
-import { getCookieData } from '../../../../libs/utils/utils'
+import { firstLevelPermission } from '../../../../libs/utils/utils'
 
 // Print Accordion
 export default (element, index) => {
@@ -139,12 +139,6 @@ const renderColapsable = (element, index, shared) => {
 }
   
 /* UTILS */ 
-
-const firstLevelPermission = (element): boolean => {
-    const cookie_ = getCookieData('data')
-    const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
-    return isValidPermision?.includes(element?.permiso)
-}
 
 const fieldTraslate = {
     "Titulo1": "h1",

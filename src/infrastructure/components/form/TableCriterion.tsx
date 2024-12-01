@@ -22,7 +22,7 @@ import Paper from '@mui/material/Paper';
 import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2 } from '@mui/material';
 
 // Hooks
-import { getCookieData } from '../../../../libs/utils/utils'
+import { firstLevelPermission } from '../../../../libs/utils/utils'
 
 export default (element,shared, onAutoSave) => {
     const classes = useStyles();
@@ -154,9 +154,3 @@ export default (element,shared, onAutoSave) => {
 }
 
 /** UTILS */
-const firstLevelPermission = (element): boolean => {
-  const cookie_ = getCookieData('data')
-  const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
-  console.log(isValidPermision?.includes(element?.permiso),"isValidPermision?.includes(element?.permiso)")
-  return isValidPermision?.includes(element?.permiso)
-}

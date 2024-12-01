@@ -45,3 +45,10 @@ export const setCookieRRC = ({sheetId, programa, proceso, gid, year, nameCookie}
     }), secretKey).toString();
     Cookies.set(nameCookie, encryptedData, { expires: 4 });
 }
+
+export const firstLevelPermission = (element) => {
+  const cookie_ = getCookieData('data')
+  if (cookie_?.rol === 'admin') return true
+  const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
+  return isValidPermision?.includes(element?.permiso)
+}

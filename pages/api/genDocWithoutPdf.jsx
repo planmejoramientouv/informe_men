@@ -1,18 +1,22 @@
-import { createDocumentFromTemplate } from '../../libs/googledocs';
+import { replaceValuesDoc } from '../../libs/googledocs';
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         try {
             const {
                 data,
-                email
+                newDocId
             } = req.body
-            console.log(req.body,"data_data_data_data_data_data_data_")
-            await createDocumentFromTemplate({ 
+            
+            const dataUrl = await replaceValuesDoc({ 
                 dataKey: data?.data,
-                res: res,
-                email: email
+                newDocId: newDocId
             });
+            console.log(data,"datadatadatadata")
+            return res.status(200).json({
+                status: true,
+                urlDocumento: dataUrl
+            }); 
         } catch (error) {
             console.log(error,'errr')
             return res.status(500).json({ a: error, error: 'Error fetching data' });
