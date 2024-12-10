@@ -52,3 +52,11 @@ export const firstLevelPermission = (element) => {
   const isValidPermision = (cookie_?.nivel ?? "").split(',') ?? []
   return isValidPermision?.includes(element?.permiso)
 }
+
+export const checkboxLevelPermission = (type) => {
+  const cookie_ = getCookieData('data')
+  if (cookie_?.rol === 'admin') return false
+  if (cookie_?.rol === 'director' && type === 1) return false
+  if (cookie_?.rol === 'daca' && type === 2) return false
+  return true
+}

@@ -22,7 +22,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import { Typography, TextField, Grid2, Button } from '@mui/material';
+import { Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
 
 // Hooks
 import { useGlobalState } from '../../../../hooks/context'
@@ -31,7 +31,7 @@ import { useGlobalState } from '../../../../hooks/context'
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
-import { firstLevelPermission } from '../../../../libs/utils/utils'
+import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
 
 // Print Accordion
 export default (element, index) => {
@@ -56,12 +56,13 @@ export default (element, index) => {
                     <Typography
                         variant="h1"
                         className={classes.titlePrimary}>
-                        {element?.primary?.texto}
+                        {element?.primary?.texto}aa
                     </Typography>
                     <hr />
                   </Grid2>
                   <For func={printFields} list={element.data} shared={element.data}/>
                 </Grid2>
+                <CheckboxesWithText data={element?.primary}/>
               </Grid2>
         </Show>
       </React.Fragment>
@@ -138,6 +139,39 @@ const renderColapsable = (element, index, shared) => {
     )
 }
   
+const CheckboxesWithText = ({ data }) => {
+  console.log(data)
+  return (
+    <Box sx={{ marginTop: '20px'}}>
+      {/* Primer Checkbox */}
+      <FormControlLabel
+        control={
+          <Checkbox 
+              defaultChecked={data?.checkbox_director !== 'FALSE'} 
+              disabled={checkboxLevelPermission(1)}
+          />}
+        label="Opción Director"
+      />
+      <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
+        Confirmar si el director revisó y aprobó los cambios finales.
+      </Typography>
+
+      {/* Segundo Checkbox */}
+      <FormControlLabel
+        control={
+          <Checkbox 
+              defaultChecked={data?.checkbox_daca !== 'FALSE'} 
+              disabled={checkboxLevelPermission(2)}
+          />}
+        label="Opción Daca"
+      />
+      <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
+         Confirmar si Daca revisó y aprobó los cambios finales.
+      </Typography>
+    </Box>
+  );
+}
+
 /* UTILS */ 
 
 const fieldTraslate = {

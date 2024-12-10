@@ -47,9 +47,10 @@ const have_permission = ({ data, dataToken }) => {
     const isAdmin = ROL_ADMIN_SISTEM.includes(isUserActive?.rol)
     const hasUrl = (isUserActive?.url_exel ?? '').match(regex) !== null
     const hasUrlDoc = isAdmin || hasUrl
-    
+    const reponse_ = isAdmin? true : isUserActive?.id && hasUrlDoc
+    console.log(reponse_)
     return {
-        response: isUserActive?.id && hasUrlDoc,
+        response: reponse_,
         hasUrl: !hasUrl && !(isUserActive?.id),
         userFound: isUserActive,
         urlData: (isUserActive?.url_exel ?? '').match(regex)
@@ -64,9 +65,9 @@ const handleCredentialResponse = async (response, loader, data, router, setOpen,
         if (havePermission.response) {
             const currentRol = havePermission?.userFound?.rol
             const currentProcess = havePermission?.userFound?.proceso
-            const sheetId = havePermission.urlData[1] ?? ''
-            const gid = havePermission.urlData[2] ?? ''
-            
+            const sheetId = havePermission?.urlData !== null? havePermission?.urlData[1] : ''
+            const gid = havePermission?.urlData !== null? havePermission?.urlData[2] : ''
+
             // Set Cookie
             Cookies.set('auth', havePermission , { expires: 4 })
             const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({

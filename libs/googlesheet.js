@@ -183,13 +183,14 @@ export const generateVarSaveDoc = async ({ sheetId, gid }) => {
             spreadsheetId_: sheetId,
             defaultSheet: 'Datos Generales RRC'
         });
-    
+
         if (response?.length < 0) return []
 
         response_ = response.map((rrc) => {
             return {
                 key: rrc?.variable_en_doc ?? "{{key}}",
-                value: rrc?.valor ?? ""
+                value: rrc?.valor ?? "",
+                group: rrc?.groups_fields
             }
         })
     } catch (e) {

@@ -19,6 +19,13 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import { Typography, TextField, Grid2, Button } from '@mui/material';
 
+// Dialog
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+
 // Fechts
 import { getValuesKey, replacementsDocsKeys, generatePdf } from '../../../../hooks/fecth/handlers/handlers'
 
@@ -30,57 +37,64 @@ export default () => {
     const classes = useStyles();
     const [cookie , setCokkie] = React.useState(null)
     const [loading , setLoading] = React.useState(false)
-
-    // const generatePdf = async ({ data_ }) => {
-    //     const response = await fetch('/api/genDoc', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify({ data: data_ }),
-    //     });
-
-    //     if (!response.ok) {
-    //         throw new Error('Error al generar el PDF');
-    //     }
-
-    //     return response;
-    // };
+    const [open, setOpen] = React.useState(false);
+    const [IsActiveRequest, setIsActiveRequest] = React.useState(false);
 
     const onHandlerClick = async () => {
+        
+        if (!IsActiveRequest) {
+            setOpen(true)
+            return
+        }
+
         setLoading(true)
+
         const keysValues = await getValuesKey({
             sheetId: cookie.sheetId,
             gid: cookie.gid
         })
-        
-        const responseIdUrl = await generatePdf({
-            data: keysValues,
-            email: cookie.email ?? ""
-        })
 
-        const remplacements = await replacementsDocsKeys({
-            data: keysValues,
-            newDocId: responseIdUrl.urlDocumento
-        })
-        console.log(responseIdUrl,"log", remplacements)
-        if (remplacements?.status) {
-            // const clonedResponse = response.clone();
-            // const blob = await clonedResponse.blob();
-            // const url = window.URL.createObjectURL(blob);
-            // const a = document.createElement('a');
-            // a.href = url;
-            // a.download = "documento.pdf";
-            // document.body.appendChild(a);
-            // a.click();
-            // document.body.removeChild(a);
-        } else {
-            console.log('Error al descargar el PDF:');
+        const regex = /^{{[a-zA-Z]+}}$/;
+        const dataFilter = keysValues.data.filter(item => regex.test(item?.key));
+        const uniqueIds = dataFilter.reduce((acc, current) => {
+            if (!acc.some(item => String(item) === String(current.group))) {
+              acc.push(current.group);
+            }
+            return acc;
+          }, []);
+
+        if (uniqueIds?.length > 0) {
+            uniqueIds.map(async (group) => {
+                const groupItems = dataFilter.filter(item => {
+                    return String(item?.group) === String(group)
+                })
+
+                const responseIdUrl = await generatePdf({
+                    data: groupItems,
+                    email: cookie.email ?? ""
+                })
+        
+                const remplacements = await replacementsDocsKeys({
+                    data: keysValues,
+                    newDocId: responseIdUrl.urlDocumento
+                })
+        
+                if (remplacements?.status) {
+                    alert("Terminado con exito")
+                } else {
+                    console.log('Error al descargar el PDF:');
+                }
+            })
         }
 
         setTimeout(() => {
+            setIsActiveRequest(false)
             setLoading(false)
         }, 300);
+    }
+
+    const execute = async () => {
+        await onHandlerClick()
     }
 
     React.useEffect(() => {
@@ -90,6 +104,11 @@ export default () => {
         cookie_.email = dataAuth.email
         setCokkie(cookie_)
     },[cookie])
+
+    React.useEffect(() => {
+        console.log(IsActiveRequest,"IsActiveRequest")
+        if (IsActiveRequest) execute()
+    },[IsActiveRequest])
 
     return (
         <React.Fragment>
@@ -103,7 +122,50 @@ export default () => {
                         { loading? 'Generando' : "Generar Documento" }
                     </Button>
                 </Box>
+                <AlertDialog {...{open, setOpen, setIsActiveRequest}}/>
             </Show>
         </React.Fragment>
     )
+}
+
+const AlertDialog = ({ open, setOpen, setIsActiveRequest }) => {
+  
+    const handleClickOpen = () => {
+      setOpen(false);
+      setIsActiveRequest(true)
+    };
+  
+    const handleClose = () => {
+      setOpen(false);
+      setIsActiveRequest(true)
+    };
+  
+    return (
+      <React.Fragment>
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">
+            {"Confirmación de creación de documento"}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+                La siguiente acción generará una nueva versión del documento, 
+                reemplazando la anterior. Ten en cuenta que los cambios 
+                realizados fuera de la aplicación no se conservarán. 
+                ¿Deseas continuar con la creación del documento?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Cerrar</Button>
+            <Button onClick={handleClose} autoFocus>
+              Aceptar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </React.Fragment>
+    );
 }
