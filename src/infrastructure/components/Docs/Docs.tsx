@@ -111,8 +111,8 @@ export default () => {
     },[IsActiveRequest])
 
     return (
-        <React.Fragment>
-            <Show when={true}>
+        <Show when={true}>
+            <React.Fragment>
                 <Box>
                     <Button 
                         disabled={loading} 
@@ -123,8 +123,8 @@ export default () => {
                     </Button>
                 </Box>
                 <AlertDialog {...{open, setOpen, setIsActiveRequest}}/>
-            </Show>
-        </React.Fragment>
+            </React.Fragment>
+        </Show>
     )
 }
 
