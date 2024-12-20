@@ -18,6 +18,8 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import { Typography, TextField, Grid2, Button } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Dialog
 import Dialog from '@mui/material/Dialog';
@@ -37,8 +39,11 @@ export default () => {
     const classes = useStyles();
     const [cookie , setCokkie] = React.useState(null)
     const [loading , setLoading] = React.useState(false)
-    const [open, setOpen] = React.useState(false);
-    const [IsActiveRequest, setIsActiveRequest] = React.useState(false);
+    const [open, setOpen] = React.useState(false)
+    const [openSnak, setOpenSnak] = React.useState(false)
+    const [textError, setTextError] = React.useState("")
+    const [IsActiveRequest, setIsActiveRequest] = React.useState(false)
+    const [isError, setIsError] = React.useState(false)
 
     const onHandlerClick = async () => {
         
@@ -64,6 +69,8 @@ export default () => {
           }, []);
 
         if (uniqueIds?.length > 0) {
+            let stateSucces = false;
+            let text = ""
             uniqueIds.map(async (group) => {
                 const groupItems = dataFilter.filter(item => {
                     return String(item?.group) === String(group)
@@ -78,19 +85,28 @@ export default () => {
                     data: keysValues,
                     newDocId: responseIdUrl.urlDocumento
                 })
-        
-                if (remplacements?.status) {
-                    alert("Terminado con exito")
-                } else {
-                    console.log('Error al descargar el PDF:');
-                }
-            })
-        }
 
+                if (remplacements?.status) {
+                    text = "Termiando con Exito"
+                    stateSucces = true
+                } else {
+                    text = "Ha ocurrido un problema"
+                    stateSucces = false
+                }
+
+                // setTimeout(() => {
+                //   setOpenSnak(false)
+                // },1000)
+            })
+            setOpenSnak(true)
+            setTextError("Terminado")
+            setIsError(true)
+        }
         setTimeout(() => {
             setIsActiveRequest(false)
             setLoading(false)
-        }, 300);
+            setOpenSnak(false)
+        }, 3000);
     }
 
     const execute = async () => {
@@ -106,9 +122,15 @@ export default () => {
     },[cookie])
 
     React.useEffect(() => {
-        console.log(IsActiveRequest,"IsActiveRequest")
         if (IsActiveRequest) execute()
     },[IsActiveRequest])
+
+    const params = {
+      open: openSnak,
+      setOpen: setOpenSnak,
+      textError: textError,
+      isError: isError 
+    }
 
     return (
         <Show when={true}>
@@ -123,6 +145,7 @@ export default () => {
                     </Button>
                 </Box>
                 <AlertDialog {...{open, setOpen, setIsActiveRequest}}/>
+                <SnackbarAlert {...params}/>
             </React.Fragment>
         </Show>
     )
@@ -168,4 +191,51 @@ const AlertDialog = ({ open, setOpen, setIsActiveRequest }) => {
         </Dialog>
       </React.Fragment>
     );
+}
+
+const SnackbarAlert = ({ open, setOpen, textError, isError}) => {
+
+  const handleClick = () => {
+    setOpen(true);
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpen(false);
+  };
+
+  const action = (
+    <React.Fragment>
+      <Button color="secondary" size="small" onClick={handleClose}>
+        UNDO
+      </Button>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
+
+  return (
+    <div>
+      <Snackbar
+        open={open}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        message=""
+        action={action}
+      >
+        <Alert severity={isError? "success" : "error"}>
+          {textError}
+        </Alert>
+      </Snackbar>
+    </div>
+  );
 }

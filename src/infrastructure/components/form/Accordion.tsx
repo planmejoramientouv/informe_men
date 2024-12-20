@@ -56,7 +56,7 @@ export default (element, index) => {
                     <Typography
                         variant="h1"
                         className={classes.titlePrimary}>
-                        {element?.primary?.texto}aa
+                        {element?.primary?.texto}
                     </Typography>
                     <hr />
                   </Grid2>
