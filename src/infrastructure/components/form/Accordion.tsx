@@ -26,7 +26,7 @@ import { Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from 
 
 // Hooks
 import { useGlobalState } from '../../../../hooks/context'
-
+// import { updateCheckbox } from '../../../../libs/googlesheet'
 // Fecth
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
@@ -62,7 +62,7 @@ export default (element, index) => {
                   </Grid2>
                   <For func={printFields} list={element.data} shared={element.data}/>
                 </Grid2>
-                <CheckboxesWithText data={element?.primary}/>
+                <CheckboxesWithText data={element?.primary} globalState={globalState}/>
               </Grid2>
         </Show>
       </React.Fragment>
@@ -139,8 +139,13 @@ const renderColapsable = (element, index, shared) => {
     )
 }
   
-const CheckboxesWithText = ({ data }) => {
-  console.log(data)
+const CheckboxesWithText = ({ data, globalState }) => {
+  
+  const handlerChange = async (e, type) => {
+      let dataSheet = globalState.data
+      // data.checkbox = event.target.checked
+  }
+
   return (
     <Box sx={{ marginTop: '20px'}}>
       {/* Primer Checkbox */}
@@ -149,6 +154,7 @@ const CheckboxesWithText = ({ data }) => {
           <Checkbox 
               defaultChecked={data?.checkbox_director !== 'FALSE'} 
               disabled={checkboxLevelPermission(1)}
+              onChange={(e) => handlerChange(e,'M')}
           />}
         label="Opción Director"
       />
@@ -162,6 +168,7 @@ const CheckboxesWithText = ({ data }) => {
           <Checkbox 
               defaultChecked={data?.checkbox_daca !== 'FALSE'} 
               disabled={checkboxLevelPermission(2)}
+              onChange={(e) => handlerChange(e,'N')}
           />}
         label="Opción Daca"
       />

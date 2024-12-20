@@ -14,7 +14,7 @@ import Show from '../../../../share/utils/Show'
 import For from '../../../../share/utils/For'
 
 // Material - IU
-import Snackbar from '@mui/material/Snackbar';
+import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import { Typography, TextField, Grid2, Button } from '@mui/material';
@@ -199,14 +199,16 @@ const SnackbarAlert = ({ open, setOpen, textError, isError}) => {
     setOpen(true);
   };
 
-  const handleClose = (event, reason) => {
+  const handleClose = (
+    event: React.SyntheticEvent | Event,
+    reason?: SnackbarCloseReason,
+  ) => {
     if (reason === 'clickaway') {
       return;
     }
 
     setOpen(false);
   };
-
   const action = (
     <React.Fragment>
       <Button color="secondary" size="small" onClick={handleClose}>

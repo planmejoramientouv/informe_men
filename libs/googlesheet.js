@@ -124,6 +124,44 @@ export const updateDataField = async ({ data, sheetId, gid }) =>  {
     }
 }
 
+export const updateCheckbox = async ({ data, sheetId, gid, row_}) => {
+    let response_ = false
+    try {
+        const arrayIdAvailables = data.map((item) => item.id)
+        const existingData  = await GetDataSheet({
+            gid,
+            spreadsheetId_: sheetId,
+            defaultSheet: 'Datos Generales RRC'
+        })
+
+        existingData.filter(async (item, index) => {
+            if (arrayIdAvailables.includes(item.id)) {
+                const updatedData = data.find((d) => d.id === item.id);
+
+                const rowIndex = index + 2;
+                const range = `${row_}${rowIndex}`;
+
+                console.log(`Actualizando fila ${rowIndex}, columna G con el valor: ${updatedData.valor}`);
+
+                const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+                const response = await sheets.spreadsheets.values.update({
+                    spreadsheetId: sheetId,
+                    range: range,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [[updatedData?.checkbox  ?? '']]
+                    }
+                });
+                return response
+            }
+        })
+        response_ = true
+    } catch(e) {
+        console.log(e)
+    }
+    return response_
+}
+
 const addSubComponents = (data) => {
     const filterCriterios = data.filter((item) => item?.typeComponent);
     if (filterCriterios?.length > 0) {
