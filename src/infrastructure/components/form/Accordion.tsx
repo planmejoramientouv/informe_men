@@ -28,7 +28,7 @@ import { Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from 
 import { useGlobalState } from '../../../../hooks/context'
 // import { updateCheckbox } from '../../../../libs/googlesheet'
 // Fecth
-import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
+import { updateDataTable, updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
@@ -141,9 +141,17 @@ const renderColapsable = (element, index, shared) => {
   
 const CheckboxesWithText = ({ data, globalState }) => {
   
-  const handlerChange = async (e, type) => {
-      let dataSheet = globalState.data
-      // data.checkbox = event.target.checked
+  const handlerChange = async (e:  React.ChangeEvent<HTMLInputElement>, type: string) => {
+      let dataSheet = []
+      data.checkbox = (e.target).checked
+      dataSheet.push(data)
+      console.log(globalState.data,data,data.checkbox)
+      const update = await updateCheckboxClient({
+        sheetId: globalState.data.sheetId,
+        gid: globalState.data.gid,
+        data: dataSheet,
+        row_: type
+      })
   }
 
   return (
