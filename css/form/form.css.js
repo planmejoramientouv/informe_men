@@ -6,8 +6,10 @@ export default makeStyles(() => ({
         padding: '20px',
         alignItems: 'flex-start',
         justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: '20px',
         width: '100%',
-        height: 'calc(100vh - 80px)',
+        // height: 'calc(100vh - 80px)',
         '@media (max-width: 700px)': {
             marginLeft: 'unset',
             width: '100%'
@@ -319,5 +321,11 @@ export default makeStyles(() => ({
     },
     buttonDownloadDocs: {
         backgroundColor: 'var(--red-univalle) !important',
+    },
+    contFormDoc: {
+        display: 'flex',
+        justifyContent: 'start',
+        width: '100%',
+        maxWidth: '1162px',
     }
 }));

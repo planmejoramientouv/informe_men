@@ -135,6 +135,7 @@ export default () => {
     return (
         <Show when={true}>
             <React.Fragment>
+              <Box className={classes.contFormDoc}>
                 <Box>
                     <Button 
                         disabled={loading} 
@@ -146,6 +147,7 @@ export default () => {
                 </Box>
                 <AlertDialog {...{open, setOpen, setIsActiveRequest}}/>
                 <SnackbarAlert {...params}/>
+              </Box>
             </React.Fragment>
         </Show>
     )

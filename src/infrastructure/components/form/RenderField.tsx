@@ -13,9 +13,11 @@ import useStyles from '../../../../css/form/form.css.js'
 import printTableAspectos from './TableAspectos'
 import printTableCriterios from './TableCriterion'
 import Show from '../../../../share/utils/Show'
+// @ts-ignore
+import PopUp from '../Popup/Popup'
 
 // Material - IU
-import { Typography, TextField, Grid2 } from '@mui/material';
+import { Typography, TextField, Grid2, Button } from '@mui/material';
 
 // Quicks
 import dynamic from 'next/dynamic'; // Importación dinámica
@@ -36,6 +38,7 @@ import { firstLevelPermission } from '../../../../libs/utils/utils'
 export default (fieldType, labelText, value, element, shared, iframeView) => {
     const classes = useStyles();
     const [value_, setValue] = React.useState('');
+    const [open, setOpen] = React.useState(false)
     const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
     const { globalState } = useGlobalState()
 
@@ -143,19 +146,23 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
       case "TableExtra":
         return (
           <Grid2 sx={classDisabledTableExtra()}>
-            <label><b>{labelText}</b></label>
-            <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
-                <iframe
-                  src={element?.valor}
-                  width="100%"
-                  height="400px"
-                  frameBorder="0"
-                  loading="lazy"
-                />
-            </Grid2>
-            <Show when={!firstLevelPermission(element)}>
-                  <Grid2 className={classes.diableBox} />
+            <Show when={firstLevelPermission(element)}>
+              <Button sx={{ background: '#C8102E', color: 'white'}} onClick={() => setOpen(true)}>
+                  <label><b>{labelText}</b></label>
+              </Button>
             </Show>
+            {/* @ts-ignore */} 
+            <PopUp open={open} onClose={() => setOpen(false)}>
+              <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
+                  <iframe
+                    src={element?.valor}
+                    width="100%"
+                    height="800px"
+                    frameBorder="0"
+                    loading="lazy"
+                  />
+              </Grid2>
+            </PopUp>
           </Grid2>
       );
   
