@@ -26,6 +26,10 @@ export default makeStyles(() => ({
         zIndex: '999',
         background: 'rgba(2,2,2,0.5)'
     },
+    titleViewSystem: {
+        marginLeft: '15px !important',
+        fontWeight: '600 !important',
+    },
     hiddentMobile: {
         '@media (max-width: 700px)': {
             display: 'none'
@@ -36,5 +40,18 @@ export default makeStyles(() => ({
         '@media (max-width: 700px)': {
             display: 'block'
         }
+    },
+    titleUnivalle: {
+        color: '#e30713',
+        fontWeight: '600 !important',
+        '@media (max-width: 700px)': {
+            display: 'none'
+        }
+    },
+    nameUserLimit: {
+        maxWidth: '40ch',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
     }
 }));

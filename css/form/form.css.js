@@ -182,7 +182,7 @@ export default makeStyles(() => ({
         height: '160px',
         padding: '10px',
         borderRadius: '4px',
-        background: '#c3c3c3',
+        background: '#fff',
         boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
         cursor: 'pointer',
         transition: 'all 0.3s ease',

@@ -80,25 +80,26 @@ export default () => {
         }
     }
 
-    React.useEffect(() => {
-        init_()
-    }, [])
+    React.useEffect(init_, [])
 
     return (
         <Show when={hydrated}>
             <header className={styles.header}>
-                <Grid2 sx={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+                <Grid2 sx={{display: 'flex', alignItems: 'center'}}>
                     <div className={`${styles['container-logo']}`}>
-                        <img src={'/assets/img/logo.jpg'} alt='logo' />
+                        <img src={'/assets/img/header.png'} alt='logo' />
                     </div>
-                    <Typography className={classes.hiddentMobile}>
+                    <Typography className={classes.titleUnivalle}>
+                        Universidad Del Valle
+                    </Typography>
+                    <Typography className={`${classes.hiddentMobile} ${classes.titleViewSystem}`}>
                         {data_?.programa?.toUpperCase()}
                     </Typography>
                 </Grid2>
                 <div>
                     <Grid2 sx={{ display: 'flex', alignItems: 'center', maxHeight: '50px' }}>
                         <Grid2>
-                            <Typography className={classes.hiddentMobile}>
+                            <Typography className={`${classes.nameUserLimit} ${classes.hiddentMobile}`}>
                                 {data_.name}
                             </Typography>
                             <Typography sx={{ textAlign: 'end'}} className={classes.hiddentMobile}>

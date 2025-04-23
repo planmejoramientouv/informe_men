@@ -28,8 +28,15 @@ import { Grid2, Typography } from '@mui/material'
 
 // Regex
 const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
-
 import { useRouter } from 'next/router';
+
+// Const
+const BORDER_COLORS = [
+    '#C8102E',
+    '#FFCD00',
+    '#0051BA',
+    '#A7A8AA',
+]
 
 export default () => {
     const classes = useStyles()
@@ -99,6 +106,7 @@ export default () => {
 const printActions = (element, index) => {
     const classes = useStyles()
     const router = useRouter();
+    const color = BORDER_COLORS[index % BORDER_COLORS.length]
 
     const handlerClick = (element) => {
         const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
@@ -123,8 +131,11 @@ const printActions = (element, index) => {
 
     return (
         <React.Fragment key={index}>
-            <Grid2 onClick={() => handlerClick(element)} className={classes.forItemsPanel} key={index}>
-                <Typography variant="h2">
+            <Grid2 
+                style={{ borderTop: `6px solid ${color}` }} 
+                onClick={() => handlerClick(element)} 
+                className={classes.forItemsPanel} key={index}>
+                <Typography  style={{ color: `${color}` }}  variant="h2">
                     {`${element?.programa} - ${element?.proceso} ${element?.year}`}
                 </Typography>
             </Grid2>
