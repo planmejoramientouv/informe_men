@@ -327,5 +327,25 @@ export default makeStyles(() => ({
         justifyContent: 'start',
         width: '100%',
         maxWidth: '1162px',
-    }
+    },
+    drawer: {
+        width: 240,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+        width: 240,
+        boxSizing: 'border-box',
+        backgroundColor: '#fafafa',
+        },
+    },
+    listItem: {
+        paddingLeft: 2,
+    },
+    nested: {
+        paddingLeft: 4,
+    },
+    content: {
+        flexGrow: 1,
+        padding: 3,
+        scrollBehavior: 'smooth',
+    },
 }));

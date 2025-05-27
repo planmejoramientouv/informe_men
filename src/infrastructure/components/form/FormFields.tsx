@@ -12,18 +12,11 @@ import useStyles from '../../../../css/form/form.css.js'
 // Components
 import Show from '../../../../share/utils/Show'
 import For from '../../../../share/utils/For'
-import renderField from './RenderField'
 import printRowsAccordion from './TabComponents'
 
 // Hoosk
 import { useGlobalState } from '../../../../hooks/context'
 
-// Material - IU
-import { Button, Typography, TextField, TextareaAutosize, MenuItem, FormControl, InputLabel, Select, Grid2 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
-
-// Tabs
-import PropTypes from 'prop-types';
 
 // Def
 export default () => {
@@ -65,7 +58,7 @@ export default () => {
         setFormData(globalState.data?.formdata)
       }
     }, [globalState])
-  
+    console.log(sizeRows,"PABLO ESCOBAR")
     return (
       <React.Fragment>
         <Show when={formData.length > 0}>
@@ -73,23 +66,4 @@ export default () => {
         </Show>
       </React.Fragment>
     )
-}
-
-
-const firstLevelPermission = (): boolean => {
-  return true
-}
-
-const fieldTraslate = {
-  "Titulo1": "h1",
-  "Titulo2": "h2",
-  "Campo": "text",
-  "TextArea": "textArea",
-  "Colapsable2": "Colapsable2",
-  "GradoCumplimiento": "GradoCumplimiento",
-  "Criterio": "select",
-  "ConclusionCondicion": "ConclusionCondicion",
-  "tabla_aspectos": "tabla_aspectos",
-  "Tabla_criterios": "Tabla_criterios",
-  "TablaExtra": "TableExtra"
 }
