@@ -59,6 +59,14 @@ import {
   Cloud,
 } from "@mui/icons-material"
 
+import Info from '@mui/icons-material/Info'
+import School from '@mui/icons-material/School'
+import EventNote from '@mui/icons-material/EventNote'
+import Build from '@mui/icons-material/Build'
+import People from '@mui/icons-material/People'
+import HomeWork from '@mui/icons-material/HomeWork'
+import AccountBalance from '@mui/icons-material/AccountBalance'
+
 // Hooks
 import { setCookieRRC, firstLevelPermission } from '../../../../libs/utils/utils'
 
@@ -288,83 +296,97 @@ export default ({ element, index }) => {
       setValue(Number(newValue) === value? -1 : Number(newValue));
     };
 
-      const toggleMenu = (menuId: string) => {
-    setExpandedMenus((prev) => (prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]))
-  }
-
-  const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
-    console.log("Menu ID:", menuId, "Has Submenu:", hasSubmenu, "Index:", index)
-    if (hasSubmenu) {
-      toggleMenu(menuId)
-    } else {
-      setActiveMenu(Number(index))
+    const toggleMenu = (menuId: string) => {
+      //@ts-ignore
+      setExpandedMenus((prev) => (prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]))
     }
-  }
 
-  React.useEffect(() => {
-      setHydrated(true);
-  }, []);
+    const iconList = [
+      <Settings />,     
+      <Info />,
+      <School />,
+      <EventNote />,
+      <Build />,
+      <People />, 
+      <HomeWork />,
+      <Security />,
+      <AccountBalance />,
+      <Settings />,
+    ]
 
-  if (!hydrated) return null;
-  
-  return (
-      <React.Fragment key={index}>
-        <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
-          {/* Drawer */}
-          <Drawer variant="permanent" sx={styles.drawer}>
-            <Box sx={styles.drawerContainer}>
-              <List>
-                {menuItems.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem sx={styles.listItem}>
-                      <ListItemButton
-                        sx={{
-                          ...styles.listItemButton,
-                          ...(activeMenu === item.id ? styles.listItemButtonActive : {}),
-                        }}
-                        onClick={() => handleMenuClick(item.id, !!item.submenu, index)}
-                      >
-                        <ListItemIcon sx={styles.listItemIcon}>{item.icon}</ListItemIcon>
-                        <ListItemText primary={item.label} sx={styles.listItemText} />
-                        {item.submenu &&
-                          (expandedMenus.includes(item.id) ? (
-                            <ExpandLess sx={{ color: "#757575" }} />
-                          ) : (
-                            <ExpandMore sx={{ color: "#757575" }} />
-                          ))}
-                      </ListItemButton>
-                    </ListItem>
+    const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
+      console.log("Menu ID:", menuId, "Has Submenu:", hasSubmenu, "Index:", index)
+      if (hasSubmenu) {
+        toggleMenu(menuId)
+      } else {
+        setActiveMenu(Number(index))
+      }
+    }
 
-                      {item.submenu && (
-                        <Collapse in={expandedMenus.includes(item.id)} timeout="auto" unmountOnExit>
-                          <List component="div" disablePadding sx={styles.submenu}>
-                            {item.submenu.map((subItem) => (
-                              <ListItem key={subItem.id} sx={styles.listItem}>
-                                <ListItemButton sx={styles.submenuItem} onClick={() => setActiveMenu(index)}>
-                                  <ListItemText primary={subItem.label} sx={styles.submenuText} />
-                                </ListItemButton>
-                              </ListItem>
+    React.useEffect(() => {
+        setHydrated(true);
+    }, []);
+
+    if (!hydrated) return null;
+
+    return (
+        <React.Fragment key={index}>
+          <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
+            {/* Drawer */}
+            <Drawer variant="permanent" sx={styles.drawer}>
+              <Box sx={styles.drawerContainer}>
+                <List>
+                  {menuItems.map((item, index) => (
+                    <React.Fragment key={index}>
+                      <ListItem sx={styles.listItem}>
+                        <ListItemButton
+                          sx={{
+                            ...styles.listItemButton,
+                            ...(activeMenu === index ? styles.listItemButtonActive : {}),
+                          }}
+                          onClick={() => handleMenuClick(item.id, !!item.submenu, index)}
+                        >
+                          <ListItemIcon sx={styles.listItemIcon}>{iconList[index]}</ListItemIcon>
+                          <ListItemText primary={item.label} sx={styles.listItemText} />
+                          {item.submenu &&
+                            (expandedMenus.includes(item.id) ? (
+                              <ExpandLess sx={{ color: "#757575" }} />
+                            ) : (
+                              <ExpandMore sx={{ color: "#757575" }} />
                             ))}
-                          </List>
-                        </Collapse>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </List>
-            </Box>
-          </Drawer>
+                        </ListItemButton>
+                      </ListItem>
 
-          {/* Main Content */}
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              {element?.[activeMenu] != null && (
-                [ element[activeMenu] ]?.map((el, idx) => (
-                  <PrintBodyTab key={idx} element={el} index={idx} />
-                )
-              ))}
-          </Box>
-          </Box>
-      </React.Fragment>
-    )
+                        {item.submenu && (
+                          <Collapse in={expandedMenus.includes(item.id)} timeout="auto" unmountOnExit>
+                            <List component="div" disablePadding sx={styles.submenu}>
+                              {item.submenu.map((subItem) => (
+                                <ListItem key={subItem.id} sx={styles.listItem}>
+                                  <ListItemButton sx={styles.submenuItem} onClick={() => setActiveMenu(index)}>
+                                    <ListItemText primary={subItem.label} sx={styles.submenuText} />
+                                  </ListItemButton>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </Collapse>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </List>
+              </Box>
+            </Drawer>
+
+            {/* Main Content */}
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                {element?.[activeMenu] != null && (
+                  [ element[activeMenu] ]?.map((el, idx) => (
+                    <PrintBodyTab key={idx} element={el} index={idx} />
+                  )
+                ))}
+            </Box>
+            </Box>
+        </React.Fragment>
+      )
 }
 
 
@@ -436,7 +458,6 @@ const PrintBodyTab = ({ element, index }) => {
       <PrintAccordion 
         element={element}
         index={index}
-        shared={element?.primary?.variables}
       />
     </Box>
   )

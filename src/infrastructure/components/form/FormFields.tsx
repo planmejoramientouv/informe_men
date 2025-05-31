@@ -42,7 +42,7 @@ export default () => {
     return (
       <React.Fragment>
         <Show when={formData.length > 0 && hydrated}>
-            <ComponentsTab element={formData} />
+            <ComponentsTab element={formData} index={null} />
         </Show>
       </React.Fragment>
     )
