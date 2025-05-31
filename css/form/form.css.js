@@ -9,7 +9,8 @@ export default makeStyles(() => ({
         flexWrap: 'wrap',
         gap: '20px',
         width: '100%',
-        // height: 'calc(100vh - 80px)',
+        marginTop: '80px',
+        height: 'calc(100vh - 80px)',
         '@media (max-width: 700px)': {
             marginLeft: 'unset',
             width: '100%'
@@ -21,14 +22,12 @@ export default makeStyles(() => ({
         borderRadius: '8px',
         padding: '20px',
         maxWidth: '1162px',
-        width: '95%',
         background: 'white',
-        boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
     },
     FormItems: {
-        display: 'flex',
+        // display: 'flex',
         gap: '20px',
-        flexWrap: 'wrap',
+        // flexWrap: 'wrap',
         overflow: 'auto',
         '& >  div[role="tabpanel"]': {
             width: '100%',

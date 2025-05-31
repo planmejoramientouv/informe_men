@@ -1,3 +1,4 @@
+"use-client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
@@ -24,9 +25,10 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default (element,shared, onAutoSave) => {
+export default ({ element,shared, onAutoSave }) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
+    const [hydrated, setHydrated] = React.useState(false);
     const [valueNumbers, setValueNumbers] = React.useState([])
     const [printFields, setPrintFields] = React.useState([])
     const [stateInputs, setStateInput] = React.useState({
@@ -93,6 +95,12 @@ export default (element,shared, onAutoSave) => {
       setValueNumbers(stateInputs.valuesNumber.map((row) => row?.valor || ''));
     },[stateInputs])
   
+    React.useEffect(() => {
+      setHydrated(true);
+    }, []);
+
+    if (!hydrated) return null;
+
     return (
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">

@@ -1,3 +1,4 @@
+"use-client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
@@ -11,7 +12,7 @@ import useStyles from '../../../../css/form/form.css.js'
 
 // Components
 import For from '../../../../share/utils/For'
-import printAccordion from './Accordion'
+import PrintAccordion from './Accordion'
 
 // Tabs
 import Tab from '@mui/material/Tab';
@@ -41,6 +42,7 @@ import {
   ThemeProvider,
   createTheme,
 } from "@mui/material"
+
 import {
   Search,
   Settings,
@@ -83,7 +85,6 @@ const drawerWidth = 280
 
 const styles = {
   appBar: {
-    zIndex: (theme: any) => theme.zIndex.drawer + 1,
     backgroundColor: "#fff",
     color: "#202124",
     boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
@@ -137,13 +138,19 @@ const styles = {
     width: "100%",
   },
   drawer: {
+    position: "relative !important",
+    zIndex: 12,
     width: drawerWidth,
-    flexShrink: 0,
     "& .MuiDrawer-paper": {
       width: drawerWidth,
       boxSizing: "border-box",
       borderRight: "1px solid #e0e0e0",
     },
+    '& .MuiPaper-root': {
+      height: "calc(100% - 80px)",
+      bottom: 0,
+      top: 'unset',
+    }
   },
   drawerContainer: {
     overflow: "auto",
@@ -201,7 +208,12 @@ const styles = {
     flexGrow: 1,
     p: 4,
     backgroundColor: "#fafafa",
-    minHeight: "100vh",
+    minHeight: "calc(100vh - 80px)",
+    maxWidth: "calc(100vw - 280px)",
+    '& .MuiGrid2-root': {
+      backgroundColor: "red",
+      maxWidth: "calc(100vw - 280px)",
+    }
   },
   contentHeader: {
     mb: 4,
@@ -257,129 +269,17 @@ const styles = {
   },
 }
 
-interface MenuItem {
-  id: string
-  label: string
-  icon: React.ReactNode
-  submenu?: { id: string; label: string }[]
-}
-
-const menuItems: MenuItem[] = [
-  {
-    id: "dashboard",
-    label: "Panel Principal",
-    icon: <DashboardIcon />,
-  },
-  {
-    id: "compute",
-    label: "Compute Engine",
-    icon: <Computer />,
-    submenu: [
-      { id: "instances", label: "Instancias de VM" },
-      { id: "disks", label: "Discos" },
-      { id: "snapshots", label: "Instantáneas" },
-    ],
-  },
-  {
-    id: "storage",
-    label: "Cloud Storage",
-    icon: <Storage />,
-    submenu: [
-      { id: "buckets", label: "Buckets" },
-      { id: "transfer", label: "Transferencia" },
-    ],
-  },
-  {
-    id: "networking",
-    label: "Redes",
-    icon: <Language />,
-    submenu: [
-      { id: "vpc", label: "Redes VPC" },
-      { id: "firewall", label: "Firewall" },
-      { id: "load-balancer", label: "Balanceadores" },
-    ],
-  },
-  {
-    id: "security",
-    label: "Seguridad",
-    icon: <Security />,
-    submenu: [
-      { id: "iam", label: "IAM y administración" },
-      { id: "secrets", label: "Secret Manager" },
-    ],
-  },
-  {
-    id: "monitoring",
-    label: "Monitoreo",
-    icon: <BarChart />,
-  },
-  {
-    id: "apis",
-    label: "APIs y servicios",
-    icon: <Code />,
-  },
-]
-
-const contentData = {
-  dashboard: {
-    title: "Panel Principal",
-    subtitle: "Resumen de tu proyecto en la nube",
-    cards: [
-      {
-        icon: <Computer sx={{ fontSize: 32 }} />,
-        title: "Compute Engine",
-        description: "Máquinas virtuales escalables y de alto rendimiento",
-      },
-      {
-        icon: <Storage sx={{ fontSize: 32 }} />,
-        title: "Cloud Storage",
-        description: "Almacenamiento de objetos unificado para desarrolladores",
-      },
-      {
-        icon: <Security sx={{ fontSize: 32 }} />,
-        title: "Seguridad",
-        description: "Protege tus recursos con herramientas de seguridad avanzadas",
-      },
-      {
-        icon: <BarChart sx={{ fontSize: 32 }} />,
-        title: "Monitoreo",
-        description: "Observabilidad completa para tus aplicaciones",
-      },
-    ],
-  },
-  compute: {
-    title: "Compute Engine",
-    subtitle: "Gestiona tus máquinas virtuales",
-    cards: [
-      {
-        icon: <Computer sx={{ fontSize: 32 }} />,
-        title: "Instancias",
-        description: "Crear y gestionar instancias de máquinas virtuales",
-      },
-      {
-        icon: <Storage sx={{ fontSize: 32 }} />,
-        title: "Discos",
-        description: "Administrar discos persistentes y almacenamiento",
-      },
-    ],
-  },
-  storage: {
-    title: "Cloud Storage",
-    subtitle: "Almacenamiento de objetos escalable",
-    cards: [
-      {
-        icon: <Storage sx={{ fontSize: 32 }} />,
-        title: "Buckets",
-        description: "Contenedores para almacenar tus objetos",
-      },
-    ],
-  },
-}
-
-export default (element, index) => {
+export default ({ element, index }) => {
     const [value, setValue] = React.useState(-1);
-    const [activeMenu, setActiveMenu] = React.useState("dashboard")
-    const [expandedMenus, setExpandedMenus] = React.useState<string[]>(["compute"])
+    const [activeMenu, setActiveMenu] = React.useState(0)
+    const [expandedMenus, setExpandedMenus] = React.useState<number[]>([0])
+    const [hydrated, setHydrated] = React.useState(false);
+
+    const menuItems = element?.map((item, idx) => ({
+      id: String(idx),
+      label: item?.primary?.variables,
+      icon: <Settings />,
+    })) || [];
 
     const handleChange = (e) => {
       const newValue = e.target.getAttribute('aria-controls')
@@ -388,110 +288,80 @@ export default (element, index) => {
       setValue(Number(newValue) === value? -1 : Number(newValue));
     };
 
-    const printBodyTab = (element, index) => {
-        return (
-          <CustomTabPanel value={value} index={index} key={index}>
-            {printAccordion(element,index)}
-          </CustomTabPanel>
-        )
-    }
-
       const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) => (prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]))
   }
 
-  const handleMenuClick = (menuId: string, hasSubmenu: boolean) => {
+  const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
+    console.log("Menu ID:", menuId, "Has Submenu:", hasSubmenu, "Index:", index)
     if (hasSubmenu) {
       toggleMenu(menuId)
     } else {
-      setActiveMenu(menuId)
+      setActiveMenu(Number(index))
     }
   }
 
-  const currentContent = contentData[activeMenu]
-    return (
+  React.useEffect(() => {
+      setHydrated(true);
+  }, []);
+
+  if (!hydrated) return null;
+  
+  return (
       <React.Fragment key={index}>
-          <Box sx={{ width: '100%', typography: 'body1' }}>
-        {/* Drawer */}
-        <Drawer variant="permanent" sx={styles.drawer}>
-          <Toolbar />
-          <Box sx={styles.drawerContainer}>
-            <List>
-              {menuItems.map((item) => (
-                <React.Fragment key={item.id}>
-                  <ListItem sx={styles.listItem}>
-                    <ListItemButton
-                      sx={{
-                        ...styles.listItemButton,
-                        ...(activeMenu === item.id ? styles.listItemButtonActive : {}),
-                      }}
-                      onClick={() => handleMenuClick(item.id, !!item.submenu)}
-                    >
-                      <ListItemIcon sx={styles.listItemIcon}>{item.icon}</ListItemIcon>
-                      <ListItemText primary={item.label} sx={styles.listItemText} />
-                      {item.submenu &&
-                        (expandedMenus.includes(item.id) ? (
-                          <ExpandLess sx={{ color: "#757575" }} />
-                        ) : (
-                          <ExpandMore sx={{ color: "#757575" }} />
-                        ))}
-                    </ListItemButton>
-                  </ListItem>
+        <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
+          {/* Drawer */}
+          <Drawer variant="permanent" sx={styles.drawer}>
+            <Box sx={styles.drawerContainer}>
+              <List>
+                {menuItems.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <ListItem sx={styles.listItem}>
+                      <ListItemButton
+                        sx={{
+                          ...styles.listItemButton,
+                          ...(activeMenu === item.id ? styles.listItemButtonActive : {}),
+                        }}
+                        onClick={() => handleMenuClick(item.id, !!item.submenu, index)}
+                      >
+                        <ListItemIcon sx={styles.listItemIcon}>{item.icon}</ListItemIcon>
+                        <ListItemText primary={item.label} sx={styles.listItemText} />
+                        {item.submenu &&
+                          (expandedMenus.includes(item.id) ? (
+                            <ExpandLess sx={{ color: "#757575" }} />
+                          ) : (
+                            <ExpandMore sx={{ color: "#757575" }} />
+                          ))}
+                      </ListItemButton>
+                    </ListItem>
 
-                  {item.submenu && (
-                    <Collapse in={expandedMenus.includes(item.id)} timeout="auto" unmountOnExit>
-                      <List component="div" disablePadding sx={styles.submenu}>
-                        {item.submenu.map((subItem) => (
-                          <ListItem key={subItem.id} sx={styles.listItem}>
-                            <ListItemButton sx={styles.submenuItem} onClick={() => setActiveMenu(subItem.id)}>
-                              <ListItemText primary={subItem.label} sx={styles.submenuText} />
-                            </ListItemButton>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Collapse>
-                  )}
-                </React.Fragment>
+                      {item.submenu && (
+                        <Collapse in={expandedMenus.includes(item.id)} timeout="auto" unmountOnExit>
+                          <List component="div" disablePadding sx={styles.submenu}>
+                            {item.submenu.map((subItem) => (
+                              <ListItem key={subItem.id} sx={styles.listItem}>
+                                <ListItemButton sx={styles.submenuItem} onClick={() => setActiveMenu(index)}>
+                                  <ListItemText primary={subItem.label} sx={styles.submenuText} />
+                                </ListItemButton>
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Collapse>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </List>
+            </Box>
+          </Drawer>
+
+          {/* Main Content */}
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              {element?.[activeMenu] != null && (
+                [ element[activeMenu] ]?.map((el, idx) => (
+                  <PrintBodyTab key={idx} element={el} index={idx} />
+                )
               ))}
-            </List>
           </Box>
-        </Drawer>
-
-        {/* Main Content */}
-        <Box component="main" sx={styles.content}>
-          <Toolbar />
-
-          <Box sx={styles.contentHeader}>
-            <Typography sx={styles.pageTitle}>{currentContent.title}</Typography>
-            <Typography sx={styles.pageSubtitle}>{currentContent.subtitle}</Typography>
-          </Box>
-
-          {activeMenu === "dashboard" && (
-            <Card sx={styles.welcomeCard}>
-              <CardContent>
-                <Typography sx={styles.welcomeTitle}>Te damos la bienvenida</Typography>
-                <Typography sx={styles.welcomeText}>
-                  Estás trabajando en tu proyecto de la nube. Explora los servicios disponibles y comienza a construir
-                  aplicaciones escalables y seguras.
-                </Typography>
-              </CardContent>
-            </Card>
-          )}
-
-          <Grid container spacing={3}>
-            {currentContent.cards.map((card, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card sx={styles.serviceCard}>
-                  <CardContent>
-                    <Box sx={styles.cardIcon}>{card.icon}</Box>
-                    <Typography sx={styles.cardTitle}>{card.title}</Typography>
-                    <Typography sx={styles.cardDescription}>{card.description}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
           </Box>
       </React.Fragment>
     )
@@ -558,6 +428,18 @@ const CustomTabPanel = (props) => {
         {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
       </div>
     );
+}
+
+const PrintBodyTab = ({ element, index }) => {
+  return (
+    <Box sx={{ height: '100%', overflow: 'auto'}} key={index}>
+      <PrintAccordion 
+        element={element}
+        index={index}
+        shared={element?.primary?.variables}
+      />
+    </Box>
+  )
 }
 
 /* UTILS */ 

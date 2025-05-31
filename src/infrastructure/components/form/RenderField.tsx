@@ -1,3 +1,4 @@
+"use-client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
@@ -10,8 +11,8 @@ import React from "react"
 import useStyles from '../../../../css/form/form.css.js'
 
 // Components
-import printTableAspectos from './TableAspectos'
-import printTableCriterios from './TableCriterion'
+import PrintTableAspectos from './TableAspectos'
+import PrintTableCriterios from './TableCriterion'
 import Show from '../../../../share/utils/Show'
 // @ts-ignore
 import PopUp from '../Popup/Popup'
@@ -35,11 +36,12 @@ import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default (fieldType, labelText, value, element, shared, iframeView) => {
+export default ({ fieldType, labelText, value, element, shared, iframeView }) => {
     const classes = useStyles();
     const [value_, setValue] = React.useState('');
     const [open, setOpen] = React.useState(false)
     const [valueTextArea, setValueTextArea] = React.useState(element.valor || '')
+    const [hydrated, setHydrated] = React.useState(false);
     const { globalState } = useGlobalState()
 
     const handleChange = (event) => {
@@ -88,6 +90,12 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
     React.useEffect(() => {
       element.valor = valueTextArea
     },[valueTextArea])
+
+    React.useEffect(() => {
+        setHydrated(true);
+    }, []);
+  
+    if (!hydrated) return null;
 
     switch (fieldType) {
       case "h1":
@@ -167,10 +175,10 @@ export default (fieldType, labelText, value, element, shared, iframeView) => {
       );
   
       case "tabla_aspectos":  
-        return (printTableAspectos(element, shared));
+        return <PrintTableAspectos element={element} shared={shared} />
   
-      case "Tabla_criterios":  
-        return (printTableCriterios(element, shared, autoSave));
+      case "Tabla_criterios":
+        return  <PrintTableCriterios element={element} shared={shared} autoSave={autoSave} />
         
       default:
         return null;

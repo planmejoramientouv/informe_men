@@ -1,3 +1,4 @@
+"use-client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
@@ -21,9 +22,10 @@ import Paper from '@mui/material/Paper';
 // Global Const
 const ASPECTS_TABLE = "tabla_aspectos"
 
-export default (element, shared) => {
+export default ({ element, shared }) => {
     const [printFields, setPrintFields] = React.useState([])
-  
+    const [hydrated, setHydrated] = React.useState(false);
+    
     React.useEffect(() => {
       const filterOptions = shared.filter((item) => item?.typeComponent)
       if (filterOptions?.length > 0) {
@@ -39,6 +41,12 @@ export default (element, shared) => {
           }
       }
     },[shared])
+
+    React.useEffect(() => {
+      setHydrated(true);
+    }, []);
+
+    if (!hydrated) return null;
   
     return (
         <TableContainer component={Paper}>
