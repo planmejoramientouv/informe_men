@@ -34,7 +34,7 @@ export default () => {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <Show when={hydrated}>
                     <Box className={classes.containerForm}>
-                        <DownloadDoc />
+                        {/* <DownloadDoc /> */}
                         <Grid2 className={classes.containerFields}>
                             <Grid2 className={classes.FormItems}>
                                 <FormFields />

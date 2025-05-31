@@ -9,7 +9,8 @@ export default makeStyles(() => ({
         flexWrap: 'wrap',
         gap: '20px',
         width: '100%',
-        // height: 'calc(100vh - 80px)',
+        marginTop: '80px',
+        height: 'calc(100vh - 80px)',
         '@media (max-width: 700px)': {
             marginLeft: 'unset',
             width: '100%'
@@ -21,14 +22,12 @@ export default makeStyles(() => ({
         borderRadius: '8px',
         padding: '20px',
         maxWidth: '1162px',
-        width: '95%',
         background: 'white',
-        boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
     },
     FormItems: {
-        display: 'flex',
+        // display: 'flex',
         gap: '20px',
-        flexWrap: 'wrap',
+        // flexWrap: 'wrap',
         overflow: 'auto',
         '& >  div[role="tabpanel"]': {
             width: '100%',
@@ -327,5 +326,25 @@ export default makeStyles(() => ({
         justifyContent: 'start',
         width: '100%',
         maxWidth: '1162px',
-    }
+    },
+    drawer: {
+        width: 240,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+        width: 240,
+        boxSizing: 'border-box',
+        backgroundColor: '#fafafa',
+        },
+    },
+    listItem: {
+        paddingLeft: 2,
+    },
+    nested: {
+        paddingLeft: 4,
+    },
+    content: {
+        flexGrow: 1,
+        padding: 3,
+        scrollBehavior: 'smooth',
+    },
 }));

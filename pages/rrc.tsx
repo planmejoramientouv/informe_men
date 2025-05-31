@@ -1,3 +1,5 @@
+"use-client"
+
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 

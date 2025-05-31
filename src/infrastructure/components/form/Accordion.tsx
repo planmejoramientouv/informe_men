@@ -1,3 +1,4 @@
+"use-client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
@@ -12,7 +13,7 @@ import useStyles from '../../../../css/form/form.css.js'
 // Components
 import Show from '../../../../share/utils/Show'
 import For from '../../../../share/utils/For'
-import renderField from './RenderField'
+import RenderField from './RenderField'
 
 // Material - IU
 import Accordion from '@mui/material/Accordion'
@@ -34,7 +35,8 @@ import { updateDataTable, updateCheckboxClient } from '../../../../hooks/fecth/h
 import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
 
 // Print Accordion
-export default (element, index) => {
+export default ({ element, index }) => {
+    if (!element?.primary) return null;
     const classes = useStyles();
     const [dataSheet,setDataSheet] = React.useState({} as any)
     const [isLoading, setIsLoading] = React.useState(false)
@@ -42,11 +44,18 @@ export default (element, index) => {
     const [isSuccess, setSuccess] = React.useState(false)
     const [errorText, setErrorText] = React.useState('Guardado Exitoso')
     const { globalState } = useGlobalState()
-  
+    const [hydrated, setHydrated] = React.useState(false);
+
     const handleClose = () => {
         setOpen(false)
     }
+
+    React.useEffect(() => {
+        setHydrated(true);
+    }, []);
   
+    if (!hydrated) return null;
+    
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission(element?.primary)}>
@@ -60,7 +69,10 @@ export default (element, index) => {
                     </Typography>
                     <hr />
                   </Grid2>
-                  <For func={printFields} list={element.data} shared={element.data}/>
+                  {/* <For func={printFields} list={element.data} shared={element.data}/> */}
+                  {
+                    element?.data?.map((el, idx) => <PrintFields key={idx} element={el} index={idx} shared={element.data} />)
+                  }
                 </Grid2>
                 <CheckboxesWithText data={element?.primary} globalState={globalState}/>
               </Grid2>
@@ -69,24 +81,24 @@ export default (element, index) => {
     )
 }
 
-const printFields = (element, index, shared) => {
+const PrintFields = ({ element, index, shared }) => {
     return (
       <React.Fragment key={index}>
         <Show when={true}>
           <>
           <Show when={!element.typeComponent}>
-              {renderField(
-                fieldTraslate[element.tipo],
-                element.texto,
-                element.valor,
-                element,
-                shared,
-                null
-              )}
+            <RenderField 
+              fieldType={fieldTraslate[element.tipo]}
+              labelText={element.texto} 
+              value={element.valor} 
+              element={element} 
+              shared={shared}
+              iframeView={null} 
+            />
           </Show>
   
           <Show when={element.typeComponent}>
-              {renderFieldColapsable(element, shared)}
+              <RenderFieldColapsable element={element} shared={shared} />
           </Show>
           </>
         </Show>
@@ -94,7 +106,7 @@ const printFields = (element, index, shared) => {
     )
 }
   
-const renderFieldColapsable = (element,shared) => {
+const RenderFieldColapsable = ({element,shared}) => {
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
     const [expanded, setExpanded] = React.useState(false);
@@ -115,26 +127,27 @@ const renderFieldColapsable = (element,shared) => {
             <Typography><b>{colapsable2?.texto}</b></Typography>
             </AccordionSummary>
             <AccordionDetails className={classes.containerDetailsAccordion}>
-            <For func={renderColapsable} list={element.data} shared={shared}/>
+            {/* <For func={renderColapsable} list={element.data} shared={shared}/> */}
+            {element?.data?.map((el, idx) => <RenderColapsable key={idx} element={element.data} shared={shared} index={idx} />)}
             </AccordionDetails>
         </Accordion>
     </React.Fragment>
     )
-}
+} 
 
-const renderColapsable = (element, index, shared) => {
+const RenderColapsable = ({element, index, shared}) => {
     return (
         <React.Fragment key={index}>
-        {/* <Show when={firstLevelPermission(element)}> */}
-            {renderField(
-            fieldTraslate[element.tipo],
-            element.texto,
-            element.valor,
-            element,
-            shared,
-            shared[0]?.iframeView
-            )}
-        {/* </Show> */}
+          <Show when={firstLevelPermission(element)}>
+              <RenderField 
+                fieldType={fieldTraslate[element.tipo]}
+                labelText={element.texto} 
+                value={element.valor} 
+                element={element} 
+                shared={shared}
+                iframeView={shared[0]?.iframeView} 
+              />
+          </Show>
         </React.Fragment>
     )
 }
