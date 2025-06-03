@@ -206,7 +206,9 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
             typeComponent: 'colapsable',
             data: item.data,
             id: item.data[0]?.id,
-            groups_fields: item.groups_fields
+            groups_fields: item.groups_fields,
+            menu: item.data?.[0]?.menu ?? null,
+            texto: item.data?.[0]?.texto ?? null,
         });
     })
 
