@@ -36,7 +36,7 @@ import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ fieldType, labelText, value, element, shared, iframeView }) => {
+export default ({ fieldType, labelText, value, element, shared, iframeView, setOpenDialog }: any) => {
     const classes = useStyles();
     const [value_, setValue] = React.useState('');
     const [open, setOpen] = React.useState(false)
@@ -83,7 +83,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView }) =>
       let hasPermission = firstLevelPermission(element)
       let classDisable = { opacity: "0.2"}
       let diabled = {...{...class_,...classDisable}}
-      console.log(diabled)
+
       return hasPermission? class_ : diabled
     }
 
@@ -178,7 +178,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView }) =>
         return <PrintTableAspectos element={element} shared={shared} />
   
       case "Tabla_criterios":
-        return  <PrintTableCriterios element={element} shared={shared} autoSave={autoSave} />
+        return  <PrintTableCriterios setOpenDialog={setOpenDialog} element={element} shared={shared} autoSave={autoSave} />
         
       default:
         return null;

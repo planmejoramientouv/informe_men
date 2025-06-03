@@ -130,6 +130,11 @@ figure {
     background-color: var(--color-primary-background);
 }
 
+.tabla_aspectos {
+    height: auto;
+    max-height: 400px;
+}
+
 /* VarCss */
 :root {
     --theme-primary: #191827;

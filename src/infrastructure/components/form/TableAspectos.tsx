@@ -49,7 +49,7 @@ export default ({ element, shared }) => {
     if (!hydrated) return null;
   
     return (
-        <TableContainer component={Paper}>
+        <TableContainer className="tabla_aspectos" component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
