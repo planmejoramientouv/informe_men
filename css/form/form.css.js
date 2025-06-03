@@ -2,6 +2,10 @@ import { makeStyles } from '@mui/styles';
 
 export default makeStyles(() => ({
     containerForm: {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        zIndex: 1,
         display: 'flex',
         padding: '20px',
         alignItems: 'flex-start',
@@ -9,7 +13,6 @@ export default makeStyles(() => ({
         flexWrap: 'wrap',
         gap: '20px',
         width: '100%',
-        marginTop: '80px',
         height: 'calc(100vh - 80px)',
         '@media (max-width: 700px)': {
             marginLeft: 'unset',
@@ -326,6 +329,7 @@ export default makeStyles(() => ({
         justifyContent: 'start',
         width: '100%',
         maxWidth: '1162px',
+        marginBottom: '20px',
     },
     drawer: {
         width: 240,

@@ -29,7 +29,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
 // Fechts
-import { getValuesKey, replacementsDocsKeys, generatePdf } from '../../../../hooks/fecth/handlers/handlers'
+import { createDocumentGoogle, getValuesKey, replacementsDocsKeys, generatePdf } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { getCookieData } from '../../../../libs/utils/utils'
@@ -59,54 +59,18 @@ export default () => {
             gid: cookie.gid
         })
 
-        const regex = /^{{[a-zA-Z]+}}$/;
+        const regex = /^{{[0-9a-zA-Z_]+}}$/;
         const dataFilter = keysValues.data.filter(item => regex.test(item?.key));
-        const uniqueIds = dataFilter.reduce((acc, current) => {
-            if (!acc.some(item => String(item) === String(current.group))) {
-              acc.push(current.group);
-            }
-            return acc;
-          }, []);
 
-        if (uniqueIds?.length > 0) {
-            let stateSucces = false;
-            let text = ""
-            uniqueIds.map(async (group) => {
-                const groupItems = dataFilter.filter(item => {
-                    return String(item?.group) === String(group)
-                })
+        await createDocumentGoogle({
+            data: dataFilter,
+            email: cookie?.email ?? ""
+        })
 
-                const responseIdUrl = await generatePdf({
-                    data: groupItems,
-                    email: cookie.email ?? ""
-                })
-        
-                const remplacements = await replacementsDocsKeys({
-                    data: keysValues,
-                    newDocId: responseIdUrl.urlDocumento
-                })
-
-                if (remplacements?.status) {
-                    text = "Termiando con Exito"
-                    stateSucces = true
-                } else {
-                    text = "Ha ocurrido un problema"
-                    stateSucces = false
-                }
-
-                // setTimeout(() => {
-                //   setOpenSnak(false)
-                // },1000)
-            })
-            setOpenSnak(true)
-            setTextError("Terminado")
-            setIsError(true)
-        }
-        setTimeout(() => {
-            setIsActiveRequest(false)
-            setLoading(false)
-            setOpenSnak(false)
-        }, 3000);
+        setOpenSnak(true)
+        setTextError("Terminado")
+        setIsError(true)
+        setLoading(false)
     }
 
     const execute = async () => {
