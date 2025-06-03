@@ -16,14 +16,11 @@ import For from '../../../../share/utils/For'
 import RenderField from './RenderField'
 
 // Material - IU
-import Accordion from '@mui/material/Accordion'
-import AccordionDetails from '@mui/material/AccordionDetails'
-import AccordionSummary from '@mui/material/AccordionSummary'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import { Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
 
 // Hooks
 import { useGlobalState } from '../../../../hooks/context'
@@ -45,6 +42,7 @@ export default ({ element, index }) => {
     const [errorText, setErrorText] = React.useState('Guardado Exitoso')
     const { globalState } = useGlobalState()
     const [hydrated, setHydrated] = React.useState(false);
+    const [openDialog, setOpenDialog] = React.useState({});
 
     const handleClose = () => {
         setOpen(false)
@@ -71,7 +69,15 @@ export default ({ element, index }) => {
                   </Grid2>
                   {/* <For func={printFields} list={element.data} shared={element.data}/> */}
                   {
-                    element?.data?.map((el, idx) => <PrintFields key={idx} element={el} index={idx} shared={element.data} />)
+                    element?.data?.map((el, idx) => 
+                      <PrintFields 
+                          key={idx} 
+                          element={el} 
+                          index={idx} 
+                          shared={element.data}
+                          openDialog={openDialog}
+                          setOpenDialog={setOpenDialog}
+                      />)
                   }
                 </Grid2>
                 <CheckboxesWithText data={element?.primary} globalState={globalState}/>
@@ -81,7 +87,7 @@ export default ({ element, index }) => {
     )
 }
 
-const PrintFields = ({ element, index, shared }) => {
+const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
     return (
       <React.Fragment key={index}>
         <Show when={true}>
@@ -93,12 +99,18 @@ const PrintFields = ({ element, index, shared }) => {
               value={element.valor} 
               element={element} 
               shared={shared}
-              iframeView={null} 
+              iframeView={null}
+              setOpenDialog={setOpenDialog}
             />
           </Show>
   
           <Show when={element.typeComponent}>
-              <RenderFieldColapsable element={element} shared={shared} />
+              <RenderFieldColapsable 
+                element={element} 
+                shared={shared}
+                openDialog={openDialog}
+                setOpenDialog={setOpenDialog}
+              />
           </Show>
           </>
         </Show>
@@ -106,36 +118,70 @@ const PrintFields = ({ element, index, shared }) => {
     )
 }
   
-const RenderFieldColapsable = ({element,shared}) => {
+const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => {
+    console.log(element,shared)
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
-    const [expanded, setExpanded] = React.useState(false);
 
-    const handleAccordionChange = () => {
-        shared[0].iframeView = !expanded
-        setExpanded(!expanded);
-    }
+    const handleOpen = () => {
+      setOpenDialog({
+        ...openDialog,
+        [element.id]: true
+      });
+    };
+
+    const handleClose = () => {
+      setOpenDialog({
+        ...openDialog,
+        [element.id]: false
+      });
+    };
 
     return (
     <React.Fragment>
-        <Accordion onChange={handleAccordionChange} className={classes.containerAccordion}>
-            <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1-content"
-            id="panel1-header"
-            >
-            <Typography><b>{colapsable2?.texto}</b></Typography>
-            </AccordionSummary>
-            <AccordionDetails className={classes.containerDetailsAccordion}>
-            {/* <For func={renderColapsable} list={element.data} shared={shared}/> */}
-            {element?.data?.map((el, idx) => <RenderColapsable key={idx} element={element.data} shared={shared} index={idx} />)}
-            </AccordionDetails>
-        </Accordion>
+      <Dialog
+        open={Boolean(openDialog[element.id])}
+        onClose={handleClose}
+        aria-labelledby={`dialog-title-${element.id}`}
+        sx={{
+           width: '100%',
+            '& .MuiDialog-paper': {
+              width: '100%',
+              maxWidth: '1000px',
+              height: '80vh',
+              overflowY: 'auto',
+            },
+        }}
+      >
+        <DialogTitle id={`dialog-title-${element.id}`}>
+          <Typography variant="h6">
+            {colapsable2?.texto || "Detalle"}
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent className={classes.dialogContent}>
+          {element?.data?.map((el, idx) => (
+            <RenderColapsable
+              key={idx}
+              element={el}
+              shared={shared}
+              index={idx}
+            />
+          ))}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </React.Fragment>
     )
 } 
 
 const RenderColapsable = ({element, index, shared}) => {
+  console.log(fieldTraslate[element.tipo], element , "shared", shared)
     return (
         <React.Fragment key={index}>
           <Show when={firstLevelPermission(element)}>

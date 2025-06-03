@@ -351,4 +351,16 @@ export default makeStyles(() => ({
         padding: 3,
         scrollBehavior: 'smooth',
     },
+    dialogContent: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        padding: '20px',
+        '& > div.MuiPaper-root.tabla_aspectos:first-of-type': {
+            display: 'block',
+        },
+        '& > div.MuiPaper-root.tabla_aspectos': {
+            display: 'none',
+        }
+    }
 }));

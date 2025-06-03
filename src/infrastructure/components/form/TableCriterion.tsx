@@ -25,7 +25,7 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ element,shared, onAutoSave }: any) => {
+export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
@@ -117,6 +117,12 @@ export default ({ element,shared, onAutoSave }: any) => {
                 <TableRow
                   key={index}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  onClick={ () => {
+                      setOpenDialog(prev => ({
+                        ...prev,
+                        [row?.id]: true
+                      }));
+                  } }
                 >
                   {/* Tr */}
                   <TableCell component="th" scope="row">
