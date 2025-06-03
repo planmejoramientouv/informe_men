@@ -66,6 +66,7 @@ import Build from '@mui/icons-material/Build'
 import People from '@mui/icons-material/People'
 import HomeWork from '@mui/icons-material/HomeWork'
 import AccountBalance from '@mui/icons-material/AccountBalance'
+import DownloadDoc from '../Docs/Docs'
 
 // Hooks
 import { setCookieRRC, firstLevelPermission } from '../../../../libs/utils/utils'
@@ -146,7 +147,6 @@ const styles = {
     width: "100%",
   },
   drawer: {
-    position: "relative !important",
     zIndex: 12,
     width: drawerWidth,
     "& .MuiDrawer-paper": {
@@ -307,24 +307,19 @@ export default ({ element, index }) => {
 
       const itemFiltered = data.filter((item) => item?.menu);
       const itemFilteredDominacion = data.filter((item) => item?.menu === `${(item?.menu)?.replace("-", "")}-`);
-      console.log("itemFiltered",itemFiltered)
+
       const subMenu = itemFilteredDominacion.map((subItem) => {
         const rawMenuKey = (subItem?.menu || "").replace("-", "");
         const children = itemFiltered.filter(
-          (cand) => {
-            console.log("Cand: ", cand?.menu,  `${rawMenuKey}.1`, cand?.menu === `${rawMenuKey}.1`)
-            return cand?.menu === `${rawMenuKey}.1`
-          }
+          (cand) => cand?.menu === `${rawMenuKey}.1`
         );
 
-        // console.log("Children: ", children)
         return {
           id: subItem.id,
           label: subItem.variables,
           primary: subItem.primary,
           secondary: subItem.secondary,
           menu: subItem.menu,
-          // Array con los datos de los sub‐submenús
           children: children.map((child) => ({
             id: child.id,
             label: child?.texto,
@@ -332,7 +327,6 @@ export default ({ element, index }) => {
             secondary: child.secondary,
             menu: child.menu,
           })),
-          // Booleano para saber si tiene sub‐submenús
           hasChildren: children.length > 0,
         };
       });
@@ -376,7 +370,6 @@ export default ({ element, index }) => {
     ]
 
     const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
-      console.log("Menu ID:", menuId, "Has Submenu:", hasSubmenu, "Index:", index)
       if (hasSubmenu) {
         toggleMenu(menuId)
       } else {
@@ -407,137 +400,138 @@ export default ({ element, index }) => {
         <React.Fragment key={index}>
           <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
             {/* Drawer */}
-          <Drawer variant="permanent" sx={styles.drawer}>
-            <Box sx={styles.drawerContainer}>
-              <List>
-                {menuItems.map((item, idx) => (
-                  <React.Fragment key={item.id}>
-                    {/* === Menú Principal === */}
-                    <ListItem sx={styles.listItem}>
-                      <ListItemButton
-                        sx={{
-                          ...styles.listItemButton,
-                          ...(activeMenu === idx
-                            ? styles.listItemButtonActive
-                            : {}),
-                        }}
-                        onClick={() =>
-                          handleMenuClick(item.id, item.hasSubmenu, idx)
-                        }
-                      >
-                        <ListItemIcon sx={styles.listItemIcon}>
-                          {iconList[idx]}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.label}
-                          sx={styles.listItemText}
-                        />
-                        {/* Mostrar flecha SOLO si hay submenú y su longitud > 0 */}
-                        {item.hasSubmenu && item.submenu.length > 0 && (
-                          expandedMenus.includes(item.id) ? (
-                            <ExpandLess sx={{ color: "#757575" }} />
-                          ) : (
-                            <ExpandMore sx={{ color: "#757575" }} />
-                          )
-                        )}
-                      </ListItemButton>
-                    </ListItem>
+            <Drawer variant="permanent" sx={styles.drawer}>
+              <Box sx={styles.drawerContainer}>
+                <List>
+                  {menuItems.map((item, idx) => (
+                    <React.Fragment key={item.id}>
+                      {/* === Menú Principal === */}
+                      <ListItem sx={styles.listItem}>
+                        <ListItemButton
+                          sx={{
+                            ...styles.listItemButton,
+                            ...(activeMenu === idx
+                              ? styles.listItemButtonActive
+                              : {}),
+                          }}
+                          onClick={() =>
+                            handleMenuClick(item.id, item.hasSubmenu, idx)
+                          }
+                        >
+                          <ListItemIcon sx={styles.listItemIcon}>
+                            {iconList[idx]}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={item.label}
+                            sx={styles.listItemText}
+                          />
+                          {/* Mostrar flecha SOLO si hay submenú y su longitud > 0 */}
+                          {item.hasSubmenu && item.submenu.length > 0 && (
+                            expandedMenus.includes(item.id) ? (
+                              <ExpandLess sx={{ color: "#757575" }} />
+                            ) : (
+                              <ExpandMore sx={{ color: "#757575" }} />
+                            )
+                          )}
+                        </ListItemButton>
+                      </ListItem>
 
-                    {/* === Submenú (Primer Nivel) === */}
-                    {item.submenu.length > 0 && (
-                      <Collapse
-                        in={expandedMenus.includes(item.id)}
-                        timeout="auto"
-                        unmountOnExit
-                      >
-                        <List component="div" disablePadding sx={styles.submenu}>
-                          {item.submenu.map((subItem, subIdx) => {
-                            const subMenuKey = `${item.id}-${subItem.id}`;
-                            return (
-                              <React.Fragment key={subItem.id}>
-                                <ListItem sx={styles.listItem}>
-                                  <ListItemButton
-                                    sx={styles.submenuItem}
-                                    onClick={() =>
-                                      handleSubMenuClick(
-                                        item.id,
-                                        subItem,
-                                        idx,
-                                        subIdx
-                                      )
-                                    }
-                                  >
-                                    <ListItemText
-                                      primary={subItem.label}
-                                      sx={styles.submenuText}
-                                    />
-                                    {/* Flecha de sub‐submenú (segundo nivel) */}
-                                    {subItem.hasChildren &&
-                                      subItem.children.length > 0 && (
-                                        expandedSubMenus.includes(subMenuKey) ? (
-                                          <ExpandLess sx={{ color: "#757575" }} />
-                                        ) : (
-                                          <ExpandMore sx={{ color: "#757575" }} />
+                      {/* === Submenú (Primer Nivel) === */}
+                      {item.submenu.length > 0 && (
+                        <Collapse
+                          in={expandedMenus.includes(item.id)}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <List component="div" disablePadding sx={styles.submenu}>
+                            {item.submenu.map((subItem, subIdx) => {
+                              const subMenuKey = `${item.id}-${subItem.id}`;
+                              return (
+                                <React.Fragment key={subItem.id}>
+                                  <ListItem sx={styles.listItem}>
+                                    <ListItemButton
+                                      sx={styles.submenuItem}
+                                      onClick={() =>
+                                        handleSubMenuClick(
+                                          item.id,
+                                          subItem,
+                                          idx,
+                                          subIdx
                                         )
-                                      )}
-                                  </ListItemButton>
-                                </ListItem>
-
-                                {/* === Sub‐Submenú (Segundo Nivel) === */}
-                                {subItem.children.length > 0 && (
-                                  <Collapse
-                                    in={expandedSubMenus.includes(subMenuKey)}
-                                    timeout="auto"
-                                    unmountOnExit
-                                  >
-                                    <List
-                                      component="div"
-                                      disablePadding
-                                      sx={styles.subsubmenu}
+                                      }
                                     >
-                                      {subItem.children.map((child) => (
-                                        <ListItem
-                                          key={child.id}
-                                          sx={styles.listItem}
-                                        >
-                                          <ListItemButton
-                                            sx={styles.subsubmenuItem}
-                                            onClick={() => {
-                                             
-                                              setActiveMenu(idx);
-                                            }}
+                                      <ListItemText
+                                        primary={subItem.label}
+                                        sx={styles.submenuText}
+                                      />
+                                      {/* Flecha de sub‐submenú (segundo nivel) */}
+                                      {subItem.hasChildren &&
+                                        subItem.children.length > 0 && (
+                                          expandedSubMenus.includes(subMenuKey) ? (
+                                            <ExpandLess sx={{ color: "#757575" }} />
+                                          ) : (
+                                            <ExpandMore sx={{ color: "#757575" }} />
+                                          )
+                                        )}
+                                    </ListItemButton>
+                                  </ListItem>
+
+                                  {/* === Sub‐Submenú (Segundo Nivel) === */}
+                                  {subItem.children.length > 0 && (
+                                    <Collapse
+                                      in={expandedSubMenus.includes(subMenuKey)}
+                                      timeout="auto"
+                                      unmountOnExit
+                                    >
+                                      <List
+                                        component="div"
+                                        disablePadding
+                                        sx={styles.subsubmenu}
+                                      >
+                                        {subItem.children.map((child) => (
+                                          <ListItem
+                                            key={child.id}
+                                            sx={styles.listItem}
                                           >
-                                            <ListItemText
-                                              primary={child.label}
-                                              sx={styles.subsubmenuText}
-                                            />
-                                          </ListItemButton>
-                                        </ListItem>
-                                      ))}
-                                    </List>
-                                  </Collapse>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </List>
-                      </Collapse>
-                    )}
-                  </React.Fragment>
-                ))}
-              </List>
-            </Box>
-          </Drawer>
+                                            <ListItemButton
+                                              sx={styles.subsubmenuItem}
+                                              onClick={() => {
+                                              
+                                                setActiveMenu(idx);
+                                              }}
+                                            >
+                                              <ListItemText
+                                                primary={child.label}
+                                                sx={styles.subsubmenuText}
+                                              />
+                                            </ListItemButton>
+                                          </ListItem>
+                                        ))}
+                                      </List>
+                                    </Collapse>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </List>
+                        </Collapse>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Box>
+            </Drawer>
 
             {/* Main Content */}
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <DownloadDoc />
                 {element?.[activeMenu] != null && (
                   [ element[activeMenu] ]?.map((el, idx) => (
                     <PrintBodyTab key={idx} element={el} index={idx} />
                   )
                 ))}
             </Box>
-            </Box>
+          </Box>
         </React.Fragment>
       )
 }
