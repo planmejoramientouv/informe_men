@@ -148,7 +148,7 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
             '& .MuiDialog-paper': {
               width: '100%',
               maxWidth: '1000px',
-              height: '80vh',
+              height: 'auto',
               overflowY: 'auto',
             },
         }}

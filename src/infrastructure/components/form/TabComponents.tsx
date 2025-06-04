@@ -372,9 +372,8 @@ export default ({ element, index }) => {
     const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
       if (hasSubmenu) {
         toggleMenu(menuId)
-      } else {
-        setActiveMenu(Number(index))
-      }
+      } 
+      setActiveMenu(Number(index))
     }
 
     const handleSubMenuClick = (parentMenuId, subItem, parentIdx, subIdx) => {
@@ -385,9 +384,8 @@ export default ({ element, index }) => {
             ? prev.filter((id) => id !== subMenuKey)
             : [...prev, subMenuKey]
         );
-      } else {
-        setActiveMenu(parentIdx);
-      }
+      } 
+      setActiveMenu(parentIdx);
     };
 
     React.useEffect(() => {
