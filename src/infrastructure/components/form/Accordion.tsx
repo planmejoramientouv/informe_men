@@ -12,13 +12,9 @@ import useStyles from '../../../../css/form/form.css.js'
 
 // Components
 import Show from '../../../../share/utils/Show'
-import For from '../../../../share/utils/For'
 import RenderField from './RenderField'
 
 // Material - IU
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
 
@@ -35,11 +31,7 @@ import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/
 export default ({ element, index }) => {
     if (!element?.primary) return null;
     const classes = useStyles();
-    const [dataSheet,setDataSheet] = React.useState({} as any)
-    const [isLoading, setIsLoading] = React.useState(false)
     const [open, setOpen] = React.useState(false)
-    const [isSuccess, setSuccess] = React.useState(false)
-    const [errorText, setErrorText] = React.useState('Guardado Exitoso')
     const { globalState } = useGlobalState()
     const [hydrated, setHydrated] = React.useState(false);
     const [openDialog, setOpenDialog] = React.useState({});
@@ -144,7 +136,8 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
         onClose={handleClose}
         aria-labelledby={`dialog-title-${element.id}`}
         sx={{
-           width: '100%',
+            width: '100%',
+            zIndex: "1300",
             '& .MuiDialog-paper': {
               width: '100%',
               maxWidth: '1000px',

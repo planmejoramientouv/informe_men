@@ -161,7 +161,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
             </Show>
             {/* @ts-ignore */} 
             <PopUp open={open} onClose={() => setOpen(false)}>
-              <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
+              <Grid2 sx={{ display: `${iframeView? 'none' : 'block'}`}} className={classes.iframe}>
                   <iframe
                     src={element?.valor}
                     width="100%"
