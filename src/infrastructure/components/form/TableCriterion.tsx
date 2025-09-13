@@ -116,7 +116,13 @@ export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
               {printFields?.length > 0 && printFields.map((row, index) => (
                 <TableRow
                   key={index}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  sx={{ 
+                    '&:last-child td, &:last-child th': { border: 0 },
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    }
+                  }}
                   onClick={ () => {
                       setOpenDialog(prev => ({
                         ...prev,
@@ -130,12 +136,13 @@ export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
                   </TableCell>
   
                   <TableCell component="th" scope="row">
-                  <FormControl className={classes.selectInTable}>
-                    <InputLabel>Grado de Cumplimiento</InputLabel>
+                  <FormControl className={classes.selectInTable} variant="outlined">
+                    <InputLabel shrink>Grado de Cumplimiento</InputLabel>
                     <Select
                       disabled={!firstLevelPermission(element)}
                       value={values[index] || ''}
                       onChange={(e) => handleChange(e, index,'select')}
+                      label="Grado de Cumplimiento"
                     >
                       <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
                       <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>
