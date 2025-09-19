@@ -18,13 +18,18 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import IconButton from '@mui/material/IconButton';
 
 // Global Const
 const ASPECTS_TABLE = "tabla_aspectos"
 
-export default ({ element, shared }) => {
+export default ({ element, shared, }) => {
     const [printFields, setPrintFields] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
+
     
     React.useEffect(() => {
       const filterOptions = shared.filter((item) => item?.typeComponent)
@@ -48,7 +53,25 @@ export default ({ element, shared }) => {
 
     if (!hydrated) return null;
   
-    return (
+return (
+  <>
+    <Button
+      variant="contained"
+      onClick={() => setOpen(true)}
+      sx={{ mb: 2, backgroundColor: '#d32f2f', color: 'white', '&:hover': { backgroundColor: '#721212ff' } }}
+      startIcon={<VisibilityIcon sx={{ fontSize: 20 }} />}
+    >
+      MOSTRAR ASPECTOS ({printFields.length})
+    </Button>
+
+    <Dialog
+      open={open}
+      onClose={() => setOpen(false)}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>Aspectos</DialogTitle>
+      <DialogContent>
         <TableContainer className="tabla_aspectos" component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
@@ -69,6 +92,12 @@ export default ({ element, shared }) => {
               ))}
             </TableBody>
           </Table>
-      </TableContainer>
-    )
+        </TableContainer>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpen(false)}>Cerrar</Button>
+      </DialogActions>
+    </Dialog>
+  </>
+);
 }
