@@ -20,12 +20,11 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import IconButton from '@mui/material/IconButton';
 
 // Global Const
 const ASPECTS_TABLE = "tabla_aspectos"
 
-export default ({ element, shared, }) => {
+export default ({ element, shared }) => {
     const [printFields, setPrintFields] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
     const [open, setOpen] = React.useState(false);
