@@ -521,7 +521,7 @@ export default ({ element, index }) => {
             </Drawer>
 
             {/* Main Content */}
-            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ pb: 10, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <DownloadDoc />
                 {element?.[activeMenu] != null && (
                   [ element[activeMenu] ]?.map((el, idx) => (
