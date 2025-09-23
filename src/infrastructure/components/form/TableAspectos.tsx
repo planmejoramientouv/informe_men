@@ -60,7 +60,7 @@ return (
       sx={{ mb: 2, backgroundColor: '#d32f2f', color: 'white', '&:hover': { backgroundColor: '#721212ff' } }}
       startIcon={<VisibilityIcon sx={{ fontSize: 20 }} />}
     >
-      MOSTRAR ASPECTOS ({printFields.length})
+      MOSTRAR ASPECTOS A EVALUAR ({printFields.length})
     </Button>
 
     <Dialog
