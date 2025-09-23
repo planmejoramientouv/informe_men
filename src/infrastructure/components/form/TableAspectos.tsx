@@ -22,7 +22,7 @@ import Paper from '@mui/material/Paper';
 // Global Const
 const ASPECTS_TABLE = "tabla_aspectos"
 
-export default ({ element, shared }) => {
+export default ({ element, shared,htmlId  }) => {
     const [printFields, setPrintFields] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
     
@@ -49,7 +49,8 @@ export default ({ element, shared }) => {
     if (!hydrated) return null;
   
     return (
-        <TableContainer className="tabla_aspectos" component={Paper}>
+        <TableContainer id={htmlId}                          // 👈 ancla
+      sx={{ scrollMarginTop: '88px' }}className="tabla_aspectos" component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>

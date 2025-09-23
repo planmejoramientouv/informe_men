@@ -54,7 +54,9 @@ export default ({ element, index }) => {
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
                         variant="h1"
-                        className={classes.titlePrimary}>
+                        className={classes.titlePrimary}
+                        id="node-section-top"          
+                        sx={{ scrollMarginTop: '88px' }}> 
                         {element?.primary?.texto}
                     </Typography>
                     <hr />
@@ -79,13 +81,17 @@ export default ({ element, index }) => {
     )
 }
 
+const anchorFrom = (el) => el?.id ? `node-${el.id}` : (el?.texto ? `node-${String(el.texto).toLowerCase().replace(/\s+/g, '-')}` : undefined)
+
 const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
+    const htmlId = anchorFrom(element)
     return (
       <React.Fragment key={index}>
         <Show when={true}>
           <>
           <Show when={!element.typeComponent}>
             <RenderField 
+              htmlId={htmlId}
               fieldType={fieldTraslate[element.tipo]}
               labelText={element.texto} 
               value={element.valor} 
@@ -175,10 +181,12 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
 
 const RenderColapsable = ({element, index, shared}) => {
   console.log(fieldTraslate[element.tipo], element , "shared", shared)
+  const htmlId = element?.id ? `node-${element.id}` : undefined
     return (
         <React.Fragment key={index}>
           <Show when={firstLevelPermission(element)}>
               <RenderField 
+                htmlId={htmlId} 
                 fieldType={fieldTraslate[element.tipo]}
                 labelText={element.texto} 
                 value={element.valor} 

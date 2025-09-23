@@ -369,23 +369,50 @@ export default ({ element, index }) => {
       <Settings />,
     ]
 
+    const [pendingAnchor, setPendingAnchor] = React.useState<string | null>(null);
+
+    const scrollToAnchor = React.useCallback((id: string) => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+
+    React.useEffect(() => {
+      if (!pendingAnchor) return;
+      let tries = 0;
+      const t = setInterval(() => {
+        const el = document.getElementById(pendingAnchor);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          clearInterval(t);
+          setPendingAnchor(null);
+        }
+        // reintenta un poco por si aún no montó el DOM
+        if (++tries > 20) {
+          clearInterval(t);
+          setPendingAnchor(null);
+        }
+      }, 100);
+      return () => clearInterval(t);
+    }, [pendingAnchor, activeMenu]);
+
+
     const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
       if (hasSubmenu) {
         toggleMenu(menuId)
       } 
       setActiveMenu(Number(index))
+      setPendingAnchor('node-section-top');
     }
 
     const handleSubMenuClick = (parentMenuId, subItem, parentIdx, subIdx) => {
       const subMenuKey = `${parentMenuId}-${subItem.id}`;
       if (subItem.hasChildren) {
         setExpandedSubMenus((prev) =>
-          prev.includes(subMenuKey)
-            ? prev.filter((id) => id !== subMenuKey)
-            : [...prev, subMenuKey]
+          prev.includes(subMenuKey) ? prev.filter((id) => id !== subMenuKey) : [...prev, subMenuKey]
         );
-      } 
+      }
       setActiveMenu(parentIdx);
+      setPendingAnchor(`node-${subItem.id}`); // 👈 scroll directo a ese bloque
     };
 
     React.useEffect(() => {
@@ -496,6 +523,7 @@ export default ({ element, index }) => {
                                               onClick={() => {
                                               
                                                 setActiveMenu(idx);
+                                                setPendingAnchor(`node-${child.id}`);
                                               }}
                                             >
                                               <ListItemText
