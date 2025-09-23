@@ -24,7 +24,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 // Global Const
 const ASPECTS_TABLE = "tabla_aspectos"
 
-export default ({ element, shared }) => {
+export default ({ element, shared,htmlId  }) => {
     const [printFields, setPrintFields] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
     const [open, setOpen] = React.useState(false);
@@ -71,7 +71,7 @@ return (
     >
       <DialogTitle>Aspectos</DialogTitle>
       <DialogContent>
-        <TableContainer className="tabla_aspectos" component={Paper}>
+        <TableContainer id={htmlId} sx={{ scrollMarginTop: '88px' }} className="tabla_aspectos" component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
