@@ -23,8 +23,6 @@ import { useGlobalState } from '../../../../hooks/context'
 // Def
 export default () => {
     const [formData, setFormData] = React.useState([])
-    const [sizeRows, setSizeRows] = React.useState([])
-    const [sizeColums, setSizeColumns] = React.useState(0)
     const [hydrated, setHydrated] = React.useState(false);
     const { globalState } = useGlobalState()
 

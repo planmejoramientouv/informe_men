@@ -36,7 +36,7 @@ import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ fieldType, labelText, value, element, shared, iframeView, setOpenDialog }: any) => {
+export default ({ fieldType, labelText, value, element, shared, iframeView, setOpenDialog, htmlId }: any) => {
     const classes = useStyles();
     const [value_, setValue] = React.useState('');
     const [open, setOpen] = React.useState(false)
@@ -102,6 +102,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
         return (
           <Grid2 sx={{ width: '100%' }}>
             <Typography
+              id={htmlId}
               variant="h1"
               className={classes.titleInputs}
             >
@@ -114,6 +115,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
         return (
           <Grid2 sx={{ width: '100%' }}>
               <Typography
+                id={htmlId}
                 variant="h2"
                 className={classes.titleInputs}
               >
@@ -126,6 +128,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
       case "text":
         return (
           <TextField
+            id={htmlId}
             variant="outlined"
             className={classes.inputText}
             onInput={handlerTextField}
@@ -138,7 +141,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
   
       case "textArea":
         return (
-            <Grid2 className={classDisabledTextArea()}>
+            <Grid2 id={htmlId} className={classDisabledTextArea()}>
                 <label><b>{labelText}</b></label>
                 <ReactQuill 
                     value={valueTextArea} 
@@ -153,7 +156,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
   
       case "TableExtra":
         return (
-          <Grid2 sx={classDisabledTableExtra()}>
+          <Grid2 id={htmlId} sx={classDisabledTableExtra()}>
             <Show when={firstLevelPermission(element)}>
               <Button sx={{ background: '#C8102E', color: 'white'}} onClick={() => setOpen(true)}>
                   <label><b>{labelText}</b></label>
@@ -161,7 +164,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
             </Show>
             {/* @ts-ignore */} 
             <PopUp open={open} onClose={() => setOpen(false)}>
-              <Grid2 sx={{ display: `${iframeView? 'block' : 'none'}`}} className={classes.iframe}>
+              <Grid2 sx={{ display: `${iframeView? 'none' : 'block'}`}} className={classes.iframe}>
                   <iframe
                     src={element?.valor}
                     width="100%"
@@ -175,10 +178,10 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
       );
   
       case "tabla_aspectos":  
-        return <PrintTableAspectos element={element} shared={shared} />
+        return <PrintTableAspectos htmlId={htmlId} element={element} shared={shared} />
   
       case "Tabla_criterios":
-        return  <PrintTableCriterios setOpenDialog={setOpenDialog} element={element} shared={shared} autoSave={autoSave} />
+        return  <PrintTableCriterios htmlId={htmlId} setOpenDialog={setOpenDialog} element={element} shared={shared} autoSave={autoSave} />
         
       default:
         return null;
