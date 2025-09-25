@@ -25,7 +25,7 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
+export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
@@ -102,7 +102,7 @@ export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
     if (!hydrated) return null;
 
     return (
-        <TableContainer component={Paper}>
+        <TableContainer id={htmlId} sx={{ scrollMarginTop: '88px' }}  component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -116,7 +116,13 @@ export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
               {printFields?.length > 0 && printFields.map((row, index) => (
                 <TableRow
                   key={index}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  sx={{ 
+                    '&:last-child td, &:last-child th': { border: 0 },
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    }
+                  }}
                   onClick={ () => {
                       setOpenDialog(prev => ({
                         ...prev,
@@ -130,12 +136,13 @@ export default ({ element,shared, onAutoSave, setOpenDialog }: any) => {
                   </TableCell>
   
                   <TableCell component="th" scope="row">
-                  <FormControl className={classes.selectInTable}>
-                    <InputLabel>Grado de Cumplimiento</InputLabel>
+                  <FormControl className={classes.selectInTable} variant="outlined">
+                    <InputLabel shrink>Grado de Cumplimiento</InputLabel>
                     <Select
                       disabled={!firstLevelPermission(element)}
                       value={values[index] || ''}
                       onChange={(e) => handleChange(e, index,'select')}
+                      label="Grado de Cumplimiento"
                     >
                       <MenuItem value="Plenamente (A)">Plenamente (A)</MenuItem>
                       <MenuItem value="Alto Grado (B)">Alto Grado (B)</MenuItem>

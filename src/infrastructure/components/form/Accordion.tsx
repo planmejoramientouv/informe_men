@@ -12,13 +12,9 @@ import useStyles from '../../../../css/form/form.css.js'
 
 // Components
 import Show from '../../../../share/utils/Show'
-import For from '../../../../share/utils/For'
 import RenderField from './RenderField'
 
 // Material - IU
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
 
@@ -35,11 +31,7 @@ import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/
 export default ({ element, index }) => {
     if (!element?.primary) return null;
     const classes = useStyles();
-    const [dataSheet,setDataSheet] = React.useState({} as any)
-    const [isLoading, setIsLoading] = React.useState(false)
     const [open, setOpen] = React.useState(false)
-    const [isSuccess, setSuccess] = React.useState(false)
-    const [errorText, setErrorText] = React.useState('Guardado Exitoso')
     const { globalState } = useGlobalState()
     const [hydrated, setHydrated] = React.useState(false);
     const [openDialog, setOpenDialog] = React.useState({});
@@ -62,7 +54,9 @@ export default ({ element, index }) => {
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
                         variant="h1"
-                        className={classes.titlePrimary}>
+                        className={classes.titlePrimary}
+                        id="node-section-top"          
+                        sx={{ scrollMarginTop: '88px' }}> 
                         {element?.primary?.texto}
                     </Typography>
                     <hr />
@@ -87,13 +81,17 @@ export default ({ element, index }) => {
     )
 }
 
+const anchorFrom = (el) => el?.id ? `node-${el.id}` : (el?.texto ? `node-${String(el.texto).toLowerCase().replace(/\s+/g, '-')}` : undefined)
+
 const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
+    const htmlId = anchorFrom(element)
     return (
       <React.Fragment key={index}>
         <Show when={true}>
           <>
           <Show when={!element.typeComponent}>
             <RenderField 
+              htmlId={htmlId}
               fieldType={fieldTraslate[element.tipo]}
               labelText={element.texto} 
               value={element.valor} 
@@ -144,7 +142,8 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
         onClose={handleClose}
         aria-labelledby={`dialog-title-${element.id}`}
         sx={{
-           width: '100%',
+            width: '100%',
+            zIndex: "1300",
             '& .MuiDialog-paper': {
               width: '100%',
               maxWidth: '1000px',
@@ -160,19 +159,43 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
         </DialogTitle>
 
         <DialogContent className={classes.dialogContent}>
-          {element?.data?.map((el, idx) => (
-            <RenderColapsable
-              key={idx}
-              element={el}
-              shared={shared}
-              index={idx}
-            />
-          ))}
+          {element?.data?.map((el, idx) => {
+            // Si no es tabla_aspectos, muéstralo normal
+            if (el.tipo !== "tabla_aspectos") {
+              return (
+                <RenderColapsable
+                  key={idx}
+                  element={el}
+                  shared={shared}
+                  index={idx}
+                />
+              );
+            }
+
+            // Si es tabla_aspectos, mostrar solo el primero
+            const isFirstAspect = element.data.findIndex(
+              (item) => item.tipo === "tabla_aspectos"
+            ) === idx;
+            if (isFirstAspect) {
+              return (
+                <RenderColapsable
+                  key={idx}
+                  element={el}
+                  shared={shared}
+                  index={idx}
+                />
+              );
+            }
+
+            // Ignorar los demás
+            return null;
+          })}
         </DialogContent>
+
 
         <DialogActions>
           <Button onClick={handleClose} color="primary">
-            Cerrar
+            Guardar y Cerrar
           </Button>
         </DialogActions>
       </Dialog>
@@ -182,10 +205,12 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
 
 const RenderColapsable = ({element, index, shared}) => {
   console.log(fieldTraslate[element.tipo], element , "shared", shared)
+  const htmlId = element?.id ? `node-${element.id}` : undefined
     return (
         <React.Fragment key={index}>
           <Show when={firstLevelPermission(element)}>
               <RenderField 
+                htmlId={htmlId} 
                 fieldType={fieldTraslate[element.tipo]}
                 labelText={element.texto} 
                 value={element.valor} 

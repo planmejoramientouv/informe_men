@@ -5,7 +5,7 @@
 
 import React from "react";
 import styles from "../../../css/home/home.module.css";
-import Popup from "../components/popup/popup";
+import Popup from "../components/Popup/Popup";
 import Slider from "../components/slider/Slider";
 import Show from "../../../share/utils/Show";
 import { preview } from "vite";
