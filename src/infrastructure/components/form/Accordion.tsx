@@ -159,19 +159,43 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
         </DialogTitle>
 
         <DialogContent className={classes.dialogContent}>
-          {element?.data?.map((el, idx) => (
-            <RenderColapsable
-              key={idx}
-              element={el}
-              shared={shared}
-              index={idx}
-            />
-          ))}
+          {element?.data?.map((el, idx) => {
+            // Si no es tabla_aspectos, muéstralo normal
+            if (el.tipo !== "tabla_aspectos") {
+              return (
+                <RenderColapsable
+                  key={idx}
+                  element={el}
+                  shared={shared}
+                  index={idx}
+                />
+              );
+            }
+
+            // Si es tabla_aspectos, mostrar solo el primero
+            const isFirstAspect = element.data.findIndex(
+              (item) => item.tipo === "tabla_aspectos"
+            ) === idx;
+            if (isFirstAspect) {
+              return (
+                <RenderColapsable
+                  key={idx}
+                  element={el}
+                  shared={shared}
+                  index={idx}
+                />
+              );
+            }
+
+            // Ignorar los demás
+            return null;
+          })}
         </DialogContent>
+
 
         <DialogActions>
           <Button onClick={handleClose} color="primary">
-            Cerrar
+            Guardar y Cerrar
           </Button>
         </DialogActions>
       </Dialog>
