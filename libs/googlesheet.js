@@ -5,6 +5,9 @@ const CLIENT_EMAIL = process.env.NEXT_PUBLIC_CLIENT_EMAIL;
 const PRIVATE_KEY = process.env.NEXT_PUBLIC_PRIVATE_KEY.replace(/\\n/g, '\n');
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_ID;
+const SHEET_PERMISOS = process.env.PERMISOS_SHEET_NAME || 'PERMISOS';
+const DRIVE_PARENT_FOLDER_ID = process.env.DRIVE_PARENT_FOLDER_ID || '1qs_oTozwSC4GTtFaeoHo4PMwrxcAEcQT'; // <- tu carpeta padre
+const TEMPLATE_SPREADSHEET_ID = process.env.TEMPLATE_SPREADSHEET_ID || '1o6hX_kN4e8GqNUPoMOjp-g6G4QYpQk2M2N5996Yu3Ws';
 
 const jwtClient = new google.auth.JWT(
     CLIENT_EMAIL,
@@ -237,4 +240,320 @@ export const generateVarSaveDoc = async ({ sheetId, gid }) => {
         console.log(e)
     }
     return response_
+}
+
+/**
+ * Lee la hoja PERMISOS y devuelve todas las filas (como arreglo de arreglos)
+ */
+async function readPermisosRaw(sheets) {
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${SHEET_PERMISOS}!A:H`,
+  });
+  return data.values || [];
+}
+
+/**
+ * Calcula el próximo ID buscando el máximo en la columna A (numérico)
+ */
+function nextIdFromValues(values) {
+  // values[0] = headers. Los datos empiezan en values[1]
+  let maxId = 0;
+  for (let i = 1; i < values.length; i++) {
+    const raw = values[i][0]; // Columna A
+    const n = Number(raw);
+    if (!Number.isNaN(n) && n > maxId) maxId = n;
+  }
+  return maxId + 1;
+}
+
+
+/**
+ * Agrega una fila a PERMISOS (A:H)
+ * Campos soportados:
+ *  - email (req)
+ *  - nivel (opcional, string)
+ *  - rol (req)          -> 'admin' | 'director' | 'lectura' | etc.
+ *  - programa (opcional)
+ *  - proceso (req)      -> 'RRC' | 'RAAC' | etc.
+ *  - year (opcional)    -> default: año actual
+ *  - estado (opcional)  -> default: 'Activo'
+ */
+export async function appendPermissionRow({ email, nivel = '', rol, programa = '', proceso, year, estado = 'Activo' }) {
+  if (!email || !rol || !proceso) {
+    throw new Error('Faltan campos obligatorios: email, rol, proceso');
+  }
+
+  const auth = /* reutiliza tu jwtClient existente */ await getAuth(); // <- si ya tienes un helper, úsalo. De lo contrario, crea el JWT igual que en tus otras funciones.
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Leer para calcular el próximo ID
+  const values = await readPermisosRaw(sheets);
+  const nextId = nextIdFromValues(values);
+  const y = year || new Date().getFullYear();
+
+  // 2) Append (A:H)
+  const row = [
+    String(nextId),  // A: ID
+    String(email),   // B: email
+    String(nivel),   // C: nivel
+    String(rol),     // D: rol
+    String(programa),// E: programa
+    String(proceso), // F: proceso
+    String(y),       // G: year
+    String(estado),  // H: estado
+  ];
+
+  const res = await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${SHEET_PERMISOS}!A:H`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values: [row] },
+  });
+
+  return { id: nextId, updatedRange: res.data.updates?.updatedRange || null };
+}
+
+/**
+ * Actualiza una fila existente por ID (columna A)
+ * Solo sobreescribe B:H (email, nivel, rol, programa, proceso, year, estado)
+ */
+export async function updatePermissionRowById({ id, email, nivel = '', rol, programa = '', proceso, year, estado }) {
+  if (!id) throw new Error('Falta ID');
+  const auth = /* jwtClient o helper */ await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Encontrar la fila (rowIndex) cuyo A == id
+  const values = await readPermisosRaw(sheets);
+  let targetRow = -1;
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      targetRow = i + 1; // +1 por 1-based index de Sheets (y otra +1 por headers)
+      break;
+    }
+  }
+  if (targetRow === -1) throw new Error(`No se encontró fila con ID=${id}`);
+
+  // Armar payload a actualizar (B:H)
+  const y = year ?? values[targetRow - 1]?.[6] ?? new Date().getFullYear(); // conserva si no llega
+  const row = [
+    email   ?? values[targetRow - 1]?.[1] ?? '',
+    nivel   ?? values[targetRow - 1]?.[2] ?? '',
+    rol     ?? values[targetRow - 1]?.[3] ?? '',
+    programa?? values[targetRow - 1]?.[4] ?? '',
+    proceso ?? values[targetRow - 1]?.[5] ?? '',
+    String(y),
+    estado  ?? values[targetRow - 1]?.[7] ?? 'Activo',
+  ];
+
+  const range = `${SHEET_PERMISOS}!B${targetRow}:H${targetRow}`;
+  const res = await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range,
+    valueInputOption: 'RAW',
+    requestBody: { values: [row] },
+  });
+
+  return { id, updatedRange: res.data.updatedRange || range };
+}
+
+/**
+ * Si no tienes un helper global para auth, crea uno:
+ */
+async function getAuth() {
+  // Usa las mismas vars y scopes que ya usas en este archivo (SERVICE ACCOUNT)
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL;
+  const privateKey  = (process.env.GOOGLE_PRIVATE_KEY || process.env.NEXT_PUBLIC_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+  const jwt = new google.auth.JWT(
+    clientEmail,
+    null,
+    privateKey,
+    [
+      'https://www.googleapis.com/auth/spreadsheets',
+      'https://www.googleapis.com/auth/drive',
+    ]
+  );
+  await jwt.authorize();
+  return jwt;
+}
+
+
+export async function listProgramsFromIndex({ spreadsheetId, sheetName, column = 'D' }) {
+  const auth = await getAuth(); // usa tu helper o tu jwtClient ya existente
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // D2:D (toda la columna desde fila 2)
+  const range = `${sheetName}!${column}2:${column}`;
+
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range,
+    // valueRenderOption, etc. si te interesa; por defecto está bien
+  });
+
+  const raw = data.values || [];
+  // flatten + filtrar vacíos
+  const list = raw
+    .map((row) => (Array.isArray(row) ? row[0] : row))
+    .map((v) => (typeof v === 'string' ? v.trim() : v))
+    .filter((v) => v && String(v).length > 0);
+
+  return list;
+}
+
+export async function listProgramsWithPeriod({
+  spreadsheetId,
+  sheetName,
+  programCol = 'D',
+  periodCol, // <- E | F | G según caso
+}) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // Traemos un rango de D..periodCol (desde fila 2)
+  const range = `${sheetName}!${programCol}2:${periodCol}`;
+  const { data } = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+  const rows = data.values || [];
+
+  // Mapea cada fila a { program, period }
+  const colSpan = periodCol.charCodeAt(0) - programCol.charCodeAt(0); // 0..?
+  const programIdx = 0;
+  const periodIdx = colSpan; // última columna del rango
+
+  return rows
+    .map(r => ({
+      program: (r[programIdx] || '').toString().trim(),
+      period:  (r[periodIdx]  || '').toString().trim(),
+    }))
+    .filter(x => x.program); // sin vacíos
+}
+
+
+async function createDriveFolder({ name, parentId }) {
+  const auth = await getAuth();
+  const drive = google.drive({ version: 'v3', auth });
+  const { data } = await drive.files.create({
+    requestBody: {
+      name,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId],
+    },
+    fields: 'id, webViewLink',
+  });
+  return { id: data.id, url: data.webViewLink };
+}
+
+// Copia el spreadsheet de plantilla a una carpeta y lo renombra
+async function copySpreadsheetToFolder({ templateId, name, parentId }) {
+  const auth = await getAuth();
+  const drive = google.drive({ version: 'v3', auth });
+  const { data } = await drive.files.copy({
+    fileId: templateId,
+    requestBody: {
+      name,
+      parents: [parentId],
+      mimeType: 'application/vnd.google-apps.spreadsheet',
+    },
+    fields: 'id, webViewLink',
+  });
+  return { id: data.id, url: data.webViewLink };
+}
+
+// Obtiene el gid (sheetId) de una pestaña por título
+async function getSheetGidByTitle({ spreadsheetId, title }) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const { data } = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties(sheetId,title)',
+  });
+  const hit = (data.sheets || []).find(s => s.properties.title === title);
+  return hit?.properties?.sheetId ?? null;
+}
+
+// Construye URL con gid
+function buildSheetUrl({ spreadsheetId, gid }) {
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?gid=${gid}#gid=${gid}`;
+}
+
+// Crea carpeta + copia archivo + resuelve gid y arma URLs
+export async function createProgramAssets({ programa, tipo, sede }) {
+  // 1) Carpeta
+  const folderName = `${programa} - ${tipo.toUpperCase()} - ${sede}`;
+  const folder = await createDriveFolder({
+    name: folderName,
+    parentId: DRIVE_PARENT_FOLDER_ID,
+  });
+
+  // 2) Copiar spreadsheet
+  const fileName = `Informe MEN - ${programa}`;
+  const file = await copySpreadsheetToFolder({
+    templateId: TEMPLATE_SPREADSHEET_ID,
+    name: fileName,
+    parentId: folder.id,
+  });
+
+  // 3) Hoja a usar según tipo
+  const sheetTitle = (String(tipo).toUpperCase() === 'RRC')
+    ? 'Datos Generales RRC'
+    : 'Datos Generales RAAC';
+
+  const gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: sheetTitle });
+  const sheetUrl = gid ? buildSheetUrl({ spreadsheetId: file.id, gid }) : file.url;
+
+  return {
+    folderId: folder.id,
+    folderUrl: folder.url,
+    fileId: file.id,
+    fileUrl: file.url,
+    gid,
+    urlExcel: sheetUrl, // lista para usar como url_exel
+  };
+}
+
+
+/**
+ * Agrega una fila a PERMISOS con URLs (A:J)
+ * A: ID (autoincrement)
+ * B: email
+ * C: nivel (sede)
+ * D: rol
+ * E: programa
+ * F: proceso
+ * G: year (periodo)
+ * H: estado
+ * I: url_carpeta
+ * J: url_exel
+ */
+export async function appendPermissionRowWithUrls({
+  email, nivel = '', rol, programa = '', proceso, year, estado = 'Activo', url_carpeta = '', url_exel = '',
+}) {
+  if (!email || !rol || !proceso) throw new Error('Faltan campos obligatorios: email, rol, proceso');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const values = await readPermisosRaw(sheets);
+  const nextId = nextIdFromValues(values);
+  const y = year || new Date().getFullYear();
+
+  const row = [
+    String(nextId), String(email), String(nivel), String(rol), String(programa),
+    String(proceso), String(y), String(estado), String(url_carpeta), String(url_exel),
+  ];
+
+  const res = await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${SHEET_PERMISOS}!A:J`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values: [row] },
+  });
+
+  return {
+    id: nextId,
+    updatedRange: res.data.updates?.updatedRange || null,
+  };
 }
