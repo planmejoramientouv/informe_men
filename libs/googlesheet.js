@@ -630,3 +630,36 @@ export async function appendPermissionRowWithUrls({
     updatedRange: res.data.updates?.updatedRange || null,
   };
 }
+
+// Normaliza texto para comparar (trim + minúsculas)
+function norm(s) {
+  return (s ?? '').toString().trim().toLowerCase();
+}
+
+/**
+ * Devuelve un Set con claves "programa|periodo" ya existentes
+ * filtrando por proceso (RRC/RAAC) y estado Activo.
+ */
+export async function getExistingProgramPeriodKeys({ proceso }) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const values = await readPermisosRaw(sheets); // usa tu helper existente
+  // Cabeceras en fila 1: A:id B:email C:nivel D:rol E:programa F:proceso G:year H:estado ...
+  const rows = values.slice(1);
+
+  const set = new Set();
+  for (const r of rows) {
+    const programa = r?.[4] ?? '';
+    const proc     = r?.[5] ?? '';
+    const year     = r?.[6] ?? ''; // aquí guardas el periodo
+    const estado   = r?.[7] ?? '';
+
+    if (norm(estado) !== 'activo') continue;
+    if (norm(proc) !== norm(proceso)) continue;
+
+    const key = `${norm(programa)}|${norm(year)}`;
+    set.add(key);
+  }
+  return set;
+}
