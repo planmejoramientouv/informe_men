@@ -569,7 +569,13 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
     await deleteSheetById({ spreadsheetId: file.id, sheetId: oppositeGid });
   }
 
-  // 7) Construir URL con el (posible) mismo gid
+  // 7) LIMPIAR COLUMNA G EN LA HOJA RENOMBRADA
+  const colToClear = CLEAR_COL_BY_TIPO[String(tipo).toUpperCase()] || null;
+  if (colToClear) {
+    await clearColumn({ spreadsheetId: file.id, sheetTitle: newSheetTitle, column: colToClear, startRow: 2 });
+  }
+
+  // 8) Construir URL con el (posible) mismo gid
   const sheetUrl = gid
     ? buildSheetUrl({ spreadsheetId: file.id, gid })
     : file.url;
@@ -584,7 +590,6 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
     urlExcel: sheetUrl,
   };
 }
-
 
 
 /**
@@ -662,4 +667,17 @@ export async function getExistingProgramPeriodKeys({ proceso }) {
     set.add(key);
   }
   return set;
+}
+const CLEAR_COL_BY_TIPO = {
+  RRC: 'G',
+  RAAC: 'F',
+};
+
+// Borra valores en G2:G de una hoja por título
+export async function clearColumn({ spreadsheetId, sheetTitle, column = 'G', startRow = 2 }) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const range = `${sheetTitle}!${column}${startRow}:${column}`;
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range });
+  return true;
 }
