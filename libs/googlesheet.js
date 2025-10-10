@@ -478,16 +478,65 @@ function buildSheetUrl({ spreadsheetId, gid }) {
   return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?gid=${gid}#gid=${gid}`;
 }
 
+// Helper para renombrar la hoja 
+async function renameSheet({ spreadsheetId, sheetId, newTitle }) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // Sanitizar título (Sheets no permite algunos caracteres / longitud)
+  const safeTitle = String(newTitle)
+    .replace(/[\\/*?:\[\]]/g, ' ') // caracteres prohibidos
+    .slice(0, 100); // límite razonable
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          updateSheetProperties: {
+            properties: {
+              sheetId,
+              title: safeTitle,
+            },
+            fields: 'title',
+          },
+        },
+      ],
+    },
+  });
+  return safeTitle;
+}
+
+async function deleteSheetById({ spreadsheetId, sheetId }) {
+  if (!sheetId) return false;
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteSheet: { sheetId }
+        }
+      ],
+    },
+  });
+  return true;
+}
+
 // Crea carpeta + copia archivo + resuelve gid y arma URLs
-export async function createProgramAssets({ programa, tipo, sede }) {
-  // 1) Carpeta
+export async function createProgramAssets({ programa, tipo, sede, periodo }) {
+  // 1) Crea carpeta
+  const isRRC = String(tipo).toUpperCase() === 'RRC';
+  const oppositeTitle = isRRC ? 'Datos Generales RAAC' : 'Datos Generales RRC';
   const folderName = `${programa} - ${tipo.toUpperCase()} - ${sede}`;
   const folder = await createDriveFolder({
     name: folderName,
     parentId: DRIVE_PARENT_FOLDER_ID,
   });
 
-  // 2) Copiar spreadsheet
+  // 2) Copia spreadsheet
   const fileName = `Informe MEN - ${programa}`;
   const file = await copySpreadsheetToFolder({
     templateId: TEMPLATE_SPREADSHEET_ID,
@@ -495,13 +544,35 @@ export async function createProgramAssets({ programa, tipo, sede }) {
     parentId: folder.id,
   });
 
-  // 3) Hoja a usar según tipo
-  const sheetTitle = (String(tipo).toUpperCase() === 'RRC')
-    ? 'Datos Generales RRC'
-    : 'Datos Generales RAAC';
+  // 3) Determinar título de la hoja a usar
+  const baseTitle =
+    String(tipo).toUpperCase() === 'RRC'
+      ? 'Datos Generales RRC'
+      : 'Datos Generales RAAC';
 
-  const gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: sheetTitle });
-  const sheetUrl = gid ? buildSheetUrl({ spreadsheetId: file.id, gid }) : file.url;
+  // 4) Obtener sheetId (gid) de esa hoja
+  let gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: baseTitle });
+
+  // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo>"
+  const newSheetTitle = `${programa} - ${periodo || ''}`.trim();
+  if (gid) {
+    await renameSheet({
+      spreadsheetId: file.id,
+      sheetId: gid,
+      newTitle: newSheetTitle,
+    });
+  }
+
+    // 6) borrar la hoja opuesta si existe
+  const oppositeGid = await getSheetGidByTitle({ spreadsheetId: file.id, title: oppositeTitle });
+  if (oppositeGid) {
+    await deleteSheetById({ spreadsheetId: file.id, sheetId: oppositeGid });
+  }
+
+  // 7) Construir URL con el (posible) mismo gid
+  const sheetUrl = gid
+    ? buildSheetUrl({ spreadsheetId: file.id, gid })
+    : file.url;
 
   return {
     folderId: folder.id,
@@ -509,9 +580,11 @@ export async function createProgramAssets({ programa, tipo, sede }) {
     fileId: file.id,
     fileUrl: file.url,
     gid,
-    urlExcel: sheetUrl, // lista para usar como url_exel
+    sheetTitle: newSheetTitle,
+    urlExcel: sheetUrl,
   };
 }
+
 
 
 /**

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     }
 
     // 1) Drive + Spreadsheet
-    const assets = await createProgramAssets({ programa, tipo, sede });
+    const assets = await createProgramAssets({ programa, tipo, sede, periodo  });
     // assets: { folderUrl, urlExcel, ... }
 
     // 2) Insertar fila en PERMISOS con URLs
