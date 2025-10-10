@@ -126,26 +126,54 @@ export default function CreateItemCard({
 
   return (
     <>
-      {/* Tarjeta clickable */}
-      <Paper
-        className={classes.forItemsPanel}
+      <Button
         onClick={handleOpen}
-        elevation={1}
+        variant="outlined"
+        fullWidth
+        startIcon={<AddCircleOutlineIcon />}
         sx={{
-          borderTop: `6px solid ${borderColor}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          cursor: 'pointer',
-          p: 2,
+          justifyContent: 'flex-start',
+          textTransform: 'none',
+          borderRadius: 2,
+          borderStyle: 'dashed',
+          borderWidth: 2,
+          borderColor: 'divider',
+          py: 2.5,
+          px: 2.5,
+          gap: 1.5,
+          position: 'relative', // necesario para la banda superior
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 6,
+            backgroundColor: borderColor,
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+          },
+          '&:hover': {
+            borderColor: borderColor,
+            backgroundColor: 'action.hover',
+          },
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: borderColor,
+            outlineOffset: 2,
+          },
         }}
       >
-        <AddCircleOutlineIcon sx={{ fontSize: 34 }} />
-        <Box>
-          <Typography variant="h2">{title}</Typography>
-          {hint && <Typography variant="body2" sx={{ opacity: 0.8 }}>{hint}</Typography>}
+        <Box sx={{ textAlign: 'left' }}>
+          <Typography variant="h6">{title}</Typography>
+          {hint && (
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              {hint}
+            </Typography>
+          )}
         </Box>
-      </Paper>
+      </Button>
+      
 
       {/* Modal */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
