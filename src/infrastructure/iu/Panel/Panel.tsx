@@ -21,19 +21,24 @@ export default () => {
     React.useEffect(() => {
         setHydrated(true);
     }, []);
+    
 
     const handleCreateSave = async ({ tipo, sede, programa, periodo, email }) => {
-        const res = await fetch('/api/createProgram', {
+          try {
+            const res = await fetch('/api/createProgram', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            tipo, sede, programa, periodo, email,
-            rol: 'director', estado: 'Activo',
-            }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.status) throw new Error(json?.error || 'Falló createProgram');
-        // refrescar listado si quieres...
+            body: JSON.stringify({ tipo, sede, programa, periodo, email, rol: 'director', estado: 'Activo' }),
+            });
+            const json = await res.json();
+            if (!res.ok || !json?.status) throw new Error(json?.error || 'Falló createProgram');
+
+            setRefreshKey(k => k + 1);
+            return json; // opcional, por si lo usas después
+        } catch (err) {
+            // deja que CreateItemCard muestre el snackbar de error
+            throw err;
+        }
         };
 
 
@@ -42,10 +47,16 @@ export default () => {
             <Show when={hydrated}>
                 <Box className={classes.containerForm}>
                     <Grid2 className={classes.containerFields}>
-                            <Grid2 className={classes.containerPanel}>
-                                <CreateItemCard onSave={handleCreateSave} />
-                                <PanelItems />
-                            </Grid2>
+                        <Grid2 className={classes.containerPanel}>
+                            <CreateItemCard onSave={handleCreateSave} />
+                            <Box sx={{
+                                maxHeight: '100vh',      // ajusta a tu gusto
+                                overflowY: 'auto',
+                                pr: 1,                  // espacio para que no tape el scroll
+                            }}>
+                            <PanelItems key={refreshKey} />
+                            </Box>
+                        </Grid2>
                     </Grid2>
                 </Box>
             </Show>

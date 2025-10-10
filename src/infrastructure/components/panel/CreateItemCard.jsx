@@ -20,7 +20,12 @@ import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 
 import Autocomplete from '@mui/material/Autocomplete';
+
+import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+
 
 const SEDES_BY_TIPO = {
   rrc: ['Regionales', 'Cali'],
@@ -48,9 +53,15 @@ export default function CreateItemCard({
   const [loadingPrograms, setLoadingPrograms] = React.useState(false);
   const [openAuto, setOpenAuto] = React.useState(false);
   const [periodo, setPeriodo] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [snack, setSnack] = React.useState({
+  open: false,
+  message: '',
+  severity: 'success', // 'success' | 'error' | 'info' | 'warning'
+});
 
 
-    React.useEffect(() => {
+  React.useEffect(() => {
     setSede('');
     setPrograma('');
     setProgramasOpts([]);
@@ -81,10 +92,23 @@ export default function CreateItemCard({
     if (!canSave) return;
     const payload = { tipo, sede, programa, periodo, email };
     try {
+      setSaving(true);
       if (typeof onSave === 'function') await onSave(payload);
+      setSnack({
+        open: true,
+        severity: 'success',
+        message: `Creado: ${tipo.toUpperCase()} • ${sede} • ${programa} — ${periodo}`,
+      });
       handleClose();
     } catch (e) {
       console.error(e);
+      setSnack({
+        open: true,
+        severity: 'error',
+        message: `No se pudo crear el proceso: ${tipo.toUpperCase()} • ${sede} • ${programa}.`,
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -274,12 +298,34 @@ export default function CreateItemCard({
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={!canSave /* canSave ya incluye programa/tipo/sede/email */}
+            disabled={saving || !canSave}
+            startIcon={saving ? <CircularProgress size={16} /> : null}
           >
-            Guardar
+            {saving ? 'Guardando…' : 'Guardar'}
           </Button>
         </DialogActions>
       </Dialog>
+      <Backdrop
+        open={saving}
+        sx={{ color: '#fff', zIndex: (t) => t.zIndex.modal + 1 }}
+      >
+        <CircularProgress />
+      </Backdrop>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3500}
+        onClose={() => setSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnack(s => ({ ...s, open: false }))}
+          severity={snack.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
