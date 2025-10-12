@@ -40,6 +40,7 @@ import {
   Collapse,
   alpha,
   ThemeProvider,
+  Button,
   createTheme,
 } from "@mui/material"
 
@@ -295,7 +296,7 @@ const styles = {
   },
 }
 
-export default ({ element, index }) => {
+export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) => {
     const [value, setValue] = React.useState(-1);
     const [activeMenu, setActiveMenu] = React.useState(0)
     const [expandedMenus, setExpandedMenus] = React.useState<number[]>([0])
@@ -553,9 +554,16 @@ export default ({ element, index }) => {
                 <DownloadDoc />
                 {element?.[activeMenu] != null && (
                   [ element[activeMenu] ]?.map((el, idx) => (
-                    <PrintBodyTab key={idx} element={el} index={idx} />
-                  )
-                ))}
+                    <PrintBodyTab
+                      key={idx}
+                      element={el}
+                      index={idx}
+                      onSaveValues={onSaveValues}
+                      onSaveChecks={onSaveChecks}
+                      saving={saving}
+                    />
+                  ))
+                )}
             </Box>
           </Box>
         </React.Fragment>
@@ -625,12 +633,15 @@ const CustomTabPanel = (props) => {
     );
 }
 
-const PrintBodyTab = ({ element, index }) => {
+const PrintBodyTab = ({ element, index, onSaveValues, onSaveChecks, saving }) => {
   return (
     <Box sx={{ height: '100%', overflow: 'auto'}} key={index}>
       <PrintAccordion 
         element={element}
         index={index}
+        onSaveValues={onSaveValues}
+        onSaveChecks={onSaveChecks}
+        saving={saving}
       />
     </Box>
   )

@@ -115,6 +115,8 @@ const printActions = (element, index) => {
         if (matches) {
             const sheetId = matches[1];
             const gid = matches[2];
+
+            const cookieName = String(element.proceso || '').toLowerCase(); // "rrc" | "raac"
             
             setCookieRRC({
                 sheetId: sheetId,
@@ -122,10 +124,10 @@ const printActions = (element, index) => {
                 proceso: element.proceso,
                 gid: gid,
                 year: element.year,
-                nameCookie: 'rrc'
+                nameCookie: cookieName
             })
             
-            router.push(`/${(element.proceso).toLowerCase()}`)
+            router.push(`/${cookieName}`);
         }
     }
 

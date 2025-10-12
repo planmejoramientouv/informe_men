@@ -38,44 +38,47 @@ export const getPermission = async (hojaCalculo) => {
     return response
 };
 
-export const getFieldRRC = async ({ sheetId, gid}) => {
-    const response = await GetDataSheet({
-        gid,
-        spreadsheetId_: sheetId,
-        defaultSheet: 'Datos Generales RRC'
+export const getFieldRRC = async ({ sheetId, gid }) => {
+  // 1) obtener el título real de la pestaña (renombrada)
+  const title = await getSheetTitleByGid(sheetId, gid);
+
+  // 2) leer datos usando ese título
+  const response = await GetDataSheet({
+    hojaCalculo: title,            // <- en vez de 'Datos Generales RRC'
+    spreadsheetId_: sheetId,
+    defaultSheet: title
+  });
+
+  if (!response || response.length <= 0) return [];
+
+  const regex = /^\d+-\s*$/;
+  const containers = response.filter((item) => regex.test(item?.groups_fields));
+
+  const groups = containers.map(element => {
+    const groupWithoutDash = Number(String(element?.groups_fields).replace("-", ""));
+    let dataFilter = [];
+
+    let data_ = response.filter(items => {
+      const groupId = Number(String(items?.groups_fields).replace("-", ""));
+      return (
+        groupWithoutDash >= Math.floor(groupId) &&
+        groupWithoutDash < (Math.floor(groupId) + 1)
+      );
     });
 
-    if (response?.length < 0) return []
+    if (data_.length > 0) {
+      dataFilter = addSubGroups(groupWithoutDash, data_, dataFilter);
+    }
 
-    const regex = /^\d+-\s*$/;
+    return {
+      data: dataFilter,
+      primary: element
+    };
+  }) ?? [];
 
-    const containers = response.filter((item) => {
-        return regex.test(item?.groups_fields);
-    });
+  return groups;
+};
 
-    const groups = containers.map(element => {
-        const groupWithoutDash = Number(element?.groups_fields.replace("-", ""));
-        let dataFilter = []
-        let data_ = response.filter(items => {
-            const groupId = Number(items?.groups_fields.replace("-", "")) 
-            return (
-                groupWithoutDash >= Math.floor(groupId) &&
-                groupWithoutDash < (Math.floor(groupId) + 1)
-            )
-        })
-
-        if (data_.length > 0) {
-            dataFilter = addSubGroups(groupWithoutDash,data_, dataFilter)
-        }
-
-        return { 
-            data: dataFilter,
-            primary: element
-        }
-    }) ?? [];
-
-    return groups
-}
 
 export const getDataTable = async ({ sheetId, gid }) => {
     if (sheetId === '' ||  gid === '') return []
@@ -88,82 +91,81 @@ export const getDataTable = async ({ sheetId, gid }) => {
 }
 
 export const updateDataField = async ({ data, sheetId, gid }) =>  {
-    try {
-        data = addSubComponents(data)
-        if (data.length <= 0) return false
-    
-        const arrayIdAvailables = data.map((item) => item.id)
-        const existingData  = await GetDataSheet({
-            gid,
-            spreadsheetId_: sheetId,
-            defaultSheet: 'Datos Generales RRC'
+  try {
+    data = addSubComponents(data);
+    if (!data || data.length <= 0) return false;
+
+    const title = await getSheetTitleByGid(sheetId, gid);
+
+    const arrayIdAvailables = data.map((item) => item.id);
+    const existingData = await GetDataSheet({
+      hojaCalculo: title,
+      spreadsheetId_: sheetId,
+      defaultSheet: title
+    });
+
+    // ¡IMPORTANTE!: ahora el rango debe incluir el nombre de la hoja
+    // ej: `${title}!G${rowIndex}`
+    existingData.filter(async (item, index) => {
+      if (arrayIdAvailables.includes(item.id)) {
+        const updatedData = data.find((d) => d.id === item.id);
+        const rowIndex = index + 2;
+        const range = `${title}!G${rowIndex}`;
+
+        const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range,
+          valueInputOption: 'RAW',
+          resource: { values: [[updatedData?.valor ?? '']] }
         });
-        const updateItems = existingData.filter(async (item, index) => {
-            if (arrayIdAvailables.includes(item.id)) {
-                const updatedData = data.find((d) => d.id === item.id);
+      }
+    });
 
-                const rowIndex = index + 2;
-                const range = `G${rowIndex}`;
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+};
 
-                console.log(`Actualizando fila ${rowIndex}, columna G con el valor: ${updatedData.valor}`);
 
-                const sheets = google.sheets({ version: 'v4', auth: jwtClient });
-                const response = await sheets.spreadsheets.values.update({
-                    spreadsheetId: sheetId,
-                    range: range,
-                    valueInputOption: 'RAW',
-                    resource: {
-                        values: [[updatedData?.valor  ?? '']]
-                    }
-                });
-                return response
-            }
-        })
-    
-        return true
-    } catch (e) {
-        console.log(e)
-        return false
-    }
-}
+export const updateCheckbox = async ({ data, sheetId, gid, row_ }) => {
+  let response_ = false;
+  try {
+    const title = await getSheetTitleByGid(sheetId, gid);
 
-export const updateCheckbox = async ({ data, sheetId, gid, row_}) => {
-    let response_ = false
-    try {
-        const arrayIdAvailables = data.map((item) => item.id)
-        const existingData  = await GetDataSheet({
-            gid,
-            spreadsheetId_: sheetId,
-            defaultSheet: 'Datos Generales RRC'
-        })
+    const arrayIdAvailables = data.map((item) => item.id);
+    const existingData = await GetDataSheet({
+      hojaCalculo: title,
+      spreadsheetId_: sheetId,
+      defaultSheet: title
+    });
 
-        existingData.filter(async (item, index) => {
-            if (arrayIdAvailables.includes(item.id)) {
-                const updatedData = data.find((d) => d.id === item.id);
+    existingData.filter(async (item, index) => {
+      if (arrayIdAvailables.includes(item.id)) {
+        const updatedData = data.find((d) => d.id === item.id);
 
-                const rowIndex = index + 2;
-                const range = `${row_}${rowIndex}`;
+        const rowIndex = index + 2;
+        const range = `${title}!${row_}${rowIndex}`;
 
-                console.log(`Actualizando fila ${rowIndex}, columna G con el valor: ${updatedData.valor}`);
+        const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range,
+          valueInputOption: 'RAW',
+          resource: { values: [[updatedData?.checkbox ?? '']] }
+        });
+      }
+    });
 
-                const sheets = google.sheets({ version: 'v4', auth: jwtClient });
-                const response = await sheets.spreadsheets.values.update({
-                    spreadsheetId: sheetId,
-                    range: range,
-                    valueInputOption: 'RAW',
-                    resource: {
-                        values: [[updatedData?.checkbox  ?? '']]
-                    }
-                });
-                return response
-            }
-        })
-        response_ = true
-    } catch(e) {
-        console.log(e)
-    }
-    return response_
-}
+    response_ = true;
+  } catch (e) {
+    console.log(e);
+  }
+  return response_;
+};
+
 
 const addSubComponents = (data) => {
     const filterCriterios = data.filter((item) => item?.typeComponent);
@@ -219,28 +221,28 @@ const addSubGroups = (groupWithoutDash,data_, dataFilter) => {
 } 
 
 export const generateVarSaveDoc = async ({ sheetId, gid }) => {
-    let response_ = []
-    try {
-        const response = await GetDataSheet({
-            gid,
-            spreadsheetId_: sheetId,
-            defaultSheet: 'Datos Generales RRC'
-        });
+  let response_ = [];
+  try {
+    const title = await getSheetTitleByGid(sheetId, gid);
 
-        if (response?.length < 0) return []
+    const response = await GetDataSheet({
+      hojaCalculo: title,
+      spreadsheetId_: sheetId,
+      defaultSheet: title
+    });
 
-        response_ = response.map((rrc) => {
-            return {
-                key: rrc?.variable_en_doc ?? "{{key}}",
-                value: rrc?.valor ?? "",
-                group: rrc?.groups_fields
-            }
-        })
-    } catch (e) {
-        console.log(e)
-    }
-    return response_
-}
+    if (!response || response.length <= 0) return [];
+
+    response_ = response.map((rrc) => ({
+      key: rrc?.variable_en_doc ?? "{{key}}",
+      value: rrc?.valor ?? "",
+      group: rrc?.groups_fields
+    }));
+  } catch (e) {
+    console.log(e);
+  }
+  return response_;
+};
 
 /**
  * Lee la hoja PERMISOS y devuelve todas las filas (como arreglo de arreglos)
@@ -379,6 +381,14 @@ async function getAuth() {
   return jwt;
 }
 
+async function getSheetTitleByGid(spreadsheetId, gid) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const { data } = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = (data.sheets || []).find(s => String(s.properties?.sheetId) === String(gid));
+  if (!sheet) throw new Error(`No se encontró la hoja con gid=${gid}`);
+  return sheet.properties.title; // ← este es el nombre actual (renombrado) de la pestaña
+}
 
 export async function listProgramsFromIndex({ spreadsheetId, sheetName, column = 'D' }) {
   const auth = await getAuth(); // usa tu helper o tu jwtClient ya existente
