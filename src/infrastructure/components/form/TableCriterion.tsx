@@ -123,12 +123,12 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: 
                       backgroundColor: 'rgba(0, 0, 0, 0.04)',
                     }
                   }}
-                  onClick={ () => {
-                      setOpenDialog(prev => ({
-                        ...prev,
-                        [row?.id]: true
-                      }));
-                  } }
+                  onClick={() => {
+                    setOpenDialog(prev => ({
+                      ...prev,
+                      [row?.id]: true
+                    }));
+                  }}
                 >
                   {/* Tr */}
                   <TableCell component="th" scope="row">
@@ -136,7 +136,7 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: 
                   </TableCell>
   
                   <TableCell component="th" scope="row">
-                  <FormControl className={classes.selectInTable} variant="outlined">
+                  <FormControl className={classes.selectInTable} variant="outlined" onClick={e => e.stopPropagation()}>
                     <InputLabel shrink>Grado de Cumplimiento</InputLabel>
                     <Select
                       disabled={!firstLevelPermission(element)}
@@ -159,6 +159,7 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: 
                       type="number"
                       value={valueNumbers[index]}
                       onChange={(e) => handleChange(e, index,'number')}
+                      onClick={(e) => e.stopPropagation()}
                       slotProps={{
                         inputLabel: {
                           shrink: true,
