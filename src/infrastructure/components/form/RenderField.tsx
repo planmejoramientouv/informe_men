@@ -170,6 +170,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
               if (!firstLevelPermission(element)) return;
               const v = e.target.value ?? '';
               setTextValue(v);
+              element.valor = v;
               if (textDebRef.current) clearTimeout(textDebRef.current);
               textDebRef.current = setTimeout(() => { saveNow(v); }, 900); // ← 900ms
             }}
@@ -187,6 +188,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
               onChange={(v: string) => {
                 if (!firstLevelPermission(element)) return;
                 setRichValue(v);
+                element.valor = v;
                 if (richDebRef.current) clearTimeout(richDebRef.current);
                 richDebRef.current = setTimeout(() => { saveNow(v); }, 1000); // ← 1000ms
               }}
