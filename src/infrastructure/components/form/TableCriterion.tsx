@@ -25,7 +25,7 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => {
+export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: any) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
@@ -49,7 +49,7 @@ export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => 
          const elementSelect = filter.find(item => item.tipo === type)
          if (elementSelect !== undefined) {
             elementSelect.valor = event.target.value
-            onAutoSave(elementSelect)
+            autoSave(elementSelect)
          }
       })
   
