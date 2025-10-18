@@ -241,8 +241,14 @@ export default function CreateItemCard({
         <Autocomplete
         disabled={!sede}
         options={programasOpts}
-        value={programa ? { program: programa, periodo } : null}
-        getOptionLabel={(opt) => (typeof opt === 'string' ? opt : opt?.program) || ''}
+        value={programa ? { program: programa, period: periodo } : null}
+        getOptionLabel={(opt) => {
+          if (!opt) return '';
+          // si la opción es string (caso fallback), devolverla
+          if (typeof opt === 'string') return opt;
+          // opción como objeto: mostrar "program period"
+          return `${opt.program} - ${opt.period ?? ''}`.trim();
+        }}
         onChange={(_, opt) => {
         if (!opt) { setPrograma(''); setPeriodo(''); return; }
         setPrograma(opt.program);
