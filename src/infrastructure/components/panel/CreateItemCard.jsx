@@ -32,7 +32,7 @@ const SEDES_BY_TIPO = {
   raac: ['Ampliación', 'Cali'],
 };
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[a-z0-9._%+-]+@correounivalle\.edu\.co$/i;
 
 export default function CreateItemCard({
   title = 'Crear nuevo proceso',
@@ -89,7 +89,7 @@ export default function CreateItemCard({
   const handleClose = () => { setOpen(false); reset(); };
   const handleSave = async () => {
     setTouched(true);
-    if (!canSave) return;
+    if (!canSave || !emailRegex.test(email)) return;
     const payload = { tipo, sede, programa, periodo, email };
     try {
       setSaving(true);
@@ -292,10 +292,19 @@ export default function CreateItemCard({
             label="Correo para permisos"
             placeholder="usuario@correounivalle.edu.co"
             value={email}
-            onChange={(e) => setEmail(e.target.value.trim())}
+            onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
             onBlur={() => setTouched(true)}
-            error={errors.email}
-            helperText={errors.email ? 'Correo inválido.' : ''}
+            error={touched && (!email || !emailRegex.test(email))}
+            helperText={
+              touched && (!email || !emailRegex.test(email))
+                ? 'Usa un correo @correounivalle.edu.co válido (ej: nombre.apellido@correounivalle.edu.co).'
+                : ''
+            }
+            inputProps={{
+              inputMode: 'email',
+              spellCheck: 'false',
+              autoCorrect: 'off',
+            }}
           />
         </DialogContent>
 

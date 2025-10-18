@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: false, error: 'Missing sheetId/gid/data' });
     }
 
-    const ok = await updateDataField({ sheetId, gid, data }); // ← ya lo tienes en libs
+    const ok = await updateDataField({ sheetId, gid, data });
     return res.status(200).json({ status: !!ok });
   } catch (e) {
     console.error('[api/update] err:', e);
