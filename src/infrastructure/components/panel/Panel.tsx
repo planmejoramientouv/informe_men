@@ -32,115 +32,129 @@ import { useRouter } from 'next/router';
 
 // Const
 const BORDER_COLORS = [
-    '#C8102E',
-    '#FFCD00',
-    '#0051BA',
-    '#A7A8AA',
+  '#C8102E',
+  '#FFCD00',
+  '#0051BA',
+  '#A7A8AA',
 ]
 
-export default () => {
-    const classes = useStyles()
-    const { globalState } = useGlobalState()
+export default function Panel() {
+  const classes = useStyles()
+  const { globalState } = useGlobalState()
+  const router = useRouter();
 
-    const [cookieData, setCookieData] = React.useState({} as any)
-    const [data, setData] =  React.useState([])
-    const [dataFor, setDataFor] =  React.useState([])
+  const [cookieData, setCookieData] = React.useState({} as any)
+  const [data, setData] =  React.useState<any[]>([])
+  const [dataFor, setDataFor] =  React.useState<any[]>([])
 
-    const getUserAllowed = async () => {
-        try {
-            let allowedUser = await getAllowedUser()
-            if (allowedUser?.data.length > 0) {
-                setData(allowedUser?.data)
-            } 
-        } catch (e) {
-            console.log(e)
-        }
-    } 
-    
-    const optionToPrint = () => {
-        if (data.length <= 0) return
-        const email_ = cookieData?.email
-        const findRol = data.find(person => String(person?.email) === String(email_))
-        const dataActive = data.filter((item) => {
-            return (
-                item.estado === 'Activo' &&
-                (item?.url_exel ?? '').match(regex) !== null
-            )
-        })
-
-        if (ROL_ADMIN_SISTEM.includes(findRol?.rol)) {
-            const dataFilter = dataActive.filter(item => item.rol !== findRol?.rol)
-            setDataFor(dataFilter)
-            return
-        }
-
-        if (ROL_DIRECTOR.includes(findRol?.rol)) {
-            const dataFilter = dataActive.filter(item => item.programa === findRol?.programa)
-            setDataFor(dataFilter)
-            return
-        }
+  const getUserAllowed = async () => {
+    try {
+      let allowedUser = await getAllowedUser()
+      if (allowedUser?.data?.length > 0) {
+        setData(allowedUser.data)
+      } 
+    } catch (e) {
+      console.log(e)
     }
-    
-    React.useMemo(optionToPrint, [data])
+  } 
 
-    React.useEffect(() => {
-        const cookie_ = getCookieData('data')
-        getUserAllowed()
-        setCookieData(cookie_)
-    },[])
+  const optionToPrint = () => {
+    if (!Array.isArray(data) || data.length <= 0) return
 
-    return (
-        <Show when={dataFor.length > 0}>
-            <React.Fragment>
-                <Grid2 className={classes.containerTitlePanel}>
-                    <Typography variant="h2">Programas con procesos activos</Typography>
-                </Grid2>
-                <Grid2 className={classes.containerForPanel}>
-                    <For func={printActions} list={dataFor}  />
-                </Grid2>
-            </React.Fragment>
-        </Show>            
+    const email_ = String(cookieData?.email || '').trim().toLowerCase()
+
+    // Todas las filas del usuario (mismo correo)
+    const rowsUser = data.filter(person => 
+      String(person?.email || '').trim().toLowerCase() === email_
     )
-}
 
-const printActions = (element, index) => {
-    const classes = useStyles()
-    const router = useRouter();
+    // Solo Activo + URL válida (para tener sheetId y gid)
+    const dataActive = data.filter((item) => {
+      const hasUrl = (item?.url_exel ?? '').match(regex) !== null
+      const isActive = String(item?.estado || '').toLowerCase() === 'activo'
+      return isActive && hasUrl
+    })
+
+    // Si el usuario es admin → ve todo lo activo excepto filas con rol admin
+    const isAdmin = rowsUser.some(r => 
+      ROL_ADMIN_SISTEM.includes(String(r?.rol || '').toLowerCase())
+    )
+
+    if (isAdmin) {
+      const dataFilter = dataActive.filter(item => 
+        !ROL_ADMIN_SISTEM.includes(String(item?.rol || '').toLowerCase())
+      )
+      setDataFor(dataFilter)
+      return
+    }
+
+    // Director (u otros): ver TODOS los programas asociados a su correo
+    const allowedPrograms = new Set(rowsUser.map(r => r.programa))
+    const dataFilter = dataActive.filter(item => allowedPrograms.has(item.programa))
+    setDataFor(dataFilter)
+    return
+  }
+
+  // recalcular cuando cambien los datos
+  React.useEffect(() => {
+    optionToPrint()
+  }, [data, cookieData])
+
+  React.useEffect(() => {
+    const cookie_ = getCookieData('data')
+    setCookieData(cookie_)
+    getUserAllowed()
+  },[])
+
+  // Render item (dentro del componente para usar router/classes)
+  const printActions = (element: any, index: number) => {
     const color = BORDER_COLORS[index % BORDER_COLORS.length]
 
-    const handlerClick = (element) => {
-        const regex = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
-        const matches = (element?.url_exel ?? '').match(regex);
+    const handlerClick = (el: any) => {
+      const matches = String(el?.url_exel || '').match(regex)
+      if (!matches) return
 
-        if (matches) {
-            const sheetId = matches[1];
-            const gid = matches[2];
-
-            const cookieName = String(element.proceso || '').toLowerCase(); // "rrc" | "raac"
-            
-            setCookieRRC({
-                sheetId: sheetId,
-                programa: element.programa,
-                proceso: element.proceso,
-                gid: gid,
-                year: element.year,
-                nameCookie: cookieName
-            })
-            
-            router.push(`/${cookieName}`);
-        }
+      const sheetId = matches[1]
+      const gid = matches[2]
+      const cookieName = String(el?.proceso || '').toLowerCase() // "rrc" | "raac"
+      
+      setCookieRRC({
+        sheetId,
+        programa: el?.programa,
+        proceso: el?.proceso,
+        gid,
+        year: el?.year,
+        nameCookie: cookieName
+      })
+      
+      router.push(`/${cookieName}`)
     }
 
     return (
-        <React.Fragment key={index}>
-            <Grid2 
-                style={{ borderTop: `6px solid ${color}` }} 
-                onClick={() => handlerClick(element)} 
-                className={classes.forItemsPanel} key={index}>
-                <Typography  style={{ color: `${color}` }}  variant="h2">
-                    {`${element?.programa} - ${element?.proceso} ${element?.year}`}
-                </Typography>
-            </Grid2>
-        </React.Fragment>
+      <React.Fragment key={`${element?.programa}-${element?.proceso}-${index}`}>
+        <Grid2 
+          style={{ borderTop: `6px solid ${color}` }} 
+          onClick={() => handlerClick(element)} 
+          className={classes.forItemsPanel}
+        >
+          <Typography style={{ color }} variant="h2">
+            {`${element?.programa} - ${element?.proceso} ${element?.year}`}
+          </Typography>
+        </Grid2>
+      </React.Fragment>
     )
+  }
+
+  return (
+    <Show when={dataFor.length > 0}>
+      <React.Fragment>
+        <Grid2 className={classes.containerTitlePanel}>
+          <Typography variant="h2">Programas con procesos activos</Typography>
+        </Grid2>
+        <Grid2 className={classes.containerForPanel}>
+          <For func={printActions} list={dataFor}  />
+        </Grid2>
+      </React.Fragment>
+    </Show>            
+  )
 }
