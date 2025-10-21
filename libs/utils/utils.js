@@ -47,22 +47,26 @@ export const setCookieRRC = ({sheetId, programa, proceso, gid, year, nameCookie}
     Cookies.set(nameCookie, encryptedData, { expires: 4 });
 }
 
-export const firstLevelPermission = (element = {}) => {
-  const cookie = getCookieData('data') || {};
-  const rol   = String(cookie?.rol || '').toLowerCase();
-  const nivel = String(cookie?.nivel || '');
+function permisoKeyFromNode(node = {}) {
+  const p = node && node.permiso;
+  // acepta 0 como válido, y cualquier otro valor truthy
+  return (p === 0 || p) ? String(p).trim() : '';
+}
 
-  // Admin: todo visible
+export const firstLevelPermission = (node = {}) => {
+  const cookie = getCookieData('data') || {};
+  const rol    = String(cookie && cookie.rol || '').toLowerCase();
+  const nivel  = String(cookie && cookie.nivel || '');
+
+  // Admin: siempre ve todo
   if (ROL_ADMIN_SISTEM.includes(rol)) return true;
 
-  // Clave de permiso de este menú/pestaña (ajusta si en tu esquema se llama distinto)
-  const permisoKey =
-    (element && (element.permiso || element.primary || element.key)) ? String(element.permiso || element.primary || element.key) : '';
+  // Director: ve TODO (sin depender de "nivel")
+  if (ROL_DIRECTOR.includes(rol)) return true;
 
-  // Si no hay clave, no bloqueamos la visibilidad
-  if (!permisoKey) return true;
-
-  // Director/Editor (y cualquier otro rol no-admin): requieren permiso de VISTA
+  // Editor: depende de "nivel" -> necesita permiso de VISTA (n)
+  const permisoKey = permisoKeyFromNode(node); // p.ej. "9"
+  if (!permisoKey) return true;               // si no hay clave, no bloqueamos
   return hasViewPermission(nivel, permisoKey);
 };
 
@@ -72,15 +76,18 @@ export const checkboxLevelPermission = (type = 0, permisoKey = '') => {
   const rol    = String(cookie?.rol || '').toLowerCase();
   const nivel  = String(cookie?.nivel || '');
 
-  // Admin puede editar todo
+  // Admin: edita todo
   if (ROL_ADMIN_SISTEM.includes(rol)) return true;
 
-  // Director / Editor: solo pueden editar si tienen el permiso con guion (n-)
-  if (ROL_DIRECTOR.includes(rol) || ROL_EDITOR_SISTEM.includes(rol)) {
+  // Director: edita TODO (sin depender de "nivel")
+  if (ROL_DIRECTOR.includes(rol)) return true;
+
+  // Editor: sólo edita si tiene el permiso con guion (n-)
+  if (ROL_EDITOR_SISTEM.includes(rol)) {
     return hasEditPermission(nivel, String(permisoKey));
   }
 
-  // Otros roles: no pueden editar (ajusta si necesitas más reglas)
+  // Otros roles: no pueden editar (ajústalo si necesitas)
   return false;
 };
 

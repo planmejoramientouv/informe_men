@@ -8,7 +8,7 @@ import useStyles from '../../../css/home/sidenav';
 
 // Type
 import React from 'react';
-import { Avatar, Button, Grid2, Menu, MenuItem, Typography } from '@mui/material';
+import { Avatar, Button, Grid2, Menu, MenuItem, Typography, Box } from '@mui/material';
 
 import Cookies from 'js-cookie';
 import CryptoJS from 'crypto-js';
@@ -86,10 +86,24 @@ export default () => {
         <Show when={hydrated}>
             <header className={styles.header}>
                 <Grid2 sx={{display: 'flex', alignItems: 'center'}}>
-                    <div className={`${styles['container-logo']}`}>
-                        <img src={'/assets/img/header.png'} alt='logo' />
+                    <div
+                        className={styles['container-logo']}
+                        onClick={() => router.push('/')}
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push('/')}
+                        role="link"
+                        tabIndex={0}
+                        style={{ cursor: 'pointer' }}
+                        >
+                        <img src="/assets/img/header.png" alt="logo" />
                     </div>
-                    <Typography className={classes.titleUnivalle}>
+                    <Typography
+                        className={classes.titleUnivalle}
+                        onClick={() => router.push('/')}
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push('/')}
+                        role="link"
+                        tabIndex={0}
+                        sx={{ cursor: 'pointer' }}
+                    >
                         Universidad Del Valle
                     </Typography>
                     <Typography className={`${classes.hiddentMobile} ${classes.titleViewSystem}`}>
