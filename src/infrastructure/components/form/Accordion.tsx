@@ -28,7 +28,7 @@ import { updateDataTable, updateCheckboxClient } from '../../../../hooks/fecth/h
 import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
 
 // Print Accordion
-export default ({ element, index }) => {
+export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) => {
     if (!element?.primary) return null;
     const classes = useStyles();
     const [open, setOpen] = React.useState(false)
@@ -65,12 +65,15 @@ export default ({ element, index }) => {
                   {
                     element?.data?.map((el, idx) => 
                       <PrintFields 
-                          key={idx} 
-                          element={el} 
-                          index={idx} 
-                          shared={element.data}
-                          openDialog={openDialog}
-                          setOpenDialog={setOpenDialog}
+                        key={idx} 
+                        element={el} 
+                        index={idx} 
+                        shared={element.data}
+                        openDialog={openDialog}
+                        setOpenDialog={setOpenDialog}
+                        onSaveValues={onSaveValues}
+                        onSaveChecks={onSaveChecks}
+                        saving={saving}
                       />)
                   }
                 </Grid2>
@@ -83,7 +86,8 @@ export default ({ element, index }) => {
 
 const anchorFrom = (el) => el?.id ? `node-${el.id}` : (el?.texto ? `node-${String(el.texto).toLowerCase().replace(/\s+/g, '-')}` : undefined)
 
-const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
+const PrintFields = ({ element, index, shared, openDialog, setOpenDialog, onSaveValues, onSaveChecks, saving }) => {
+
     const htmlId = anchorFrom(element)
     return (
       <React.Fragment key={index}>
@@ -99,6 +103,10 @@ const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
               shared={shared}
               iframeView={null}
               setOpenDialog={setOpenDialog}
+              /* NUEVO */
+              onSaveValues={onSaveValues}
+              onSaveChecks={onSaveChecks}
+              saving={saving}
             />
           </Show>
   
@@ -108,6 +116,10 @@ const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
                 shared={shared}
                 openDialog={openDialog}
                 setOpenDialog={setOpenDialog}
+                /* NUEVO */
+                onSaveValues={onSaveValues}
+                onSaveChecks={onSaveChecks}
+                saving={saving}
               />
           </Show>
           </>
@@ -115,8 +127,8 @@ const PrintFields = ({ element, index, shared, openDialog, setOpenDialog}) => {
       </React.Fragment>
     )
 }
-  
-const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => {
+
+const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog, onSaveValues, onSaveChecks, saving}) => {
     console.log(element,shared)
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
@@ -168,9 +180,13 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
                   element={el}
                   shared={shared}
                   index={idx}
+                  /* NUEVO */
+                  onSaveValues={onSaveValues}
+                  onSaveChecks={onSaveChecks}
+                  saving={saving}
                 />
-              );
-            }
+                    );
+              }
 
             // Si es tabla_aspectos, mostrar solo el primero
             const isFirstAspect = element.data.findIndex(
@@ -183,6 +199,10 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
                   element={el}
                   shared={shared}
                   index={idx}
+                  /* NUEVO */
+                  onSaveValues={onSaveValues}
+                  onSaveChecks={onSaveChecks}
+                  saving={saving}
                 />
               );
             }
@@ -203,7 +223,7 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog}) => 
     )
 } 
 
-const RenderColapsable = ({element, index, shared}) => {
+const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, saving }) => {
   console.log(fieldTraslate[element.tipo], element , "shared", shared)
   const htmlId = element?.id ? `node-${element.id}` : undefined
     return (
@@ -216,7 +236,11 @@ const RenderColapsable = ({element, index, shared}) => {
                 value={element.valor} 
                 element={element} 
                 shared={shared}
-                iframeView={shared[0]?.iframeView} 
+                iframeView={shared[0]?.iframeView}
+                /* NUEVO */
+                onSaveValues={onSaveValues}
+                onSaveChecks={onSaveChecks}
+                saving={saving}
               />
           </Show>
         </React.Fragment>

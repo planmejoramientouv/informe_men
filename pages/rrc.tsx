@@ -16,51 +16,55 @@ import { getFormRRC } from '../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { getCookieData, setCookieRRC } from '../libs/utils/utils'
+import { error } from "console"
 
 // Home
-export default () => {
-    const { setGlobalState } = useGlobalState()
-    const [dataCookie, setDataCookie] = React.useState({} as any)
+export default function RRCPage() {
+  const { setGlobalState } = useGlobalState();
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-    const getDataRRC = async ({sheetId, gid}) => {
-        const response = await getFormRRC({
-            sheetId: sheetId,
-            gid: gid
-        })
+  React.useEffect(() => {
+    let alive = true;
 
-        if (response?.data?.length > 0) {
-            setGlobalState((prev) => ({
-                ...prev,
-                data: {
-                    formdata: response?.data ?? [],
-                    sheetId: sheetId,
-                    gid: gid
-                }
-            }))
-        } 
-    }
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    const getDataCookie = () =>  {
-        const rcc_ = getCookieData('rrc')
-        setDataCookie(rcc_)
-    }
+        const cookie = getCookieData("rrc"); // ← clave
+        if (!cookie?.sheetId || !cookie?.gid) {
+          throw new Error("No se encontró el proceso RRC seleccionado. Vuelve al panel y elige uno.");
+        }
 
-    React.useEffect(() => {
-        getDataCookie()
-    }, []);
+        const resp = await getFormRRC({ sheetId: cookie.sheetId, gid: cookie.gid });
+        if (!alive) return;
 
-    React.useEffect(() => {
-        if (!dataCookie.sheetId) return 
-        getDataRRC({
-            sheetId: dataCookie.sheetId,
-            gid: dataCookie.gid
-        })
-    }, [dataCookie]);
+        setGlobalState((prev) => ({
+          ...prev,
+          data: {
+            formdata: resp?.data ?? [],
+            sheetId: cookie.sheetId,
+            gid: cookie.gid,
+          },
+        }));
+      } catch (e) {
+        if (!alive) return;
+        setError(e?.message || "No fue posible cargar el formulario RRC.");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
 
-    return (
-        <main className="root-container">
-            <Header />
-            <Form />
-        </main>
-    )
+    return () => { alive = false; };
+  }, [setGlobalState]);
+
+  return (
+    <main className="root-container">
+      <Header />
+      {loading && <div style={{ padding: 16 }}>Cargando RRC…</div>}
+      {!loading && error && <div style={{ padding: 16, color: "#b00020" }}>{error}</div>}
+      {!loading && !error && <Form />}
+    </main>
+  );
 }

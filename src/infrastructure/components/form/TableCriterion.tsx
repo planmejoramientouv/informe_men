@@ -25,7 +25,7 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => {
+export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: any) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
@@ -49,7 +49,7 @@ export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => 
          const elementSelect = filter.find(item => item.tipo === type)
          if (elementSelect !== undefined) {
             elementSelect.valor = event.target.value
-            onAutoSave(elementSelect)
+            autoSave(elementSelect)
          }
       })
   
@@ -123,12 +123,12 @@ export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => 
                       backgroundColor: 'rgba(0, 0, 0, 0.04)',
                     }
                   }}
-                  onClick={ () => {
-                      setOpenDialog(prev => ({
-                        ...prev,
-                        [row?.id]: true
-                      }));
-                  } }
+                  onClick={() => {
+                    setOpenDialog(prev => ({
+                      ...prev,
+                      [row?.id]: true
+                    }));
+                  }}
                 >
                   {/* Tr */}
                   <TableCell component="th" scope="row">
@@ -136,7 +136,7 @@ export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => 
                   </TableCell>
   
                   <TableCell component="th" scope="row">
-                  <FormControl className={classes.selectInTable} variant="outlined">
+                  <FormControl className={classes.selectInTable} variant="outlined" onClick={e => e.stopPropagation()}>
                     <InputLabel shrink>Grado de Cumplimiento</InputLabel>
                     <Select
                       disabled={!firstLevelPermission(element)}
@@ -159,6 +159,7 @@ export default ({ element,shared, onAutoSave, setOpenDialog, htmlId  }: any) => 
                       type="number"
                       value={valueNumbers[index]}
                       onChange={(e) => handleChange(e, index,'number')}
+                      onClick={(e) => e.stopPropagation()}
                       slotProps={{
                         inputLabel: {
                           shrink: true,

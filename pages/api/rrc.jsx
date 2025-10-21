@@ -1,26 +1,25 @@
+// pages/api/rrc.jsx
 import { getFieldRRC } from '../../libs/googlesheet';
 
 export default async function handler(req, res) {
-    if (req.method === 'GET') {
-        try {
-            const { sheetId, gid } = req.query;
-
-            if (!sheetId || !gid) {
-                return res.status(400).json({ error: 'Missing sheetId or gid parameter' });
-            }
-
-            const allowedUser = await getFieldRRC({
-                sheetId: sheetId, 
-                gid: gid
-            });
-            console.log(allowedUser)
-            return res.status(200).json({ data: allowedUser });
-        } catch (error) {
-            console.log(error,'errr')
-            return res.status(500).json({ a:error, error: 'Error fetching data' });
-        }
-    } else {
-        res.setHeader('Allow', ['GET']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+  try {
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      res.setHeader('Allow', ['GET', 'POST']);
+      return res.status(405).json({ status: false, error: `Method ${req.method} Not Allowed` });
     }
+
+    // POST → body, GET → query
+    const sheetId = req.method === 'POST' ? req.body?.sheetId : req.query?.sheetId;
+    const gid     = req.method === 'POST' ? req.body?.gid     : req.query?.gid;
+
+    if (!sheetId || !gid) {
+      return res.status(400).json({ status: false, error: 'Missing sheetId or gid' });
+    }
+
+    const data = await getFieldRRC({ sheetId, gid }); // ← lee del archivo propio
+    return res.status(200).json({ status: true, data });
+  } catch (e) {
+    console.error('[api/rrc] error:', e);
+    return res.status(500).json({ status: false, error: e?.message || 'Internal Server Error' });
+  }
 }

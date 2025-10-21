@@ -1,0 +1,346 @@
+// components/panel/CreateItemCard.jsx
+import React from 'react';
+import useStyles from '../../../../css/form/form.css.js';
+
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+
+import Autocomplete from '@mui/material/Autocomplete';
+
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+
+
+const SEDES_BY_TIPO = {
+  rrc: ['Regionales', 'Cali'],
+  raac: ['Ampliación', 'Cali'],
+};
+
+const emailRegex = /^[a-z0-9._%+-]+@correounivalle\.edu\.co$/i;
+
+export default function CreateItemCard({
+  title = 'Crear nuevo proceso',
+  hint = 'Configura y guarda un proceso',
+  borderColor = '#1976D2',
+  sedesByTipo = SEDES_BY_TIPO,
+  onSave,
+}) {
+  const classes = useStyles();
+
+  const [open, setOpen] = React.useState(false);
+  const [tipo, setTipo] = React.useState('');
+  const [sede, setSede] = React.useState('');
+  const [programa, setPrograma] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [touched, setTouched] = React.useState(false);
+  const [programasOpts, setProgramasOpts] = React.useState([]);
+  const [loadingPrograms, setLoadingPrograms] = React.useState(false);
+  const [openAuto, setOpenAuto] = React.useState(false);
+  const [periodo, setPeriodo] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [snack, setSnack] = React.useState({
+  open: false,
+  message: '',
+  severity: 'success', // 'success' | 'error' | 'info' | 'warning'
+});
+
+
+  React.useEffect(() => {
+    setSede('');
+    setPrograma('');
+    setProgramasOpts([]);
+  }, [tipo]);
+
+  const sedes = tipo ? (sedesByTipo?.[tipo] ?? []) : [];
+  const errors = {
+    tipo: !tipo && touched,
+    sede: !sede && touched,
+    programa: !programa && touched,
+    email: (!email || !emailRegex.test(email)) && touched,
+  };
+  const canSave = Boolean(tipo && sede && programa && emailRegex.test(email));
+
+  const reset = () => {
+    setTipo('');
+    setSede('');
+    setPrograma('');
+    setPeriodo('');
+    setEmail('');
+    setTouched(false);
+  };
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => { setOpen(false); reset(); };
+  const handleSave = async () => {
+    setTouched(true);
+    if (!canSave || !emailRegex.test(email)) return;
+    const payload = { tipo, sede, programa, periodo, email };
+    try {
+      setSaving(true);
+      if (typeof onSave === 'function') await onSave(payload);
+      setSnack({
+        open: true,
+        severity: 'success',
+        message: `Creado: ${tipo.toUpperCase()} • ${sede} • ${programa} — ${periodo}`,
+      });
+      handleClose();
+    } catch (e) {
+      console.error(e);
+      setSnack({
+        open: true,
+        severity: 'error',
+        message: `No se pudo crear el proceso: ${tipo.toUpperCase()} • ${sede} • ${programa}.`,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  React.useEffect(() => {
+  let alive = true; // evita setState después de ununmount/rápidos cambios
+
+  const fetchPrograms = async () => {
+    if (!tipo || !sede) {
+      setProgramasOpts([]);
+      setPeriodo('');
+      return;
+    }
+    try {
+      setLoadingPrograms(true);              
+      const res = await fetch(`/api/programs?tipo=${encodeURIComponent(tipo.toUpperCase())}&sede=${encodeURIComponent(sede)}`);
+      const json = await res.json();
+      if (!alive) return;
+      setProgramasOpts(json?.status ? (json.data || []) : []);
+      setPeriodo(''); 
+        setPrograma('');
+    } catch (e) {
+      console.error(e);
+      if (!alive) return;
+      setProgramasOpts([]);
+        setPeriodo('');
+        setPrograma('');
+    } finally {
+      if (!alive) return;
+      setLoadingPrograms(false);            
+    }
+  };
+
+  fetchPrograms();
+  return () => { alive = false; };
+}, [tipo, sede]);
+
+
+  const sedesList = tipo ? SEDES_BY_TIPO[tipo.toLowerCase()] || [] : [];
+
+  return (
+    <>
+      <Button
+        onClick={handleOpen}
+        variant="outlined"
+        fullWidth
+        startIcon={<AddCircleOutlineIcon />}
+        sx={{
+          justifyContent: 'flex-start',
+          textTransform: 'none',
+          borderRadius: 2,
+          borderStyle: 'dashed',
+          borderWidth: 2,
+          borderColor: 'divider',
+          py: 2.5,
+          px: 2.5,
+          gap: 1.5,
+          position: 'relative', // necesario para la banda superior
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 6,
+            backgroundColor: borderColor,
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+          },
+          '&:hover': {
+            borderColor: borderColor,
+            backgroundColor: 'action.hover',
+          },
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: borderColor,
+            outlineOffset: 2,
+          },
+        }}
+      >
+        <Box sx={{ textAlign: 'left' }}>
+          <Typography variant="h6">{title}</Typography>
+          {hint && (
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              {hint}
+            </Typography>
+          )}
+        </Box>
+      </Button>
+      
+
+      {/* Modal */}
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+        <DialogTitle>Crear proceso</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          {/* TIPO */}
+          <FormControl fullWidth margin="normal" error={errors.tipo}>
+            <InputLabel id="tipo-label">Tipo</InputLabel>
+            <Select
+              labelId="tipo-label"
+              label="Tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)} // 'rrc' | 'raac'
+              onBlur={() => setTouched(true)}
+              size="small"
+            >
+              <MenuItem value="rrc">RRC</MenuItem>
+              <MenuItem value="raac">RAAC</MenuItem>
+            </Select>
+            {errors.tipo && <FormHelperText>Selecciona un tipo.</FormHelperText>}
+          </FormControl>
+
+          {/* SEDE (dependiente del tipo) */}
+          <FormControl fullWidth margin="normal" error={errors.sede} disabled={!tipo}>
+            <InputLabel id="sede-label">Sede</InputLabel>
+            <Select
+              labelId="sede-label"
+              label="Sede"
+              value={sede}
+              onChange={(e) => setSede(e.target.value)} // 'Regionales'/'Cali' o 'Ampliación'/'Cali'
+              onBlur={() => setTouched(true)}
+            >
+              {sedesList.map((s) => (
+                <MenuItem key={s} value={s}>{s}</MenuItem>
+              ))}
+            </Select>
+            {errors.sede && <FormHelperText>Selecciona una sede.</FormHelperText>}
+          </FormControl>
+
+        {/* PROGRAMA (buscable con Autocomplete) */}
+        <Autocomplete
+        disabled={!sede}
+        options={programasOpts}
+        value={programa ? { program: programa, period: periodo } : null}
+        getOptionLabel={(opt) => {
+          if (!opt) return '';
+          // si la opción es string (caso fallback), devolverla
+          if (typeof opt === 'string') return opt;
+          // opción como objeto: mostrar "program period"
+          return `${opt.program} - ${opt.period ?? ''}`.trim();
+        }}
+        onChange={(_, opt) => {
+        if (!opt) { setPrograma(''); setPeriodo(''); return; }
+        setPrograma(opt.program);
+        setPeriodo(opt.period); // <- guardamos el periodo seleccionado
+        }}
+        loading={loadingPrograms}
+        autoHighlight
+        blurOnSelect
+        disablePortal
+        open={openAuto}                          // <-- controlar apertura
+        onOpen={() => setOpenAuto(true)}         // <--
+        onClose={() => setOpenAuto(false)}       // <--
+        ListboxProps={{ style: { maxHeight: 240, overflowY: 'auto' } }}
+        sx={{ mt: 2 }}
+        renderInput={(params) => (
+            <TextField
+            {...params}
+            label="Programa"
+            size="small"
+            margin="normal"
+            error={errors.programa}
+            helperText={errors.programa ? 'Selecciona un programa.' : ''}
+            InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                <>
+                    {openAuto && loadingPrograms ? <CircularProgress size={18} /> : null}
+                    {params.InputProps.endAdornment}
+                </>
+                ),
+            }}
+            />
+        )}
+        />
+
+
+          {/* EMAIL */}
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Correo para permisos"
+            placeholder="usuario@correounivalle.edu.co"
+            value={email}
+            onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
+            onBlur={() => setTouched(true)}
+            error={touched && (!email || !emailRegex.test(email))}
+            helperText={
+              touched && (!email || !emailRegex.test(email))
+                ? 'Usa un correo @correounivalle.edu.co válido (ej: nombre.apellido@correounivalle.edu.co).'
+                : ''
+            }
+            inputProps={{
+              inputMode: 'email',
+              spellCheck: 'false',
+              autoCorrect: 'off',
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={saving || !canSave}
+            startIcon={saving ? <CircularProgress size={16} /> : null}
+          >
+            {saving ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Backdrop
+        open={saving}
+        sx={{ color: '#fff', zIndex: (t) => t.zIndex.modal + 1 }}
+      >
+        <CircularProgress />
+      </Backdrop>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3500}
+        onClose={() => setSnack(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnack(s => ({ ...s, open: false }))}
+          severity={snack.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
+    </>
+  );
+}

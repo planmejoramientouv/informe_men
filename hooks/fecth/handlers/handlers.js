@@ -7,11 +7,16 @@ export const getAllowedUser = () => {
     })
 }
 
-export const getFormRRC = ({ sheetId, gid }) => {
-    return fetchGetGeneral({
-        urlEndPoint: `${API_GET_RRC_FORM}?sheetId=${sheetId}&gid=${gid}`
-    })
-}
+export const getFormRRC = async ({ sheetId, gid }) => {
+  const res = await fetch('/api/rrc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sheetId, gid }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json?.status) throw new Error(json?.error || 'No se pudo cargar RRC');
+  return json; // { status, data }
+};
 
 export const getValuesKey = ({ sheetId, gid }) => {
     return fetchGetGeneral({
@@ -59,3 +64,26 @@ export const createDocumentGoogle = (data) => {
         urlEndPoint: `https://google-doc-api-553236746574.us-central1.run.app/execute`
     })
 }
+
+export const postUpdateRRC = async ({ sheetId, gid, data }) => {
+  const res = await fetch('/api/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sheetId, gid, data }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json?.status) throw new Error(json?.error || 'No se pudo actualizar');
+  return json;
+};
+
+export const postUpdateCheckboxRRC = async ({ sheetId, gid, data }) => {
+  const res = await fetch('/api/updateCheckbox', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // 🔴 Para RRC, siempre G
+    body: JSON.stringify({ sheetId, gid, data, row_: 'G' }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json?.status) throw new Error(json?.error || 'No se pudo actualizar check');
+  return json;
+};
