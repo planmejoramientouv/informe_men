@@ -7,7 +7,7 @@ const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_ID;
 const SHEET_PERMISOS = process.env.PERMISOS_SHEET_NAME || 'PERMISOS';
 const DRIVE_PARENT_FOLDER_ID = process.env.DRIVE_PARENT_FOLDER_ID || '1qs_oTozwSC4GTtFaeoHo4PMwrxcAEcQT'; // <- tu carpeta padre
-const TEMPLATE_SPREADSHEET_ID = process.env.TEMPLATE_SPREADSHEET_ID || '1o6hX_kN4e8GqNUPoMOjp-g6G4QYpQk2M2N5996Yu3Ws';
+const TEMPLATE_SPREADSHEET_ID = '1o6hX_kN4e8GqNUPoMOjp-g6G4QYpQk2M2N5996Yu3Ws';
 
 const jwtClient = new google.auth.JWT(
     CLIENT_EMAIL,
@@ -580,9 +580,18 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   }
 
   // 7) LIMPIAR COLUMNA G EN LA HOJA RENOMBRADA
+  const keepRows = [49, 50, 101, 123, 141, 142, 143, 158, 159, 160, 174, 175, 185, 191, 203, 204];
   const colToClear = CLEAR_COL_BY_TIPO[String(tipo).toUpperCase()] || null;
+
   if (colToClear) {
-    await clearColumn({ spreadsheetId: file.id, sheetTitle: newSheetTitle, column: colToClear, startRow: 2 });
+    await clearColumnExcept({
+      spreadsheetId: file.id,
+      sheetTitle: newSheetTitle,
+      column: colToClear,
+      keepRows: keepRows,
+      startRow: 2,
+      endRow: 270,
+    });
   }
 
   // 8) Construir URL con el (posible) mismo gid
@@ -690,4 +699,21 @@ export async function clearColumn({ spreadsheetId, sheetTitle, column = 'G', sta
   const range = `${sheetTitle}!${column}${startRow}:${column}`;
   await sheets.spreadsheets.values.clear({ spreadsheetId, range });
   return true;
+}
+
+export async function clearColumnExcept({ spreadsheetId, sheetTitle, column, keepRows, startRow = 2, endRow = 300 }) {
+  const auth = await getAuth(); // reutiliza tu autenticación global
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const allRows = Array.from({ length: endRow - startRow + 1 }, (_, i) => i + startRow);
+  const rowsToClear = allRows.filter(r => !keepRows.includes(r));
+
+  if (rowsToClear.length === 0) return;
+
+  const ranges = rowsToClear.map(row => `${sheetTitle}!${column}${row}`);
+
+  await sheets.spreadsheets.values.batchClear({
+    spreadsheetId,
+    requestBody: { ranges },
+  });
 }

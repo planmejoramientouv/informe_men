@@ -34,6 +34,111 @@ import { createDocumentGoogle, getValuesKey, replacementsDocsKeys, generatePdf }
 // Hooks
 import { getCookieData } from '../../../../libs/utils/utils'
 
+function stripHTML(htmlString) {
+  if (typeof htmlString !== 'string') return htmlString;
+
+  // Crea un elemento temporal en memoria
+  const tmp = globalThis?.document?.createElement
+    ? document.createElement("div")
+    : null;
+
+  if (tmp) {
+    tmp.innerHTML = htmlString;
+    return tmp.textContent || tmp.innerText || "";
+  }
+
+  // Si estamos fuera del navegador, fallback por regex
+  return htmlString
+    .replace(/<[^>]*>/g, '')      // quita etiquetas HTML
+    .replace(/&nbsp;/g, ' ')      // reemplaza entidades comunes
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+
+function prepareMergedData(dataFilter, selectedOptions) {
+  // Crear arreglo con las llaves y valores (añadiendo los corchetes si faltan)
+  const dataKeyArray = Object.keys(selectedOptions).map(k => {
+    let keyFormatted = k.trim();
+
+    // Si no empieza con {{, agrégalo
+    if (!keyFormatted.startsWith('{{')) {
+      keyFormatted = `{{${keyFormatted}`;
+    }
+
+    // Si no termina con }}, agrégalo
+    if (!keyFormatted.endsWith('}}')) {
+      keyFormatted = `${keyFormatted}}}`;
+    }
+
+    return {
+      key: keyFormatted,
+      value: selectedOptions[k] ? 'X' : ''
+    };
+  });
+
+  // Mapa base con las llaves originales
+  const map = new Map();
+  dataFilter.forEach(item => {
+    const cleanKey = item.key.trim();
+    // Limpia etiquetas HTML antes de guardar
+    const cleanValue = stripHTML(item.value ?? '');
+    map.set(cleanKey, { key: cleanKey, value: cleanValue });
+  });
+
+  // Sobrescribir o agregar las nuevas variables
+  dataKeyArray.forEach(item => {
+    const cleanKey = item.key.trim();
+    const cleanValue = stripHTML(item.value ?? '');
+    map.set(cleanKey, { key: cleanKey, value: cleanValue });
+  });
+
+  return Array.from(map.values());
+}
+
+
+function generateSelectedOptionsFromData(dataFilter) {
+  const selectedOptions = {};
+
+  // función auxiliar para adaptar los nombres de criterio (criterio → cri)
+  function normalizeCriterioName(criterio) {
+    return criterio.replace("criterio", "cri");
+  }
+
+  dataFilter.forEach(({ key, value }) => {
+    if (key.includes("criterio") && key.includes("gradocump")) {
+      const criterio = key.split("_")[0]; // ejemplo: criterio1
+      const criterioDoc = normalizeCriterioName(criterio); // → cri1
+
+      // Normaliza el valor para comparar sin errores
+      const val = (value || "").toLowerCase().trim();
+
+      // Inicializa todas las opciones como falsas
+      selectedOptions[`${criterioDoc}_A`] = false;
+      selectedOptions[`${criterioDoc}_B`] = false;
+      selectedOptions[`${criterioDoc}_C`] = false;
+      selectedOptions[`${criterioDoc}_D`] = false;
+
+      // Compara según las opciones conocidas
+      if (val.includes("plenamente") || val.includes("(a)")) {
+        selectedOptions[`${criterioDoc}_A`] = true;
+      } else if (val.includes("alto") || val.includes("(b)")) {
+        selectedOptions[`${criterioDoc}_B`] = true;
+      } else if (val.includes("aceptable") || val.includes("(c)")) {
+        selectedOptions[`${criterioDoc}_C`] = true;
+      } else if (val.includes("insatisfactorio") || val.includes("(d)")) {
+        selectedOptions[`${criterioDoc}_D`] = true;
+      }
+    }
+  });
+
+  return selectedOptions;
+}
+
+
+
 // Generate Doc
 export default () => {
     const classes = useStyles();
@@ -44,6 +149,7 @@ export default () => {
     const [textError, setTextError] = React.useState("")
     const [IsActiveRequest, setIsActiveRequest] = React.useState(false)
     const [isError, setIsError] = React.useState(false)
+
 
     const onHandlerClick = async () => {
         
@@ -62,10 +168,21 @@ export default () => {
         const regex = /^{{[0-9a-zA-Z_]+}}$/;
         const dataFilter = keysValues.data.filter(item => regex.test(item?.key));
 
+        // Llamamos a la nueva función que hace todo el merge
+        // 🧩 Generar automáticamente las opciones desde el documento
+        const selectedOptions = generateSelectedOptionsFromData(dataFilter);
+
+        // 👉 Mezclar con los valores originales
+        const mergedData = prepareMergedData(dataFilter, selectedOptions);
+
+        console.log("🔍 mergedData:", mergedData);
+
+
         await createDocumentGoogle({
-            data: dataFilter,
+            data: mergedData,
             email: cookie?.email ?? ""
         })
+        
 
         setOpenSnak(true)
         setTextError("Terminado")

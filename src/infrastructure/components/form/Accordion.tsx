@@ -269,10 +269,10 @@ const CheckboxesWithText = ({ data, globalState }) => {
         control={
           <Checkbox 
               defaultChecked={data?.checkbox_director !== 'FALSE'} 
-              disabled={checkboxLevelPermission(1)}
+              disabled={!checkboxLevelPermission(1)}
               onChange={(e) => handlerChange(e,'M')}
           />}
-        label="Opción Director"
+        label=" Director"
       />
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
         Confirmar si el director revisó y aprobó los cambios finales.
@@ -283,7 +283,7 @@ const CheckboxesWithText = ({ data, globalState }) => {
         control={
           <Checkbox 
               defaultChecked={data?.checkbox_daca !== 'FALSE'} 
-              disabled={checkboxLevelPermission(2)}
+              disabled={!checkboxLevelPermission(2)}
               onChange={(e) => handlerChange(e,'N')}
           />}
         label="Opción Daca"

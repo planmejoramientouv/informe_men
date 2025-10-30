@@ -322,8 +322,12 @@ export default makeStyles(() => ({
         cursor: 'not-allowed'
     },
     buttonDownloadDocs: {
-        backgroundColor: 'var(--red-univalle) !important',
-    },
+        backgroundColor: '#9e9e9e !important',
+        color: '#fff !important',
+        '&:hover': {
+            backgroundColor: '#757575 !important',
+        },
+        },
     contFormDoc: {
         display: 'flex',
         justifyContent: 'start',
