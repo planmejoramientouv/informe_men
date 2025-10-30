@@ -76,6 +76,8 @@ export const checkboxLevelPermission = (type = 0, permisoKey = '') => {
   const rol    = String(cookie?.rol || '').toLowerCase();
   const nivel  = String(cookie?.nivel || '');
 
+  console.log("rol ", rol, nivel, permisoKey);
+
   // Admin: edita todo
   if (ROL_ADMIN_SISTEM.includes(rol)) return true;
 

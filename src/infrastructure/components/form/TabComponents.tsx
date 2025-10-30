@@ -427,6 +427,22 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
           <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
             {/* Drawer */}
             <Drawer variant="permanent" sx={styles.drawer}>
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  p: 2,
+                  borderBottom: '1px solid #e0e0e0',
+                  backgroundColor: '#f5f5f5',
+                  textAlign: 'center',
+                }}
+              >
+                <Box sx={{ width: '90%', display: 'flex', justifyContent: 'center' }}>
+                  <DownloadDoc />
+                </Box>
+              </Box>
               <Box sx={styles.drawerContainer}>
                 <List>
                   {menuItems.map((item, idx) => (
@@ -551,7 +567,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
 
             {/* Main Content */}
             <Box sx={{ pb: 10, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <DownloadDoc />
+                {/* <DownloadDoc /> */}
                 {element?.[activeMenu] != null && (
                   [ element[activeMenu] ]?.map((el, idx) => (
                     <PrintBodyTab
