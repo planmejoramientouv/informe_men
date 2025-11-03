@@ -9,6 +9,11 @@ import Show from '../../../../share/utils/Show'
 import PanelItems from '../../components/panel/Panel'
 import CreateItemCard from '../../components/panel/CreateItemCard';
 
+// Para manejar cookies y roles
+import { getCookieData } from '../../../../libs/utils/utils'
+import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, ROL_EDITOR_SISTEM } from '../../../../libs/utils/const'
+
+
 // Material - IU
 import Box from '@mui/material/Box'
 import { Button, Grid2, Typography } from '@mui/material'
@@ -18,8 +23,20 @@ export default () => {
     const [hydrated, setHydrated] = React.useState(false);
     const [refreshKey, setRefreshKey] = React.useState(0);
 
+    const [role, setRole] = React.useState('');
+    const canCreate = React.useMemo(() => {
+        // Mostrar botón SOLO a admin o director
+        return !ROL_EDITOR_SISTEM.includes(role);
+    }, [role]);
+
     React.useEffect(() => {
         setHydrated(true);
+        try {
+            const cookie = getCookieData('data') || {};
+            setRole(String(cookie?.rol || '').toLowerCase());
+        } catch (e) {
+        setRole('');
+        }
     }, []);
     
 
@@ -48,11 +65,11 @@ export default () => {
                 <Box className={classes.containerForm}>
                     <Grid2 className={classes.containerFields}>
                         <Grid2 className={classes.containerPanel}>
-                            <CreateItemCard onSave={handleCreateSave} />
+                            {canCreate && <CreateItemCard onSave={handleCreateSave} />}
                             <Box sx={{
-                                maxHeight: '100vh',      // ajusta a tu gusto
+                                maxHeight: '100vh',
                                 overflowY: 'auto',
-                                pr: 1,                  // espacio para que no tape el scroll
+                                pr: 1,                  
                             }}>
                             <PanelItems key={refreshKey} />
                             </Box>
