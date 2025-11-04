@@ -19,6 +19,8 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import PropTypes from 'prop-types';
 
+import EditorsManagerLauncher from '../../components/editors/EditorsManagerLauncher'
+
 // Material - IU
 
 import {
@@ -303,6 +305,12 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const [expandedSubMenus, setExpandedSubMenus] = React.useState<string[]>([]);
     const [hydrated, setHydrated] = React.useState(false);
 
+    const getNivelFromGroup = (groups_fields) => {
+    const s = String(groups_fields || '').trim()
+    const m = s.match(/^(\d+)(?:\.\d+)?/)
+    return m ? m[1] : ''
+}
+
     const subMenuItems = (data) => {
       if (!Array.isArray(data)) return [];
 
@@ -421,6 +429,9 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     }, []);
     console.log("Element: 45", menuItems)
     if (!hydrated) return null;
+
+    const elActivo = element?.[activeMenu] 
+    const nivelSugerido = getNivelFromGroup(elActivo?.groups_fields || elActivo?.primary?.groups_fields)
 
     return (
         <React.Fragment key={index}>
@@ -567,19 +578,24 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
 
             {/* Main Content */}
             <Box sx={{ pb: 10, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* <DownloadDoc /> */}
-                {element?.[activeMenu] != null && (
-                  [ element[activeMenu] ]?.map((el, idx) => (
-                    <PrintBodyTab
-                      key={idx}
-                      element={el}
-                      index={idx}
-                      onSaveValues={onSaveValues}
-                      onSaveChecks={onSaveChecks}
-                      saving={saving}
-                    />
-                  ))
-                )}
+              {/* <DownloadDoc /> */}
+              
+              <div style={{ margin: '8px 0' }}>
+                 <EditorsManagerLauncher defaultNivel={String(nivelSugerido || '')} />
+              </div>
+
+              {element?.[activeMenu] != null && (
+                [element[activeMenu]]?.map((el, idx) => (
+                  <PrintBodyTab
+                    key={idx}
+                    element={el}
+                    index={idx}
+                    onSaveValues={onSaveValues}
+                    onSaveChecks={onSaveChecks}
+                    saving={saving}
+                  />
+                ))
+              )}
             </Box>
           </Box>
         </React.Fragment>

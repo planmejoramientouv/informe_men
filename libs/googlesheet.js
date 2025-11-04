@@ -321,32 +321,34 @@ export async function appendPermissionRow({ email, nivel = '', rol, programa = '
  * Actualiza una fila existente por ID (columna A)
  * Solo sobreescribe B:H (email, nivel, rol, programa, proceso, year, estado)
  */
-export async function updatePermissionRowById({ id, email, nivel = '', rol, programa = '', proceso, year, estado }) {
+export async function updatePermissionRowById({
+  id, email, nivel, rol, programa, proceso, year, estado
+}) {
   if (!id) throw new Error('Falta ID');
-  const auth = /* jwtClient o helper */ await getAuth();
+  const auth = await getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
 
-  // 1) Encontrar la fila (rowIndex) cuyo A == id
   const values = await readPermisosRaw(sheets);
   let targetRow = -1;
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
-      targetRow = i + 1; // +1 por 1-based index de Sheets (y otra +1 por headers)
-      break;
-    }
+    if (String(values[i][0]) === String(id)) { targetRow = i + 1; break; }
   }
   if (targetRow === -1) throw new Error(`No se encontró fila con ID=${id}`);
 
-  // Armar payload a actualizar (B:H)
-  const y = year ?? values[targetRow - 1]?.[6] ?? new Date().getFullYear(); // conserva si no llega
+  const existing = values[targetRow - 1] || []; // [A:id, B:email, C:nivel, D:rol, E:programa, F:proceso, G:year, H:estado]
+
+  const keep = (v, fallback) => (v === undefined ? fallback : v); // solo si es undefined, conserva
+
+  const y = year === undefined ? (existing[6] || new Date().getFullYear()) : year;
+
   const row = [
-    email   ?? values[targetRow - 1]?.[1] ?? '',
-    nivel   ?? values[targetRow - 1]?.[2] ?? '',
-    rol     ?? values[targetRow - 1]?.[3] ?? '',
-    programa?? values[targetRow - 1]?.[4] ?? '',
-    proceso ?? values[targetRow - 1]?.[5] ?? '',
+    keep(email,    existing[1] || ''),
+    keep(nivel,    existing[2] || ''),
+    keep(rol,      existing[3] || ''),
+    keep(programa, existing[4] || ''),   
+    keep(proceso,  existing[5] || ''),
     String(y),
-    estado  ?? values[targetRow - 1]?.[7] ?? 'Activo',
+    keep(estado,   existing[7] || 'Activo'),
   ];
 
   const range = `${SHEET_PERMISOS}!B${targetRow}:H${targetRow}`;
