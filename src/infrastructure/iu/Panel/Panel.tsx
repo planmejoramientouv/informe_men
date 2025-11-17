@@ -11,7 +11,7 @@ import CreateItemCard from '../../components/panel/CreateItemCard';
 
 // Para manejar cookies y roles
 import { getCookieData } from '../../../../libs/utils/utils'
-import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, ROL_EDITOR_SISTEM } from '../../../../libs/utils/const'
+import {  ROL_EDITOR_SISTEM } from '../../../../libs/utils/const'
 
 
 // Material - IU

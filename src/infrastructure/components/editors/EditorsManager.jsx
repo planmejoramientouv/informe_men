@@ -225,7 +225,7 @@ export default function EditorsManager({
         <Box sx={{ mb: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="body2">
-              La <b>condición seleccionada</b> del formulario se usará como <code>nivel</code> al crear el editor (editable).
+              La <b>sección seleccionada</b> del formulario se usará como <code>nivel</code> al crear el editor (editable).
             </Typography>
             <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)}>
               Asignar editor
