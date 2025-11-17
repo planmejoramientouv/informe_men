@@ -1,8 +1,9 @@
+// pages/api/editors.jsx
 import {
   getPermission,
   appendPermissionRowWithUrls,
   updatePermissionRowById,
-} from '../../libs/googlesheet' 
+} from '../../libs/googlesheet'
 
 const isUnivalleEmail = (s) =>
   /@correounivalle\.edu\.co$/i.test(String(s || '').trim())
@@ -33,35 +34,77 @@ function findAnyActiveContextRow(rows, { programa, proceso, year }) {
   )
 }
 
+function tokenizeNiveles(s) {
+  // "1, 2, 3.4" => ["1","2","3"]  (normaliza cada token)
+  return String(s ?? "")
+    .split(",")
+    .map(t => t.trim())
+    .filter(t => t.length > 0)
+    .map(normalizeNivel)
+    .filter(t => t.length > 0)
+}
+
+function mergeNiveles(existing, incoming) {
+  const a = tokenizeNiveles(existing)
+  const b = tokenizeNiveles(incoming)
+  const set = new Set([...a, ...b])
+
+  // Orden numérico ascendente si son números puros; si no, por texto
+  const arr = Array.from(set)
+  const nums = arr.filter(x => /^\d+$/.test(x)).map(x => Number(x)).sort((x,y) => x-y).map(String)
+  const others = arr.filter(x => !/^\d+$/.test(x)).sort((x,y)=> x.localeCompare(y))
+  return [...nums, ...others].join(",")
+}
+
+function removeNivel(existing, toRemove) {
+  const list = normalizeNivelList(existing)
+  const nRem = normalizeNivel(toRemove)
+  const next = list.filter(n => n !== nRem)
+  return next.join(',')
+}
+
+
 function normalizeNivel(n) {
   const s = String(n ?? '').trim()
   if (!s) return ''
-  // Solo normaliza si la cadena ES exactamente "dígitos" o "dígitos.dígitos"
   const m = s.match(/^(\d+)(?:\.\d+)?$/)
   return m ? m[1] : s
+}
+
+// NUEVO: normaliza listas de nivel separadas por coma
+function normalizeNivelList(s) {
+  return String(s ?? '')
+    .split(',')
+    .map(x => normalizeNivel(x))
+    .filter(Boolean)
 }
 
 export default async function handler(req, res) {
   try {
     // LIST
     if (req.method === 'GET') {
-      const { programa = '', proceso = '', year = '' } = req.query || {}
+      const { programa = '', proceso = '', year = '', nivel = '' } = req.query || {}
       const all = await getPermission('PERMISOS')
 
-      const list = (all || []).filter(r =>
+      let list = (all || []).filter(r =>
         norm(r.rol) === 'editor' &&
         norm(r.programa) === norm(programa) &&
         norm(r.proceso) === norm(proceso) &&
         norm(r.year) === norm(year)
       )
 
+      // si llega nivel, incluir también filas cuyo r.nivel contenga ese nivel entre comas
+      const nNivel = normalizeNivel(nivel)
+      if (nNivel) {
+        list = list.filter(r => normalizeNivelList(r.nivel).includes(nNivel))
+      }
+
       return res.status(200).json({ ok: true, data: list })
     }
 
-    // CREATE / UPSERT
+    // CREATE / UPSERT (igual que antes: usar SOLO nivelSugerido)
     if (req.method === 'POST') {
-      
-      const { email, nivel, nivelSugerido, programa, proceso, year } = req.body || {}
+      const { email, nivelSugerido, programa, proceso, year } = req.body || {}
 
       if (!isUnivalleEmail(email)) {
         return res.status(400).json({ ok: false, error: 'Correo no permitido. Usa @correounivalle.edu.co.' })
@@ -70,16 +113,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: 'Faltan campos: email, programa, proceso, year' })
       }
 
-      
-      const normalizedNivel = normalizeNivel(nivel) || normalizeNivel(nivelSugerido)
+      const normalizedNivel = normalizeNivel(nivelSugerido)
       if (!normalizedNivel) {
-        return res.status(400).json({ ok: false, error: 'Falta nivel (o nivelSugerido).' })
+        return res.status(400).json({ ok: false, error: 'Falta nivel por defecto (nivelSugerido).' })
       }
 
       const all = await getPermission('PERMISOS')
       const existing = findEditor(all || [], { email, programa, proceso, year })
 
-      // copiar URLs de cualquier fila activa del mismo contexto
       const contextAny = findAnyActiveContextRow(all || [], { programa, proceso, year })
       const url_carpeta = contextAny?.url_carpeta ?? ''
       const url_exel    = contextAny?.url_exel ?? ''
@@ -99,18 +140,23 @@ export default async function handler(req, res) {
         return res.status(201).json({ ok: true, created })
       }
 
-      // Ya existe → reactivar/actualizar nivel
-      const id = existing.id
+      const mergedNivel = mergeNiveles(existing.nivel, normalizedNivel)
+
       await updatePermissionRowById({
-        id,
-        
-        nivel: normalizedNivel || existing.nivel,
+        id: existing.id,
+        // (opcional) conservar el email tal cual
+        email: existing.email,
+        nivel: mergedNivel,      // 👈 aquí está el cambio clave
+        rol: 'editor',
+        programa: existing.programa,
+        proceso: existing.proceso,
+        year: existing.year,
         estado: 'Activo',
       })
-      return res.status(200).json({ ok: true, reactivated: id })
+      return res.status(200).json({ ok: true, reactivated: existing.id, nivel: mergedNivel })
     }
 
-    // UPDATE (nivel/email/estado)
+    // UPDATE (soporta cambiar email/nivel/estado)
     if (req.method === 'PUT') {
       const { id, email, nivel, estado } = req.body || {}
       if (!id) return res.status(400).json({ ok: false, error: 'Falta id' })
@@ -138,12 +184,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true })
     }
 
-    // SOFT-DELETE → estado='Inactivo'
     if (req.method === 'DELETE') {
-      const { id } = req.query || {}
+      const { id, nivel } = req.query || {}
       if (!id) return res.status(400).json({ ok: false, error: 'Falta id' })
+      if (!nivel) return res.status(400).json({ ok: false, error: 'Falta nivel a eliminar' })
 
-      await updatePermissionRowById({ id, estado: 'Inactivo' })
+      // 1) Trae permisos y busca la fila por id
+      const all = await getPermission('PERMISOS')
+      const row = (all || []).find(r => String(r.id) === String(id))
+      if (!row) return res.status(404).json({ ok: false, error: 'No existe el editor' })
+
+      // 2) Quita el nivel solicitado
+      const nextNivel = removeNivel(row.nivel, nivel)
+
+      // 3) Si queda vacío -> inactivar; si no -> actualizar solo nivel
+      if (!nextNivel) {
+        await updatePermissionRowById({ id, estado: 'Inactivo', nivel: '' })
+      } else {
+        await updatePermissionRowById({ id, nivel: nextNivel })
+      }
       return res.status(200).json({ ok: true })
     }
 
