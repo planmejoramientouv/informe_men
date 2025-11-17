@@ -6,13 +6,11 @@ import {
   TextField, Typography, IconButton, Table, TableHead, TableRow, TableCell, TableBody,
   Stack, Tooltip, Chip
 } from "@mui/material"
-import { Add, Delete, Edit, Restore  } from "@mui/icons-material"
+import { Add, Delete, Edit, Restore, Save, Close } from "@mui/icons-material"
 
-// --- helpers en cliente ---
 const isUnivalleEmail = (s) =>
   /@correounivalle\.edu\.co$/i.test(String(s || "").trim())
 
-// Solo normaliza si *toda* la cadena es "dígitos" o "dígitos.dígitos"
 const normalizeNivel = (n) => {
   const s = String(n ?? "").trim()
   if (!s) return ""
@@ -22,7 +20,6 @@ const normalizeNivel = (n) => {
 
 function useProcesoContext(contextOverride) {
   const [ctx, setCtx] = React.useState({ programa: "", proceso: "", year: "" })
-
   React.useEffect(() => {
     let alive = true
     ;(async () => {
@@ -31,7 +28,6 @@ function useProcesoContext(contextOverride) {
         setCtx(contextOverride)
         return
       }
-      // import dinámico (evita SSR)
       const { getCookieData } = await import("../../../../libs/utils/utils")
       const c = getCookieData("rrc") || getCookieData("raac") || getCookieData("data") || {}
       if (!alive) return
@@ -43,7 +39,6 @@ function useProcesoContext(contextOverride) {
     })()
     return () => { alive = false }
   }, [contextOverride])
-
   return ctx
 }
 
@@ -55,24 +50,17 @@ export default function EditorsManager({
 }) {
   const cookie = useProcesoContext(contextOverride)
 
-  // tabla
   const [rows, setRows] = React.useState([])
   const [loading, setLoading] = React.useState(false)
 
-  // crear
-  const [openCreate, setOpenCreate] = React.useState(false)
+  // Crear en línea (sin sub-modal)
   const [email, setEmail] = React.useState("")
-  const [nivel, setNivel] = React.useState(defaultNivel || "")
 
-  // editar
-  const [openEdit, setOpenEdit] = React.useState(false)
-  const [editId, setEditId] = React.useState(null)
-  const [editNivel, setEditNivel] = React.useState("")
-  const [editOriginalNivel, setEditOriginalNivel] = React.useState("")
+  // Editar correo inline
+  const [editEmailId, setEditEmailId] = React.useState(null)
+  const [editEmailValue, setEditEmailValue] = React.useState("")
 
-  React.useEffect(() => {
-    setNivel(defaultNivel || "")
-  }, [defaultNivel])
+  const nivelFiltro = normalizeNivel(defaultNivel)
 
   const fetchList = React.useCallback(async () => {
     if (!cookie?.programa || !cookie?.proceso || !cookie?.year) return
@@ -82,6 +70,7 @@ export default function EditorsManager({
         programa: cookie.programa,
         proceso:  cookie.proceso,
         year:     String(cookie.year),
+        nivel:    String(nivelFiltro || ""),
       }).toString()
 
       const res = await fetch(`/api/editors?${qs}`)
@@ -92,7 +81,7 @@ export default function EditorsManager({
     } finally {
       setLoading(false)
     }
-  }, [cookie?.programa, cookie?.proceso, cookie?.year])
+  }, [cookie?.programa, cookie?.proceso, cookie?.year, nivelFiltro])
 
   React.useEffect(() => {
     if (open) fetchList()
@@ -104,21 +93,19 @@ export default function EditorsManager({
       alert("El correo debe ser @correounivalle.edu.co.")
       return
     }
+    if (!nivelFiltro) {
+      alert("No hay nivel por defecto disponible para este tab.")
+      return
+    }
 
     try {
       setLoading(true)
-
-      // nivel sugerido desde defaultNivel (que viene del tab activo)
-      const sugerido = normalizeNivel(defaultNivel)
-      const nivelToSend = normalizeNivel(nivel || sugerido)
-
       const res = await fetch("/api/editors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: String(email).trim().toLowerCase(),
-          nivel: nivelToSend || "",
-          nivelSugerido: sugerido || "",
+          nivelSugerido: nivelFiltro,
           programa: cookie.programa,
           proceso:  cookie.proceso,
           year:     cookie.year,
@@ -126,9 +113,7 @@ export default function EditorsManager({
       })
       const json = await res.json()
       if (!json?.ok) throw new Error(json?.error || "Error creando editor")
-      setOpenCreate(false)
       setEmail("")
-      setNivel(defaultNivel || "")
       await fetchList()
     } catch (e) {
       console.error(e)
@@ -138,13 +123,16 @@ export default function EditorsManager({
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm("¿Quitar editor? Se marcará como Inactivo.")) return
+  // ⬇️ CAMBIO: eliminar SOLO el nivel actual (no inactivar)
+  const handleDeleteLevelFromRow = async (id) => {
+    if (!id || !nivelFiltro) return
+    if (!confirm(`¿Quitar el nivel ${nivelFiltro} de este editor?`)) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/editors?id=${id}`, { method: "DELETE" })
+      const qs = new URLSearchParams({ id: String(id), nivel: String(nivelFiltro) }).toString()
+      const res = await fetch(`/api/editors?${qs}`, { method: "DELETE" })
       const json = await res.json()
-      if (!json?.ok) throw new Error(json?.error || "Error al eliminar")
+      if (!json?.ok) throw new Error(json?.error || "Error al quitar el nivel")
       await fetchList()
     } catch (e) {
       console.error(e)
@@ -154,7 +142,6 @@ export default function EditorsManager({
     }
   }
 
-  // Activar (reactivar) un editor inactivo
   const handleActivate = async (id) => {
     try {
       setLoading(true)
@@ -174,38 +161,34 @@ export default function EditorsManager({
     }
   }
 
-  const openEditNivel = (row) => {
-    setEditId(row.id)
-    setEditNivel(row.nivel || "")
-    setEditOriginalNivel(row.nivel || "")
-    setOpenEdit(true)
+  // --- EDITAR CORREO INLINE ---
+  const startEditEmail = (row) => {
+    setEditEmailId(row.id)
+    setEditEmailValue(row.email || "")
   }
 
-  const handleSaveNivel = async () => {
-    if (!editId) return
+  const cancelEditEmail = () => {
+    setEditEmailId(null)
+    setEditEmailValue("")
+  }
+
+  const saveEditEmail = async () => {
+    if (!editEmailId) return
+    const next = String(editEmailValue || "").trim().toLowerCase()
+    if (!isUnivalleEmail(next)) {
+      alert("El correo debe ser @correounivalle.edu.co.")
+      return
+    }
     try {
       setLoading(true)
-      const next = (editNivel ?? "").trim()
-      const prev = (editOriginalNivel ?? "").trim()
-
-      // si no cambió, no dispares PUT
-      if (next === prev) {
-        setOpenEdit(false)
-        setEditId(null)
-        setEditNivel("")
-        return
-      }
-
       const res = await fetch("/api/editors", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editId, nivel: next }),
+        body: JSON.stringify({ id: editEmailId, email: next }),
       })
       const json = await res.json()
-      if (!json?.ok) throw new Error(json?.error || "Error guardando nivel")
-      setOpenEdit(false)
-      setEditId(null)
-      setEditNivel("")
+      if (!json?.ok) throw new Error(json?.error || "Error guardando correo")
+      cancelEditEmail()
       await fetchList()
     } catch (e) {
       console.error(e)
@@ -214,22 +197,40 @@ export default function EditorsManager({
       setLoading(false)
     }
   }
+  // --- FIN EDITAR CORREO INLINE ---
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
-        Editores – {cookie?.programa} · {cookie?.proceso} {cookie?.year}
+        Editores – {cookie?.programa} · {cookie?.proceso} {cookie?.year} {nivelFiltro ? `· Nivel ${nivelFiltro}` : ""}
       </DialogTitle>
 
       <DialogContent dividers>
         <Box sx={{ mb: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="body2">
-              La <b>condición seleccionada</b> del formulario se usará como <code>nivel</code> al crear el editor (editable).
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
+            <Typography variant="body2" sx={{ textAlign: { xs: "center", md: "left" } }}>
+              Se listan editores de cualquier fila cuyo <b>nivel</b> incluya <b>{nivelFiltro || "(sin nivel)"}</b>.
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)}>
-              Asignar editor
-            </Button>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="center" sx={{ width: "100%", maxWidth: 760 }}>
+              <TextField
+                label="Correo del editor"
+                type="email"
+                size="medium"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                fullWidth
+                sx={{ minWidth: 420, maxWidth: 640 }}
+              />
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleCreate}
+                disabled={!email || !nivelFiltro || loading}
+              >
+                Asignar
+              </Button>
+            </Stack>
           </Stack>
         </Box>
 
@@ -244,104 +245,89 @@ export default function EditorsManager({
           </TableHead>
           <TableBody>
             {(!rows || rows.length === 0) && (
-              <TableRow>
-                <TableCell colSpan={4}>No hay editores asignados.</TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={4}>No hay editores en este nivel.</TableCell></TableRow>
             )}
-            {rows?.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.email}</TableCell>
-                <TableCell>{r.nivel || "-"}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={r.estado}
-                    color={String(r.estado).toLowerCase() === "activo" ? "success" : "default"}
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <Tooltip title="Editar nivel">
-                    <span>
-                      <IconButton onClick={() => openEditNivel(r)}>
-                        <Edit />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  {String(r.estado).toLowerCase() === "activo" ? (
-                    <Tooltip title="Quitar (Inactivar)">
+            {rows?.map((r) => {
+              const isEditing = editEmailId === r.id
+              return (
+                <TableRow key={r.id}>
+                  <TableCell>
+                    {isEditing ? (
+                      <TextField
+                        value={editEmailValue}
+                        onChange={(e) => setEditEmailValue(e.target.value)}
+                        size="small"
+                        fullWidth
+                        sx={{ maxWidth: 480 }}
+                      />
+                    ) : (
+                      r.email
+                    )}
+                  </TableCell>
+                  <TableCell>{r.nivel || "-"}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size="small"
+                      label={r.estado}
+                      color={String(r.estado).toLowerCase() === "activo" ? "success" : "default"}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {isEditing ? (
+                      <>
+                        <Tooltip title="Guardar">
+                          <span>
+                            <IconButton color="success" onClick={saveEditEmail} disabled={loading}>
+                              <Save />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Cancelar">
+                          <span>
+                            <IconButton onClick={cancelEditEmail} disabled={loading}>
+                              <Close />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </>
+                    ) : (
+                      <Tooltip title="Editar correo">
+                        <span>
+                          <IconButton onClick={() => startEditEmail(r)} disabled={loading}>
+                            <Edit />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+
+                    {/* ⬇️ AHORA eliminar quita SOLO el nivel actual */}
+                    <Tooltip title={`Quitar nivel ${nivelFiltro || ""}`}>
                       <span>
-                        <IconButton color="error" onClick={() => handleDelete(r.id)}>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteLevelFromRow(r.id)}
+                          disabled={loading || !nivelFiltro}
+                        >
                           <Delete />
                         </IconButton>
                       </span>
                     </Tooltip>
-                  ) : (
-                    <Tooltip title="Activar">
-                      <span>
-                        <IconButton color="success" onClick={() => handleActivate(r.id)}>
-                          <Restore />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+
+                    {String(r.estado).toLowerCase() !== "activo" && (
+                      <Tooltip title="Activar">
+                        <span>
+                          <IconButton color="success" onClick={() => handleActivate(r.id)} disabled={loading}>
+                            <Restore />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
-
-        {/* Crear */}
-        <Dialog open={openCreate} onClose={() => setOpenCreate(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Asignar editor</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Correo del editor"
-              type="email"
-              fullWidth
-              margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <TextField
-              label="Nivel (opcional)"
-              fullWidth
-              margin="normal"
-              value={nivel}
-              onChange={(e) => setNivel(e.target.value)}
-              placeholder="1,2,5 por ejemplo"
-              helperText="Se prellena con la condición seleccionada en el formulario."
-            />
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Contexto: <b>{cookie?.programa}</b> – {cookie?.proceso} {cookie?.year}.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenCreate(false)}>Cancelar</Button>
-            <Button variant="contained" onClick={handleCreate} disabled={!email || loading}>
-              Guardar
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Editar nivel */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="xs">
-          <DialogTitle>Editar nivel</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Nivel"
-              fullWidth
-              margin="normal"
-              value={editNivel}
-              onChange={(e) => setEditNivel(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Cancelar</Button>
-            <Button variant="contained" onClick={handleSaveNivel} disabled={!editId || loading}>
-              Guardar
-            </Button>
-          </DialogActions>
-        </Dialog>
       </DialogContent>
 
       <DialogActions>
