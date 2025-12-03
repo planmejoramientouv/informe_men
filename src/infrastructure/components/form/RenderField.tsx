@@ -50,6 +50,8 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
     const textDebRef = React.useRef<any>(null);
     const richDebRef = React.useRef<any>(null);
 
+    
+
     const handleChange = (event) => {
       element.valor = event.target.value
       setValue(event.target.value);

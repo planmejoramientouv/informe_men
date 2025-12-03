@@ -549,7 +549,9 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   });
 
   // 2) Copia spreadsheet
-  const fileName = `Informe MEN - ${programa}`;
+  const proceso = String(tipo).toUpperCase();
+
+  const fileName = `Informe MEN - ${proceso} - ${programa}`;
   const file = await copySpreadsheetToFolder({
     templateId: TEMPLATE_SPREADSHEET_ID,
     name: fileName,
@@ -565,8 +567,8 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   // 4) Obtener sheetId (gid) de esa hoja
   let gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: baseTitle });
 
-  // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo>"
-  const newSheetTitle = `${programa} - ${periodo || ''}`.trim();
+  // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo> - <tipo>"
+  const newSheetTitle = `${programa} - ${periodo || ''} - ${tipo.toUpperCase()}`.trim();
   if (gid) {
     await renameSheet({
       spreadsheetId: file.id,
@@ -718,4 +720,231 @@ export async function clearColumnExcept({ spreadsheetId, sheetTitle, column, kee
     spreadsheetId,
     requestBody: { ranges },
   });
+}
+
+
+
+
+// -----------------------------------------------------------------------------
+// Asegura que exista una hoja con cierto título en un spreadsheet
+// Si existe, la devuelve. Si no, la crea.
+// -----------------------------------------------------------------------------
+export async function ensureSheetByTitle({ spreadsheetId, title }) {
+  if (!spreadsheetId) throw new Error('Falta spreadsheetId');
+  if (!title) throw new Error('Falta title');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Ver si ya existe una hoja con ese título
+  const { data } = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties(sheetId,title)',
+  });
+
+  const existing = (data.sheets || []).find(
+    (s) => s.properties && s.properties.title === title
+  );
+
+  if (existing) {
+    return {
+      sheetId: existing.properties.sheetId,
+      title: existing.properties.title,
+      created: false,
+    };
+  }
+
+  // 2) Si no existe, la creamos
+  const res = await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title,
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  const added = res.data.replies?.[0]?.addSheet?.properties;
+
+  return {
+    sheetId: added?.sheetId,
+    title: added?.title || title,
+    created: true,
+  };
+}
+
+const LINK_REGEX = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
+
+function makeSafeTitle(base) {
+  return String(base || '')
+    .replace(/[\\/*?:\[\]]/g, ' ')
+    .slice(0, 100);
+}
+
+export async function importTablesFromLinks({
+  spreadsheetId,
+  gid,
+  keepRows = [49, 50, 101, 123, 141, 142, 143, 158, 159, 160, 174, 175, 185, 191, 203, 204],
+}) {
+  if (!spreadsheetId) throw new Error('Falta spreadsheetId');
+  if (!gid) throw new Error('Falta gid de la hoja principal');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Hoja principal donde están los enlaces
+  const sheetTitle = await getSheetTitleByGid(spreadsheetId, gid);
+
+  // 2) Leer G en las filas que nos interesan
+  const ranges = keepRows.map((row) => `${sheetTitle}!G${row}`);
+  const { data: batch } = await sheets.spreadsheets.values.batchGet({
+    spreadsheetId,
+    ranges,
+  });
+
+  const results = [];
+
+  for (let i = 0; i < keepRows.length; i++) {
+    const row = keepRows[i];
+    const vr = batch.valueRanges?.[i];
+    const rawValue = vr?.values?.[0]?.[0] || '';
+
+    if (!rawValue) {
+      results.push({ row, skipped: true, reason: 'Celda vacía' });
+      continue;
+    }
+
+    const match = String(rawValue).match(LINK_REGEX);
+    if (!match) {
+      results.push({
+        row,
+        skipped: true,
+        reason: 'No es un enlace válido de Google Sheets',
+        raw: rawValue,
+      });
+      continue;
+    }
+
+    const sourceSpreadsheetId = match[1];
+    const sourceGid = match[2];
+
+    // Evitar recursión si ya apunta al mismo archivo
+    if (sourceSpreadsheetId === spreadsheetId) {
+      results.push({
+        row,
+        skipped: true,
+        reason: 'Ya apunta al mismo spreadsheet destino',
+        raw: rawValue,
+      });
+      continue;
+    }
+
+    try {
+      // 3) Metadata archivo origen (para sacar el nombre)
+      const { data: srcMeta } = await sheets.spreadsheets.get({
+        spreadsheetId: sourceSpreadsheetId,
+        fields: 'properties.title,sheets.properties(sheetId,title)',
+      });
+
+      const fileTitle = srcMeta.properties?.title || 'Origen';
+
+      const srcSheetProps = (srcMeta.sheets || []).find(
+        (s) => String(s.properties?.sheetId) === String(sourceGid)
+      );
+
+      const srcSheetTitle = srcSheetProps?.properties?.title;
+      if (!srcSheetTitle) {
+        results.push({
+          row,
+          skipped: true,
+          reason: 'No se encontró la hoja origen por gid',
+          raw: rawValue,
+        });
+        continue;
+      }
+
+      // 4) Número de tabla (4..19)
+      const tableNumber = 4 + i;
+
+      // 5) Copiar la hoja completa al spreadsheet destino
+      const copyRes = await sheets.spreadsheets.sheets.copyTo({
+        spreadsheetId: sourceSpreadsheetId,
+        sheetId: Number(sourceGid),
+        requestBody: {
+          destinationSpreadsheetId: spreadsheetId,
+        },
+      });
+
+      const newSheetId = copyRes.data.sheetId;
+      let newSheetTitle = copyRes.data.title || srcSheetTitle;
+
+      // 6) Renombrar la nueva hoja a "Tabla X - <archivo>"
+      const baseTitle = `Tabla ${tableNumber} - ${fileTitle}`;
+      const safeTitle = makeSafeTitle(baseTitle);
+
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId: newSheetId,
+                  title: safeTitle,
+                },
+                fields: 'title',
+              },
+            },
+          ],
+        },
+      });
+
+      newSheetTitle = safeTitle;
+
+      // 7) Generar nuevo enlace local a esa hoja y actualizar G[row]
+      const newUrl = buildSheetUrl({
+        spreadsheetId,
+        gid: newSheetId,
+      });
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetTitle}!G${row}`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [[newUrl]],
+        },
+      });
+
+      results.push({
+        row,
+        oldUrl: rawValue,
+        newUrl,
+        newSheetTitle,
+        newSheetId,
+        tableNumber,
+        skipped: false,
+      });
+    } catch (err) {
+      console.error(`Error importando fila G${row}:`, err?.message || err);
+      results.push({
+        row,
+        skipped: true,
+        reason: err?.message || 'Error al copiar la hoja origen',
+        code: err?.code || null,
+      });
+      continue;
+    }
+  }
+
+  return {
+    sheetTitle,
+    results,
+  };
 }

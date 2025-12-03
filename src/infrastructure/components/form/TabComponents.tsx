@@ -70,6 +70,7 @@ import People from '@mui/icons-material/People'
 import HomeWork from '@mui/icons-material/HomeWork'
 import AccountBalance from '@mui/icons-material/AccountBalance'
 import DownloadDoc from '../Docs/Docs'
+import ImportarTablas from '../../components/panel/ImportarTablas'
 
 // Hooks
 import { setCookieRRC, firstLevelPermission } from '../../../../libs/utils/utils'
@@ -450,8 +451,15 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                   textAlign: 'center',
                 }}
               >
-                <Box sx={{ width: '90%', display: 'flex', justifyContent: 'center' }}>
-                  <DownloadDoc />
+                <Box sx={{ width: '90%' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <DownloadDoc />
+                  </Box>
+
+                  {/* Fila para ImportarTablas */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <ImportarTablas />
+                  </Box>
                 </Box>
               </Box>
               <Box sx={styles.drawerContainer}>

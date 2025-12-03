@@ -272,7 +272,7 @@ const CheckboxesWithText = ({ data, globalState }) => {
               disabled={!checkboxLevelPermission(1)}
               onChange={(e) => handlerChange(e,'M')}
           />}
-        label=" Director"
+        label=" Sección Finalizada"
       />
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
         Confirmar si el director revisó y aprobó los cambios finales.
@@ -286,7 +286,7 @@ const CheckboxesWithText = ({ data, globalState }) => {
               disabled={!checkboxLevelPermission(2)}
               onChange={(e) => handlerChange(e,'N')}
           />}
-        label="Opción Daca"
+        label="Aprobado Daca"
       />
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
          Confirmar si Daca revisó y aprobó los cambios finales.
