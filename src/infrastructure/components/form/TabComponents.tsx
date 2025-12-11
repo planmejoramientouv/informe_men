@@ -73,7 +73,8 @@ import DownloadDoc from '../Docs/Docs'
 import ImportarTablas from '../../components/panel/ImportarTablas'
 
 // Hooks
-import { setCookieRRC, firstLevelPermission } from '../../../../libs/utils/utils'
+import { setCookieRRC, getCookieData,firstLevelPermission, useRouteCookie } from '../../../../libs/utils/utils'
+import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, ROL_EDITOR_SISTEM } from "../../../../libs/utils/const.js"
 
 const theme = createTheme({
   palette: {
@@ -97,6 +98,13 @@ const theme = createTheme({
 const drawerWidth = 280
 
 const styles = {
+  editableItem: {
+    backgroundColor: "#d7f7d4 !important", // verde claro
+  },
+  editableSubItem: {
+    backgroundColor: "#e8ffe5 !important",
+  },
+
   appBar: {
     backgroundColor: "#fff",
     color: "#202124",
@@ -310,7 +318,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const s = String(groups_fields || '').trim()
     const m = s.match(/^(\d+)(?:\.\d+)?/)
     return m ? m[1] : ''
-}
+  }
 
     const subMenuItems = (data) => {
       if (!Array.isArray(data)) return [];
@@ -434,6 +442,16 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const elActivo = element?.[activeMenu] 
     const nivelSugerido = getNivelFromGroup(elActivo?.groups_fields || elActivo?.primary?.groups_fields)
 
+    
+    const { cookie } = useRouteCookie();
+    const cookieData = getCookieData("data");
+    const nivelesUsuario = String(cookie?.nivel || ''); // por ejemplo: "1,2,3"
+    const nivelesArray = nivelesUsuario.split(',');      // ["1","2","3"]
+    
+    const rolUsuario = (cookieData?.rol || '').toLowerCase();
+    const esEditor = ROL_EDITOR_SISTEM.includes(rolUsuario);
+    const esAdminODirector = ROL_ADMIN_SISTEM.includes(rolUsuario) || ROL_DIRECTOR.includes(rolUsuario);
+
     return (
         <React.Fragment key={index}>
           <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
@@ -474,10 +492,11 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                             ...(activeMenu === idx
                               ? styles.listItemButtonActive
                               : {}),
+                              backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined
                           }}
-                          onClick={() =>
+                          onClick={() => {
                             handleMenuClick(item.id, item.hasSubmenu, idx)
-                          }
+                          }}
                         >
                           <ListItemIcon sx={styles.listItemIcon}>
                             {iconList[idx]}
@@ -511,15 +530,18 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                 <React.Fragment key={subItem.id}>
                                   <ListItem sx={styles.listItem}>
                                     <ListItemButton
-                                      sx={styles.submenuItem}
-                                      onClick={() =>
-                                        handleSubMenuClick(
-                                          item.id,
-                                          subItem,
-                                          idx,
-                                          subIdx
+                                        sx={{
+                                            ...styles.submenuItem,
+                                            backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined
+                                          }}
+                                        onClick={() => {
+                                          handleSubMenuClick(
+                                            item.id,
+                                            subItem,
+                                            idx,
+                                            subIdx
                                         )
-                                      }
+                                      }}
                                     >
                                       <ListItemText
                                         primary={subItem.label}
@@ -555,7 +577,9 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                             sx={styles.listItem}
                                           >
                                             <ListItemButton
-                                              sx={styles.subsubmenuItem}
+                                              sx={{...styles.subsubmenuItem, 
+                                                backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined,
+                                              }}
                                               onClick={() => {
                                               
                                                 setActiveMenu(idx);

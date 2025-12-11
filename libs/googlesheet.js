@@ -156,6 +156,7 @@ export const updateCheckbox = async ({ data, sheetId, gid, row_ }) => {
           valueInputOption: 'RAW',
           resource: { values: [[updatedData?.checkbox ?? '']] }
         });
+        console.log("✅ Checkbox actualizado para ID:", row_);
       }
     });
 

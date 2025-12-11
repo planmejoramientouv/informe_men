@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 import CryptoJS from 'crypto-js';
 import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, ROL_EDITOR_SISTEM } from './const';
+import { usePathname } from "next/navigation";
 
 const secretKey = process.env.NEXT_PUBLIC_SECRET_KEY;
 
@@ -36,13 +37,15 @@ export const getCookieData = (cookieName) => {
   return JSON.parse(CryptoJS?.AES?.decrypt(encryptedData, secretKey).toString(CryptoJS.enc.Utf8) || '{}');
 }
 
-export const setCookieRRC = ({sheetId, programa, proceso, gid, year, nameCookie}) => {
+export const setCookieRRC = ({sheetId, programa, proceso, gid, year, rol, nivel, nameCookie}) => {
     const encryptedData = CryptoJS.AES.encrypt(JSON.stringify({
         sheetId: sheetId,
         programa: programa,
         proceso: proceso,
         gid: gid,
         year: year,
+        rol: rol,
+        nivel: nivel,
     }), secretKey).toString();
     Cookies.set(nameCookie, encryptedData, { expires: 4 });
 }
@@ -64,34 +67,40 @@ export const firstLevelPermission = (node = {}) => {
   // Director: ve TODO (sin depender de "nivel")
   if (ROL_DIRECTOR.includes(rol)) return true;
 
+  if (ROL_EDITOR_SISTEM.includes(rol)) return true;
+
   // Editor: depende de "nivel" -> necesita permiso de VISTA (n)
-  const permisoKey = permisoKeyFromNode(node); // p.ej. "9"
-  if (!permisoKey) return true;               // si no hay clave, no bloqueamos
-  return hasViewPermission(nivel, permisoKey);
+  // const permisoKey = permisoKeyFromNode(node); // p.ej. "9"
+  // if (!permisoKey) return true;               // si no hay clave, no bloqueamos
+  // return hasViewPermission(nivel, permisoKey);
 };
 
 
-export const checkboxLevelPermission = (type = 0, permisoKey = '') => {
-  const cookie = getCookieData('data') || {};
-  const rol    = String(cookie?.rol || '').toLowerCase();
-  const nivel  = String(cookie?.nivel || '');
+export const checkboxLevelPermission = (permisoKey = '', tipo = '') => {
+  const routeCookie = useRouteCookie() || {};
+  const cookieData = getCookieData("data") || {};
+  const cookie = routeCookie.cookie || {};
+  const rol = String(cookie.rol || '').toLowerCase();
+  const niveles = String(cookie.nivel || '');
+  const nivelesArray = niveles.split(',');
 
-  console.log("rol ", rol, nivel, permisoKey);
+  // Admin puede todo
+  if (ROL_ADMIN_SISTEM.includes(cookieData.rol)) return true;
 
-  // Admin: edita todo
-  if (ROL_ADMIN_SISTEM.includes(rol)) return true;
+  // Director solo checkbox "director"
+  if (ROL_DIRECTOR.includes(cookieData.rol)) return tipo === 'director';
 
-  // Director: edita TODO (sin depender de "nivel")
-  if (ROL_DIRECTOR.includes(rol)) return true;
-
-  // Editor: sólo edita si tiene el permiso con guion (n-)
-  if (ROL_EDITOR_SISTEM.includes(rol)) {
-    return hasEditPermission(nivel, String(permisoKey));
+  // Editor solo puede checkbox director si su nivel incluye el permiso
+  if (ROL_EDITOR_SISTEM.includes(cookieData.rol)) {
+    return tipo === 'director' && nivelesArray.includes(String(permisoKey).trim());
   }
 
-  // Otros roles: no pueden editar (ajústalo si necesitas)
+  // Otros roles: no pueden editar
   return false;
 };
+
+
+
 
 
 // Normaliza y separa permisos de vista/edición desde el string nivel:
@@ -100,18 +109,37 @@ export const parseNivelTokens = (nivelStr = '') => {
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
-  const view = new Set();  // ej. '1', '2'
-  const edit = new Set();  // ej. '1', '2' (para los que tengan '1-', '2-')
+
+  const view = new Set();  // opcional si aún lo necesitas
+  const edit = new Set();  // ahora aquí va TODO
+
   for (const t of tokens) {
-    if (/-$/.test(t)) {
-      const k = t.replace(/-$/, '');
-      if (k) edit.add(k);
-    } else {
-      view.add(t);
-    }
+    // Todos los números son permisos de edición
+    edit.add(t);
+
+    // Y también sirven como permisos de vista si sigues usándolo
+    view.add(t);
   }
+
   return { view, edit };
 };
+
+export const useRouteCookie = () => {
+  const pathname = usePathname(); // Ej: "/rrc/form/123"
+
+  // Primer segmento
+  const segment = pathname.split("/").filter(Boolean)[0] || "";
+
+  // Nombre de la cookie = primer segmento
+  const cookieName = segment;
+
+  // Leer cookie
+  const cookie = getCookieData(cookieName) || {};
+
+  return { cookieName, cookie };
+};
+
+
 
 // ¿Tiene permiso de VER un menú (primer nivel)?
 export const hasViewPermission = (nivelStr = '', permisoKey = '') => {
@@ -125,3 +153,10 @@ export const hasEditPermission = (nivelStr = '', permisoKey = '') => {
   return edit.has(String(permisoKey));
 };
 
+export function canEditMenu(element, nivelStr) {
+  const raw = element?.groups_fields || element?.primary?.groups_fields || "";
+  const match = String(raw).match(/^\d+/);
+  const menuNumber = match ? match[0] : "";
+
+  return can;
+}

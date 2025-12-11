@@ -25,7 +25,7 @@ import { Typography, TextField, FormControl, MenuItem, Select, InputLabel, Grid2
 // Hooks
 import { firstLevelPermission } from '../../../../libs/utils/utils'
 
-export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: any) => {
+export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId , puedeEditar }: any) => {
     const classes = useStyles();
     const [values, setValues] = React.useState([])
     const [hydrated, setHydrated] = React.useState(false);
@@ -139,7 +139,7 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: 
                   <FormControl className={classes.selectInTable} variant="outlined" onClick={e => e.stopPropagation()}>
                     <InputLabel shrink>Grado de Cumplimiento</InputLabel>
                     <Select
-                      disabled={!firstLevelPermission(element)}
+                      disabled={!puedeEditar}
                       value={values[index] || ''}
                       onChange={(e) => handleChange(e, index,'select')}
                       label="Grado de Cumplimiento"
@@ -154,7 +154,7 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId  }: 
   
                   <TableCell component="th" scope="row">
                   <TextField
-                      disabled={!firstLevelPermission(element)}
+                      disabled={!puedeEditar}
                       className={classes.inputNumberInTable}
                       type="number"
                       value={valueNumbers[index]}

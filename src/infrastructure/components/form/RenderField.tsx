@@ -34,7 +34,8 @@ import { useGlobalState } from '../../../../hooks/context'
 import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
-import { firstLevelPermission } from '../../../../libs/utils/utils'
+import {useRouteCookie, hasEditPermission, firstLevelPermission , getCookieData} from '../../../../libs/utils/utils'
+import { ROL_ADMIN_SISTEM, ROL_DIRECTOR } from "../../../../libs/utils/const.js"
 
 export default ({ fieldType, labelText, value, element, shared, iframeView, setOpenDialog, htmlId, onSaveValues, onSaveChecks, saving = false,}: any) => {
     const classes = useStyles();
@@ -50,7 +51,14 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
     const textDebRef = React.useRef<any>(null);
     const richDebRef = React.useRef<any>(null);
 
-    
+    const { cookie } = useRouteCookie();
+    const cookieData = getCookieData("data");
+    const rol = (cookieData.rol || "").toLowerCase();
+    const nivel = cookie.nivel || "";
+
+
+
+    // console.log("[RenderField] nivel:", nivel, "rol:", rol, "element:", element);
 
     const handleChange = (event) => {
       element.valor = event.target.value
@@ -88,6 +96,24 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
     }
   }, [element?.id, onSaveValues]);
 
+  function getMenuNumber(element) {
+    const raw = element?.groups_fields || element?.primary?.groups_fields || "";
+    const match = String(raw).match(/^\d+/);
+    return match ? match[0] : "";
+  }
+  const nivelesUsuario = nivel.split(",").map(n => n.trim());
+  const menuNumber = String(getMenuNumber(element)).trim();
+    const esAdmin = ROL_ADMIN_SISTEM.includes(rol);
+    const esDirector = ROL_DIRECTOR.includes(rol);
+    
+
+  const puedeEditar = esAdmin || esDirector || nivelesUsuario.includes(menuNumber);
+
+  // console.log("nivel del usuario:", nivel);
+
+  // console.log("permiso para editar:", puedeEditar);
+
+
   const queueSaveText = (val: string) => {
     if (textDebRef.current) clearTimeout(textDebRef.current);
     textDebRef.current = setTimeout(() => { saveNow(val); }, 500);
@@ -100,13 +126,13 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
 
   const classDisabledTextArea = () => {
     let class_ = classes.containerTextAreaNew
-    let hasPermission = firstLevelPermission(element)
+    let hasPermission = puedeEditar
       return hasPermission ? class_ : `${class_} ${classes.disabledTextArea}`
     }
 
     const classDisabledTableExtra = () => {
       let base = { width: '100%', position: "relative" } as any
-      let hasPermission = firstLevelPermission(element)
+      let hasPermission = puedeEditar
       return hasPermission ? base : { ...base, opacity: "0.2" }
     }
 
@@ -169,7 +195,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
             label={labelText}
             value={textValue}
             onChange={(e) => {
-              if (!firstLevelPermission(element)) return;
+              if (!puedeEditar(element)) return;
               const v = e.target.value ?? '';
               setTextValue(v);
               element.valor = v;
@@ -177,7 +203,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
               textDebRef.current = setTimeout(() => { saveNow(v); }, 900); // ← 900ms
             }}
             // onBlur={async () => { if (!firstLevelPermission(element)) return; await saveNow(textValue); }}
-            disabled={saving || !firstLevelPermission(element)}
+            disabled={saving || !puedeEditar}
           />
         );
   
@@ -188,7 +214,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
             <ReactQuill
               value={richValue}
               onChange={(v: string) => {
-                if (!firstLevelPermission(element)) return;
+                if (!puedeEditar) return;
                 setRichValue(v);
                 element.valor = v;
                 if (richDebRef.current) clearTimeout(richDebRef.current);
@@ -196,9 +222,9 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
               }}
               // ❌ quita el guardado en blur
               // onBlur={async () => { if (!firstLevelPermission(element)) return; await saveNow(richValue); }}
-              readOnly={saving || !firstLevelPermission(element)}
+              readOnly={saving || !puedeEditar}
             />
-            <Show when={!firstLevelPermission(element)}>
+            <Show when={!puedeEditar}>
               <Grid2 className={classes.diableBox} />
             </Show>
           </Grid2>
@@ -207,7 +233,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
       case "TableExtra":
         return (
           <Grid2 id={htmlId} sx={classDisabledTableExtra()}>
-            <Show when={firstLevelPermission(element)}>
+            <Show when={puedeEditar}>
               <Button sx={{ background: '#C8102E', color: 'white'}} onClick={() => setOpen(true)}>
                   <label><b>{labelText}</b></label>
               </Button>
@@ -246,6 +272,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
             element={element}
             shared={shared}
             autoSave={autoSave}
+            puedeEditar={puedeEditar}
           />
         );
 
