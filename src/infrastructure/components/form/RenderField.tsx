@@ -18,7 +18,7 @@ import Show from '../../../../share/utils/Show'
 import PopUp from '../Popup/Popup'
 
 // Material - IU
-import { Typography, TextField, Grid2, Button } from '@mui/material';
+import { Typography, TextField, Grid2, Button, Box } from '@mui/material';
 
 // Quicks
 import dynamic from 'next/dynamic'; // Importación dinámica
@@ -210,23 +210,45 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
       case "textArea":
         return (
           <Grid2 id={htmlId} className={classDisabledTextArea()}>
+
             <label><b>{labelText}</b></label>
+
             <ReactQuill
               value={richValue}
-              onChange={(v: string) => {
+              onChange={(v) => {
                 if (!puedeEditar) return;
                 setRichValue(v);
                 element.valor = v;
                 if (richDebRef.current) clearTimeout(richDebRef.current);
-                richDebRef.current = setTimeout(() => { saveNow(v); }, 1000); // ← 1000ms
+                richDebRef.current = setTimeout(() => { saveNow(v); }, 1000);
               }}
-              // ❌ quita el guardado en blur
-              // onBlur={async () => { if (!firstLevelPermission(element)) return; await saveNow(richValue); }}
               readOnly={saving || !puedeEditar}
             />
+
             <Show when={!puedeEditar}>
               <Grid2 className={classes.diableBox} />
             </Show>
+
+            {element?.ayuda && (
+              <Box
+                sx={{
+                  mt: 1.5,
+                  p: 1.2,
+                  background: "#f7f7f7",
+                  borderRadius: "6px",
+                  border: "1px solid #e0e0e0",
+                  whiteSpace: "pre-line",
+                  fontSize: "0.78rem",
+                  color: "#444",
+                  lineHeight: 1.4,
+                }}
+              >
+                {element.ayuda}
+              </Box>
+            )}
+
+
+
           </Grid2>
         );
   
