@@ -1,11 +1,11 @@
-"use-client"
+"use client"
 /**
  * @author: Cristian Machado <cristian.machado@correounivalle.edu.co>
  * @copyright:  2024 
 */
 
 // React
-import React from "react"
+import React, { useState } from "react"
 
 // Styles
 import useStyles from '../../../../css/form/form.css.js'
@@ -18,7 +18,7 @@ import Show from '../../../../share/utils/Show'
 import PopUp from '../Popup/Popup'
 
 // Material - IU
-import { Typography, TextField, Grid2, Button, Box } from '@mui/material';
+import { Typography, TextField, Grid2, Button, Box, DialogContent, DialogTitle, Dialog, DialogActions } from '@mui/material';
 
 // Quicks
 import dynamic from 'next/dynamic'; // Importación dinámica
@@ -31,11 +31,12 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import { useGlobalState } from '../../../../hooks/context'
 
 // Fecth
-import { updateDataTable } from '../../../../hooks/fecth/handlers/handlers'
+import { saveNote } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import {useRouteCookie, hasEditPermission, firstLevelPermission , getCookieData} from '../../../../libs/utils/utils'
-import { ROL_ADMIN_SISTEM, ROL_DIRECTOR } from "../../../../libs/utils/const.js"
+import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, NOTE_TYPES } from "../../../../libs/utils/const.js"
+
 
 export default ({ fieldType, labelText, value, element, shared, iframeView, setOpenDialog, htmlId, onSaveValues, onSaveChecks, saving = false,}: any) => {
     const classes = useStyles();
@@ -50,15 +51,152 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
 
     const textDebRef = React.useRef<any>(null);
     const richDebRef = React.useRef<any>(null);
+    const sheetId = globalState?.data?.sheetId;
+
+    const [notas, setNotas] = useState<any[]>([]);
+    const [loadingNotas, setLoadingNotas] = useState(false);
+    const notasCount = notas.length;
+
+
 
     const { cookie } = useRouteCookie();
     const cookieData = getCookieData("data");
     const rol = (cookieData.rol || "").toLowerCase();
     const nivel = cookie.nivel || "";
 
+    const [modalComentario, setModalComentario] = useState({
+      open: false,
+      element: null,
+      texto: "",
+    });
+
+    const [modalNota, setModalNota] = useState({
+      open: false,
+      element: null,
+      archivo: "",
+      paginas: "",
+    });
 
 
-    // console.log("[RenderField] nivel:", nivel, "rol:", rol, "element:", element);
+    const agregarComentario = (element) => {
+      if (richDebRef.current) clearTimeout(richDebRef.current);
+
+      setModalComentario({
+        open: true,
+        element,
+        texto: "",
+      });
+    };
+
+
+    const cerrarModalComentario = () => {
+      setModalComentario({
+        open: false,
+        element: null,
+        texto: "",
+      });
+    };
+
+    const agregarNotaDeReferencia = async (element) => {
+      if (richDebRef.current) clearTimeout(richDebRef.current);
+      setModalNota({
+        open: true,
+        element,
+        archivo: "",
+        paginas: "",
+      });
+
+      await cargarNotas(element);
+    };
+
+
+    const cerrarModalNota = () => {
+      setModalNota({
+        open: false,
+        element: null,
+        archivo: "",
+        paginas: "",
+      });
+    };
+
+const guardarComentario = async () => {
+  if (!modalComentario.texto.trim()) return;
+  if (!modalComentario.element) return;
+  if (!globalState.data.sheetId) {
+    console.error('No se puede guardar comentario: sheetId no definido');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sheetId: globalState.data.sheetId, // ✅ ahora usamos la constante definida arriba
+        elementId: modalComentario.element.id,
+        texto: modalComentario.texto,
+        usuario: cookieData?.email || 'desconocido',
+        fecha: new Date().toISOString(),
+      }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.status) {
+      console.error('Error guardando comentario', json);
+      return;
+    }
+
+    cerrarModalComentario();
+    cargarComentarios(modalComentario.element); // recarga los comentarios
+  } catch (err) {
+    console.error('Error guardando comentario', err);
+  }
+};
+
+
+
+
+    const guardarNota = async () => {
+  await saveNote({
+    sheetId: globalState.data.sheetId,
+    tipo: NOTE_TYPES.NOTA,
+    rows: [
+      {
+        element_id: modalNota.element.id,
+        tipo: NOTE_TYPES.NOTA,
+        archivo: modalNota.archivo,
+        paginas: modalNota.paginas,
+        fecha: new Date().toISOString(),
+        usuario: cookieData?.email || 'desconocido',
+      },
+    ],
+  });
+
+  cerrarModalNota();
+};
+
+
+    const cargarNotas = async (element: any) => {
+      if (!sheetId || !element?.id) return;
+      try {
+        setLoadingNotas(true);
+        const res = await fetch(`/api/notesList?sheetId=${sheetId}&elementId=${element.id}`);
+        if (!res.ok) {
+          console.warn('No se pudieron cargar las notas, status:', res.status);
+          setNotas([]);
+          return;
+        }
+        const json = await res.json();
+        setNotas(json.data || []);
+      } catch (err) {
+        console.error('Error cargando notas', err);
+        setNotas([]);
+      } finally {
+        setLoadingNotas(false);
+      }
+    };
+
 
     const handleChange = (event) => {
       element.valor = event.target.value
@@ -71,24 +209,21 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
       element.valor = newValue
       setValueTextArea(newValue);
     }
-  
-    const autoSave = async (element) => {
-      if (element?.valor?.length <= 0) return
-      
-      let data = [element]
-      let dataSheet = globalState.data
-      console.log(data)
-      const response  = await updateDataTable({
-        sheetId: dataSheet.sheetId,
-        gid: dataSheet.gid,
-        data: data
-      })
 
-      if (response?.data)
-          console.log("Guardado Exitoso!!!")
-    }
+    const isTextoVacio = (text?: string) => {
+      if (!text) return true;
+
+      const limpio = text
+        .replace(/<(.|\n)*?>/g, '') // quita HTML
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+
+      return limpio.length === 0;
+    };
+
 
     // ===== Helpers de guardado =====
+    const hayModalAbierto = modalComentario.open || modalNota.open;
   const saveNow = React.useCallback(async (val: string) => {
     if (!element?.id) return;
     if (typeof onSaveValues === 'function') {
@@ -113,16 +248,36 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
 
   // console.log("permiso para editar:", puedeEditar);
 
+  const [comentarios, setComentarios] = useState<any[]>([]);
+  const [loadingComentarios, setLoadingComentarios] = useState(false);
 
-  const queueSaveText = (val: string) => {
-    if (textDebRef.current) clearTimeout(textDebRef.current);
-    textDebRef.current = setTimeout(() => { saveNow(val); }, 500);
-  };
+const cargarComentarios = async (element: any) => {
+  if (!sheetId || !element?.id) return;
 
-  const queueSaveRich = (val: string) => {
-    if (richDebRef.current) clearTimeout(richDebRef.current);
-    richDebRef.current = setTimeout(() => { saveNow(val); }, 600);
-  };
+  try {
+    setLoadingComentarios(true);
+
+    const res = await fetch(`/api/comments?sheetId=${sheetId}&elementId=${element.id}`);
+    const json = await res.json();
+
+    console.log('API comentarios response:', json);  // 🔹 revisa aquí
+
+    if (!res.ok) {
+      console.warn('No se pudo cargar comentarios, status:', res.status);
+      setComentarios([]);
+      return;
+    }
+
+    setComentarios(json.data || []);
+  } catch (err) {
+    console.error('Error cargando comentarios', err);
+    setComentarios([]);
+  } finally {
+    setLoadingComentarios(false);
+  }
+};
+
+
 
   const classDisabledTextArea = () => {
     let class_ = classes.containerTextAreaNew
@@ -148,6 +303,18 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
     React.useEffect(() => {
         setHydrated(true);
     }, []);
+
+    const initializedRef = React.useRef(false);
+
+    React.useEffect(() => {
+      if (!element?.id || !sheetId) return;
+      if (initializedRef.current) return; // ya cargado
+      cargarComentarios(element);
+      cargarNotas(element);
+      initializedRef.current = true;
+    }, [element?.id, sheetId]);
+
+
 
     React.useEffect(() => {
       return () => {
@@ -209,47 +376,222 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
   
       case "textArea":
         return (
-          <Grid2 id={htmlId} className={classDisabledTextArea()}>
+          <>
+            <Grid2 id={htmlId} className={classDisabledTextArea()}>
+              
+              <label><b>{labelText}</b></label>
 
-            <label><b>{labelText}</b></label>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                {/* ReactQuill ocupa todo el espacio */}
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    minHeight: 180, // 👈 altura similar a la versión anterior
+                    "& .ql-container": {
+                      minHeight: 140,
+                    },
+                    "& .ql-editor": {
+                      minHeight: 140,
+                    },
+                  }}
+                >
+                  <ReactQuill
+                    value={richValue}
+                    onChange={(v) => {
+                      if (!puedeEditar) return;
+                      if (modalComentario.open || modalNota.open) return; // 👈 CLAVE
 
-            <ReactQuill
-              value={richValue}
-              onChange={(v) => {
-                if (!puedeEditar) return;
-                setRichValue(v);
-                element.valor = v;
-                if (richDebRef.current) clearTimeout(richDebRef.current);
-                richDebRef.current = setTimeout(() => { saveNow(v); }, 1000);
-              }}
-              readOnly={saving || !puedeEditar}
-            />
+                      setRichValue(v);
+                      element.valor = v;
 
-            <Show when={!puedeEditar}>
-              <Grid2 className={classes.diableBox} />
-            </Show>
+                      if (richDebRef.current) clearTimeout(richDebRef.current);
+                      richDebRef.current = setTimeout(() => {
+                        saveNow(v);
+                      }, 1000);
+                    }}
+                    readOnly={saving || !puedeEditar}
+                  />
+                </Box>
 
-            {element?.ayuda && (
-              <Box
-                sx={{
-                  mt: 1.5,
-                  p: 1.2,
-                  background: "#f7f7f7",
-                  borderRadius: "6px",
-                  border: "1px solid #e0e0e0",
-                  whiteSpace: "pre-line",
-                  fontSize: "0.78rem",
-                  color: "#444",
-                  lineHeight: 1.4,
-                }}
-              >
-                {element.ayuda}
+                {/* Botones */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => agregarNotaDeReferencia(element)}
+                  >
+                    Nota {notasCount > 0 && `(${notasCount})`}
+                  </Button>
+                  {esAdmin && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => agregarComentario(element)}
+                    >
+                      Comentario
+                    </Button>
+                  )}
+                </Box>
               </Box>
-            )}
+              {/* Comentarios existentes */}
+              {loadingComentarios && (
+                <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
+                  Cargando comentarios...
+                </Box>
+              )}
 
+              {comentarios.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <b style={{ fontSize: '0.8rem' }}>Comentarios:</b>
 
+                  {comentarios.map((c, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        mt: 1,
+                        p: 1,
+                        background: '#fafafa',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <div>{c.texto}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 4 }}>
+                        {c.usuario} · {c.fecha}
+                      </div>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+              <Show when={!puedeEditar}>
+                <Grid2 className={classes.diableBox} />
+              </Show>
 
-          </Grid2>
+              {element?.ayuda && (
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    p: 1.2,
+                    background: "#f7f7f7",
+                    borderRadius: "6px",
+                    border: "1px solid #e0e0e0",
+                    whiteSpace: "pre-line",
+                    fontSize: "0.78rem",
+                    color: "#444",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {element.ayuda}
+                </Box>
+              )}
+            </Grid2>
+            <Dialog
+              open={modalComentario.open}
+              onClose={cerrarModalComentario}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>Agregar comentario</DialogTitle>
+
+              <DialogContent>
+                <TextField
+                  multiline
+                  minRows={4}
+                  fullWidth
+                  placeholder="Escribe tu comentario aquí..."
+                  value={modalComentario.texto}
+                  onChange={(e) =>
+                    setModalComentario({ ...modalComentario, texto: e.target.value })
+                  }
+                />
+              </DialogContent>
+
+              <DialogActions>
+                <Button onClick={cerrarModalComentario}>Cancelar</Button>
+                <Button
+                  variant="contained"
+                  disabled={isTextoVacio(modalComentario.texto)}
+                  onClick={guardarComentario}
+                >
+                  Guardar
+                </Button>
+
+              </DialogActions>
+            </Dialog>
+            <Dialog
+              open={modalNota.open}
+              onClose={cerrarModalNota}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>Nota de referencia</DialogTitle>
+
+              <DialogContent>
+                <TextField
+  fullWidth
+  label="Nombre del archivo"
+  placeholder="Ej. evidencia.pdf"
+  value={modalNota.archivo || ""}
+  onChange={(e) => setModalNota({ ...modalNota, archivo: e.target.value })}
+  sx={{ mb: 2, fontSize: '1rem' }} // 👈 aumenta tamaño
+/>
+
+<TextField
+  fullWidth
+  label="Número de la(s) página(s)"
+  placeholder="Ej. Pág. 45 - 46"
+  value={modalNota.paginas || ""}
+  onChange={(e) => setModalNota({ ...modalNota, paginas: e.target.value })}
+  sx={{ fontSize: '1rem' }} // 👈 aumenta tamaño
+/>
+
+                                {loadingNotas && (
+                  <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
+                    Cargando notas...
+                  </Box>
+                )}
+
+                {notas.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <b style={{ fontSize: '0.8rem' }}>Notas existentes:</b>
+
+                    {notas.map((n, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          mt: 1,
+                          p: 1,
+                          background: '#eef7ff',
+                          border: '1px solid #c0d4eb',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        <div><b>Archivo:</b> {n.archivo}</div>
+                        <div><b>Páginas:</b> {n.paginas}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 4 }}>
+                          {n.usuario} · {n.fecha}
+                        </div>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+              </DialogContent>
+
+              <DialogActions>
+                <Button onClick={cerrarModalNota}>Cancelar</Button>
+                <Button
+                  variant="contained"
+                  disabled={isTextoVacio(modalNota.archivo) || isTextoVacio(modalNota.paginas)}
+                  onClick={guardarNota}
+                >
+                  Guardar
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </>
         );
   
       case "TableExtra":

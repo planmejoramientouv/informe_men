@@ -949,3 +949,73 @@ export async function importTablesFromLinks({
     results,
   };
 }
+
+// ===============================
+// NOTAS / COMENTARIOS
+// ===============================
+
+export async function ensureSheetExists(spreadsheetId, title, headers = []) {
+  console.log('[ensureSheetExists]', spreadsheetId, title);
+
+  const { created } = await ensureSheetByTitle({
+    spreadsheetId,
+    title,
+  });
+
+  // Si la hoja fue creada, escribimos headers
+  if (created && headers.length > 0) {
+    const auth = await getAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${title}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [headers],
+      },
+    });
+  }
+}
+
+export async function appendRowsToSheet(spreadsheetId, title, rows) {
+  console.log('[appendRowsToSheet]', title, rows);
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${title}!A1`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: rows,
+    },
+  });
+}
+
+export async function getAllRowsFromSheet(spreadsheetId, sheetName) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: sheetName,
+  });
+
+  return res.data.values || [];
+}
+
+// Devuelve todas las filas de una hoja
+export async function getSheetValues(spreadsheetId, sheetName) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: sheetName,
+  });
+
+  return res.data.values || [];
+}

@@ -22,7 +22,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextFie
 import { useGlobalState } from '../../../../hooks/context'
 // import { updateCheckbox } from '../../../../libs/googlesheet'
 // Fecth
-import { updateDataTable, updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
+import { updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
