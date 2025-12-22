@@ -322,6 +322,25 @@ const cargarComentarios = async (element: any) => {
         if (richDebRef.current) clearTimeout(richDebRef.current);
       };
     }, []);
+
+    const ayudaBox = element?.ayuda ? (
+      <Box
+        sx={{
+          mt: 1.5,
+          p: 1.2,
+          background: "#f7f7f7",
+          borderRadius: "6px",
+          border: "1px solid #e0e0e0",
+          whiteSpace: "pre-line",
+          fontSize: "0.78rem",
+          color: "#444",
+          lineHeight: 1.4,
+        }}
+      >
+        {element.ayuda}
+      </Box>
+    ) : null;
+
   
     if (!hydrated) return null;
 
@@ -336,6 +355,8 @@ const cargarComentarios = async (element: any) => {
             >
               {labelText}
             </Typography>
+            {ayudaBox}
+
           </Grid2>
         );
   
@@ -349,29 +370,34 @@ const cargarComentarios = async (element: any) => {
               >
                 {labelText}
               </Typography>
+              {ayudaBox}
+
               <hr />
           </Grid2>
         );
     
       case "text":
         return (
-          <TextField
-            id={htmlId}
-            variant="outlined"
-            className={classes.inputText}
-            label={labelText}
-            value={textValue}
-            onChange={(e) => {
-              if (!puedeEditar(element)) return;
-              const v = e.target.value ?? '';
-              setTextValue(v);
-              element.valor = v;
-              if (textDebRef.current) clearTimeout(textDebRef.current);
-              textDebRef.current = setTimeout(() => { saveNow(v); }, 900); // ← 900ms
-            }}
-            // onBlur={async () => { if (!firstLevelPermission(element)) return; await saveNow(textValue); }}
-            disabled={saving || !puedeEditar}
-          />
+          <>
+            <TextField
+              id={htmlId}
+              variant="outlined"
+              className={classes.inputText}
+              label={labelText}
+              value={textValue}
+              onChange={(e) => {
+                if (!puedeEditar) return;
+                const v = e.target.value ?? "";
+                setTextValue(v);
+                element.valor = v;
+                if (textDebRef.current) clearTimeout(textDebRef.current);
+                textDebRef.current = setTimeout(() => saveNow(v), 900);
+              }}
+              disabled={saving || !puedeEditar}
+            />
+
+            {ayudaBox}
+          </>
         );
   
       case "textArea":
@@ -534,7 +560,7 @@ const cargarComentarios = async (element: any) => {
   placeholder="Ej. evidencia.pdf"
   value={modalNota.archivo || ""}
   onChange={(e) => setModalNota({ ...modalNota, archivo: e.target.value })}
-  sx={{ mb: 2, fontSize: '1rem' }} // 👈 aumenta tamaño
+  sx={{ mb: 2, fontSize: '1rem' }} 
 />
 
 <TextField
@@ -543,7 +569,7 @@ const cargarComentarios = async (element: any) => {
   placeholder="Ej. Pág. 45 - 46"
   value={modalNota.paginas || ""}
   onChange={(e) => setModalNota({ ...modalNota, paginas: e.target.value })}
-  sx={{ fontSize: '1rem' }} // 👈 aumenta tamaño
+  sx={{ fontSize: '1rem' }} 
 />
 
                                 {loadingNotas && (
@@ -596,6 +622,7 @@ const cargarComentarios = async (element: any) => {
   
       case "TableExtra":
         return (
+          <>
           <Grid2 id={htmlId} sx={classDisabledTableExtra()}>
             <Show when={puedeEditar}>
               <Button sx={{ background: '#C8102E', color: 'white'}} onClick={() => setOpen(true)}>
@@ -603,22 +630,29 @@ const cargarComentarios = async (element: any) => {
               </Button>
             </Show>
             {/* @ts-ignore */} 
-            <PopUp open={open} onClose={() => setOpen(false)}>
-              <Grid2 sx={{ display: `${iframeView? 'none' : 'block'}`}} className={classes.iframe}>
-                  <iframe
-                    src={element?.valor}
-                    width="100%"
-                    height="800px"
-                    frameBorder="0"
-                    loading="lazy"
-                  />
-              </Grid2>
-            </PopUp>
+              <PopUp open={open} onClose={() => setOpen(false)}>
+                <Grid2 sx={{ display: `${iframeView? 'none' : 'block'}`}} className={classes.iframe}>
+                    <iframe
+                      src={element?.valor}
+                      width="100%"
+                      height="800px"
+                      frameBorder="0"
+                      loading="lazy"
+                    />
+                </Grid2>
+              </PopUp>
           </Grid2>
+          {ayudaBox}
+          </>
       );
   
       case "tabla_aspectos":
-        return <PrintTableAspectos htmlId={htmlId} element={element} shared={shared} />
+        return (
+        <>
+          <PrintTableAspectos htmlId={htmlId} element={element} shared={shared} />
+           {ayudaBox}
+        </>
+      );
   
       case "Tabla_criterios":
         const autoSave = async (rowOrElement: any) => {
@@ -630,6 +664,7 @@ const cargarComentarios = async (element: any) => {
           }
         };
         return (
+          <>
           <PrintTableCriterios
             htmlId={htmlId}
             setOpenDialog={setOpenDialog}
@@ -637,7 +672,9 @@ const cargarComentarios = async (element: any) => {
             shared={shared}
             autoSave={autoSave}
             puedeEditar={puedeEditar}
-          />
+            />
+          {ayudaBox}
+          </>
         );
 
       default:
