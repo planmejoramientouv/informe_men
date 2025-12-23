@@ -1,4 +1,4 @@
-import { API_POST_CHECKBOX_UPDATE, API_POST_REPLACEMENTS_KEYS, API_POST_GENERATE_PDF, API_GET_VALUES_KEYS, API_GET_ALLOWED_USER , API_GET_RRC_FORM,  API_GET_TABLE, API_GET_UPDATE} from "../const/api"
+import { API_POST_CHECKBOX_UPDATE, API_SAVE_NOTE, API_POST_REPLACEMENTS_KEYS, API_POST_GENERATE_PDF, API_GET_VALUES_KEYS, API_GET_ALLOWED_USER , API_GET_RRC_FORM,  API_GET_TABLE, API_GET_UPDATE} from "../const/api"
 import { fetchGetGeneral, fetchPostGeneral } from "../fecth"
 
 export const getAllowedUser = () => {
@@ -29,6 +29,16 @@ export const getDataTable = () => {
         urlEndPoint: API_GET_TABLE
     })
 }
+
+export const saveNote = async (payload) => {
+  // console.log('[saveNote] payload:', payload);
+
+  return fetchPostGeneral({
+    urlEndPoint: API_SAVE_NOTE,
+    dataSend: payload,
+  });
+};
+
 
 export const updateDataTable = (data) => {
     return fetchPostGeneral({

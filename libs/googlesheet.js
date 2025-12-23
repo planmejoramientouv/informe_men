@@ -156,6 +156,7 @@ export const updateCheckbox = async ({ data, sheetId, gid, row_ }) => {
           valueInputOption: 'RAW',
           resource: { values: [[updatedData?.checkbox ?? '']] }
         });
+        console.log("✅ Checkbox actualizado para ID:", row_);
       }
     });
 
@@ -321,32 +322,34 @@ export async function appendPermissionRow({ email, nivel = '', rol, programa = '
  * Actualiza una fila existente por ID (columna A)
  * Solo sobreescribe B:H (email, nivel, rol, programa, proceso, year, estado)
  */
-export async function updatePermissionRowById({ id, email, nivel = '', rol, programa = '', proceso, year, estado }) {
+export async function updatePermissionRowById({
+  id, email, nivel, rol, programa, proceso, year, estado
+}) {
   if (!id) throw new Error('Falta ID');
-  const auth = /* jwtClient o helper */ await getAuth();
+  const auth = await getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
 
-  // 1) Encontrar la fila (rowIndex) cuyo A == id
   const values = await readPermisosRaw(sheets);
   let targetRow = -1;
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
-      targetRow = i + 1; // +1 por 1-based index de Sheets (y otra +1 por headers)
-      break;
-    }
+    if (String(values[i][0]) === String(id)) { targetRow = i + 1; break; }
   }
   if (targetRow === -1) throw new Error(`No se encontró fila con ID=${id}`);
 
-  // Armar payload a actualizar (B:H)
-  const y = year ?? values[targetRow - 1]?.[6] ?? new Date().getFullYear(); // conserva si no llega
+  const existing = values[targetRow - 1] || []; // [A:id, B:email, C:nivel, D:rol, E:programa, F:proceso, G:year, H:estado]
+
+  const keep = (v, fallback) => (v === undefined ? fallback : v); // solo si es undefined, conserva
+
+  const y = year === undefined ? (existing[6] || new Date().getFullYear()) : year;
+
   const row = [
-    email   ?? values[targetRow - 1]?.[1] ?? '',
-    nivel   ?? values[targetRow - 1]?.[2] ?? '',
-    rol     ?? values[targetRow - 1]?.[3] ?? '',
-    programa?? values[targetRow - 1]?.[4] ?? '',
-    proceso ?? values[targetRow - 1]?.[5] ?? '',
+    keep(email,    existing[1] || ''),
+    keep(nivel,    existing[2] || ''),
+    keep(rol,      existing[3] || ''),
+    keep(programa, existing[4] || ''),   
+    keep(proceso,  existing[5] || ''),
     String(y),
-    estado  ?? values[targetRow - 1]?.[7] ?? 'Activo',
+    keep(estado,   existing[7] || 'Activo'),
   ];
 
   const range = `${SHEET_PERMISOS}!B${targetRow}:H${targetRow}`;
@@ -547,7 +550,9 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   });
 
   // 2) Copia spreadsheet
-  const fileName = `Informe MEN - ${programa}`;
+  const proceso = String(tipo).toUpperCase();
+
+  const fileName = `Informe MEN - ${proceso} - ${programa}`;
   const file = await copySpreadsheetToFolder({
     templateId: TEMPLATE_SPREADSHEET_ID,
     name: fileName,
@@ -563,8 +568,8 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   // 4) Obtener sheetId (gid) de esa hoja
   let gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: baseTitle });
 
-  // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo>"
-  const newSheetTitle = `${programa} - ${periodo || ''}`.trim();
+  // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo> - <tipo>"
+  const newSheetTitle = `${programa} - ${periodo || ''} - ${tipo.toUpperCase()}`.trim();
   if (gid) {
     await renameSheet({
       spreadsheetId: file.id,
@@ -716,4 +721,301 @@ export async function clearColumnExcept({ spreadsheetId, sheetTitle, column, kee
     spreadsheetId,
     requestBody: { ranges },
   });
+}
+
+
+
+
+// -----------------------------------------------------------------------------
+// Asegura que exista una hoja con cierto título en un spreadsheet
+// Si existe, la devuelve. Si no, la crea.
+// -----------------------------------------------------------------------------
+export async function ensureSheetByTitle({ spreadsheetId, title }) {
+  if (!spreadsheetId) throw new Error('Falta spreadsheetId');
+  if (!title) throw new Error('Falta title');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Ver si ya existe una hoja con ese título
+  const { data } = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties(sheetId,title)',
+  });
+
+  const existing = (data.sheets || []).find(
+    (s) => s.properties && s.properties.title === title
+  );
+
+  if (existing) {
+    return {
+      sheetId: existing.properties.sheetId,
+      title: existing.properties.title,
+      created: false,
+    };
+  }
+
+  // 2) Si no existe, la creamos
+  const res = await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title,
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  const added = res.data.replies?.[0]?.addSheet?.properties;
+
+  return {
+    sheetId: added?.sheetId,
+    title: added?.title || title,
+    created: true,
+  };
+}
+
+const LINK_REGEX = /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit.*?gid=([0-9]+)/;
+
+function makeSafeTitle(base) {
+  return String(base || '')
+    .replace(/[\\/*?:\[\]]/g, ' ')
+    .slice(0, 100);
+}
+
+export async function importTablesFromLinks({
+  spreadsheetId,
+  gid,
+  keepRows = [49, 50, 101, 123, 141, 142, 143, 158, 159, 160, 174, 175, 185, 191, 203, 204],
+}) {
+  if (!spreadsheetId) throw new Error('Falta spreadsheetId');
+  if (!gid) throw new Error('Falta gid de la hoja principal');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1) Hoja principal donde están los enlaces
+  const sheetTitle = await getSheetTitleByGid(spreadsheetId, gid);
+
+  // 2) Leer G en las filas que nos interesan
+  const ranges = keepRows.map((row) => `${sheetTitle}!G${row}`);
+  const { data: batch } = await sheets.spreadsheets.values.batchGet({
+    spreadsheetId,
+    ranges,
+  });
+
+  const results = [];
+
+  for (let i = 0; i < keepRows.length; i++) {
+    const row = keepRows[i];
+    const vr = batch.valueRanges?.[i];
+    const rawValue = vr?.values?.[0]?.[0] || '';
+
+    if (!rawValue) {
+      results.push({ row, skipped: true, reason: 'Celda vacía' });
+      continue;
+    }
+
+    const match = String(rawValue).match(LINK_REGEX);
+    if (!match) {
+      results.push({
+        row,
+        skipped: true,
+        reason: 'No es un enlace válido de Google Sheets',
+        raw: rawValue,
+      });
+      continue;
+    }
+
+    const sourceSpreadsheetId = match[1];
+    const sourceGid = match[2];
+
+    // Evitar recursión si ya apunta al mismo archivo
+    if (sourceSpreadsheetId === spreadsheetId) {
+      results.push({
+        row,
+        skipped: true,
+        reason: 'Ya apunta al mismo spreadsheet destino',
+        raw: rawValue,
+      });
+      continue;
+    }
+
+    try {
+      // 3) Metadata archivo origen (para sacar el nombre)
+      const { data: srcMeta } = await sheets.spreadsheets.get({
+        spreadsheetId: sourceSpreadsheetId,
+        fields: 'properties.title,sheets.properties(sheetId,title)',
+      });
+
+      const fileTitle = srcMeta.properties?.title || 'Origen';
+
+      const srcSheetProps = (srcMeta.sheets || []).find(
+        (s) => String(s.properties?.sheetId) === String(sourceGid)
+      );
+
+      const srcSheetTitle = srcSheetProps?.properties?.title;
+      if (!srcSheetTitle) {
+        results.push({
+          row,
+          skipped: true,
+          reason: 'No se encontró la hoja origen por gid',
+          raw: rawValue,
+        });
+        continue;
+      }
+
+      // 4) Número de tabla (4..19)
+      const tableNumber = 4 + i;
+
+      // 5) Copiar la hoja completa al spreadsheet destino
+      const copyRes = await sheets.spreadsheets.sheets.copyTo({
+        spreadsheetId: sourceSpreadsheetId,
+        sheetId: Number(sourceGid),
+        requestBody: {
+          destinationSpreadsheetId: spreadsheetId,
+        },
+      });
+
+      const newSheetId = copyRes.data.sheetId;
+      let newSheetTitle = copyRes.data.title || srcSheetTitle;
+
+      // 6) Renombrar la nueva hoja a "Tabla X - <archivo>"
+      const baseTitle = `Tabla ${tableNumber} - ${fileTitle}`;
+      const safeTitle = makeSafeTitle(baseTitle);
+
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId: newSheetId,
+                  title: safeTitle,
+                },
+                fields: 'title',
+              },
+            },
+          ],
+        },
+      });
+
+      newSheetTitle = safeTitle;
+
+      // 7) Generar nuevo enlace local a esa hoja y actualizar G[row]
+      const newUrl = buildSheetUrl({
+        spreadsheetId,
+        gid: newSheetId,
+      });
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetTitle}!G${row}`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [[newUrl]],
+        },
+      });
+
+      results.push({
+        row,
+        oldUrl: rawValue,
+        newUrl,
+        newSheetTitle,
+        newSheetId,
+        tableNumber,
+        skipped: false,
+      });
+    } catch (err) {
+      console.error(`Error importando fila G${row}:`, err?.message || err);
+      results.push({
+        row,
+        skipped: true,
+        reason: err?.message || 'Error al copiar la hoja origen',
+        code: err?.code || null,
+      });
+      continue;
+    }
+  }
+
+  return {
+    sheetTitle,
+    results,
+  };
+}
+
+// ===============================
+// NOTAS / COMENTARIOS
+// ===============================
+
+export async function ensureSheetExists(spreadsheetId, title, headers = []) {
+  console.log('[ensureSheetExists]', spreadsheetId, title);
+
+  const { created } = await ensureSheetByTitle({
+    spreadsheetId,
+    title,
+  });
+
+  // Si la hoja fue creada, escribimos headers
+  if (created && headers.length > 0) {
+    const auth = await getAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${title}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [headers],
+      },
+    });
+  }
+}
+
+export async function appendRowsToSheet(spreadsheetId, title, rows) {
+  console.log('[appendRowsToSheet]', title, rows);
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${title}!A1`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: rows,
+    },
+  });
+}
+
+export async function getAllRowsFromSheet(spreadsheetId, sheetName) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: sheetName,
+  });
+
+  return res.data.values || [];
+}
+
+// Devuelve todas las filas de una hoja
+export async function getSheetValues(spreadsheetId, sheetName) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: sheetName,
+  });
+
+  return res.data.values || [];
 }

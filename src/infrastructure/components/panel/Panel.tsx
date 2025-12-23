@@ -124,6 +124,8 @@ export default function Panel() {
         proceso: el?.proceso,
         gid,
         year: el?.year,
+        rol: el?.rol,  
+        nivel: el?.nivel,  
         nameCookie: cookieName
       })
       

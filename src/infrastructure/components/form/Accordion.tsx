@@ -22,7 +22,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextFie
 import { useGlobalState } from '../../../../hooks/context'
 // import { updateCheckbox } from '../../../../libs/googlesheet'
 // Fecth
-import { updateDataTable, updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
+import { updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
 import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
@@ -262,38 +262,46 @@ const CheckboxesWithText = ({ data, globalState }) => {
       })
   }
 
+  const permisoKey = String(data?.groups_fields || '').split('-')[0]; // ej: "1-".split('-')[0] => "1"
+
+  // Permisos por checkbox
+  const canEditDirector = checkboxLevelPermission(permisoKey, 'director'); // Sección Finalizada
+  const canEditDaca = checkboxLevelPermission(permisoKey, 'admin');         // Aprobado Daca
+
   return (
     <Box sx={{ marginTop: '20px'}}>
-      {/* Primer Checkbox */}
+      {/* Checkbox Director */}
       <FormControlLabel
         control={
-          <Checkbox 
-              defaultChecked={data?.checkbox_director !== 'FALSE'} 
-              disabled={!checkboxLevelPermission(1)}
-              onChange={(e) => handlerChange(e,'M')}
-          />}
-        label=" Director"
+          <Checkbox
+            defaultChecked={data?.checkbox_director !== 'FALSE'}
+            disabled={!canEditDirector}
+            onChange={(e) => handlerChange(e, 'M')}
+          />
+        }
+        label="Sección Finalizada"
       />
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
         Confirmar si el director revisó y aprobó los cambios finales.
       </Typography>
 
-      {/* Segundo Checkbox */}
+      {/* Checkbox Daca */}
       <FormControlLabel
         control={
-          <Checkbox 
-              defaultChecked={data?.checkbox_daca !== 'FALSE'} 
-              disabled={!checkboxLevelPermission(2)}
-              onChange={(e) => handlerChange(e,'N')}
-          />}
-        label="Opción Daca"
+          <Checkbox
+            defaultChecked={data?.checkbox_daca !== 'FALSE'}
+            disabled={!canEditDaca}
+            onChange={(e) => handlerChange(e, 'N')}
+          />
+        }
+        label="Aprobado Daca"
       />
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
-         Confirmar si Daca revisó y aprobó los cambios finales.
+        Confirmar si Daca revisó y aprobó los cambios finales.
       </Typography>
     </Box>
   );
-}
+};
 
 /* UTILS */ 
 
