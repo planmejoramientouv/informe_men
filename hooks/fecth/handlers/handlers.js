@@ -31,7 +31,7 @@ export const getDataTable = () => {
 }
 
 export const saveNote = async (payload) => {
-  console.log('[saveNote] payload:', payload);
+  // console.log('[saveNote] payload:', payload);
 
   return fetchPostGeneral({
     urlEndPoint: API_SAVE_NOTE,

@@ -18,7 +18,28 @@ import Show from '../../../../share/utils/Show'
 import PopUp from '../Popup/Popup'
 
 // Material - IU
-import { Typography, TextField, Grid2, Button, Box, DialogContent, DialogTitle, Dialog, DialogActions } from '@mui/material';
+
+import {
+  Typography,
+  TextField,
+  Grid2,
+  Button,
+  Box,
+  DialogContent,
+  DialogTitle,
+  Dialog,
+  DialogActions,
+  IconButton,
+  Tooltip,
+  Badge,
+  Popover,
+  InputAdornment,
+} from "@mui/material";
+
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; 
+
 
 // Quicks
 import dynamic from 'next/dynamic'; // Importación dinámica
@@ -106,7 +127,9 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
         paginas: "",
       });
 
-      await cargarNotas(element);
+      if (notas.length === 0) {
+        await cargarNotas(element);
+      }
     };
 
 
@@ -154,27 +177,39 @@ const guardarComentario = async () => {
   }
 };
 
+const [infoAnchorEl, setInfoAnchorEl] = useState<HTMLElement | null>(null);
 
+const openInfo = Boolean(infoAnchorEl);
+
+const handleOpenInfo = (e: React.MouseEvent<HTMLElement>) => {
+  setInfoAnchorEl(e.currentTarget);
+};
+
+const handleCloseInfo = () => {
+  setInfoAnchorEl(null);
+};
 
 
     const guardarNota = async () => {
-  await saveNote({
-    sheetId: globalState.data.sheetId,
-    tipo: NOTE_TYPES.NOTA,
-    rows: [
-      {
-        element_id: modalNota.element.id,
+      await saveNote({
+        sheetId: globalState.data.sheetId,
         tipo: NOTE_TYPES.NOTA,
-        archivo: modalNota.archivo,
-        paginas: modalNota.paginas,
-        fecha: new Date().toISOString(),
-        usuario: cookieData?.email || 'desconocido',
-      },
-    ],
-  });
+        rows: [
+          {
+            element_id: modalNota.element.id,
+            tipo: NOTE_TYPES.NOTA,
+            archivo: modalNota.archivo,
+            paginas: modalNota.paginas,
+            fecha: new Date().toISOString(),
+            usuario: cookieData?.email || 'desconocido',
+          },
+        ],
+      });
 
-  cerrarModalNota();
-};
+      if (modalNota.element) await cargarNotas(modalNota.element); // ✅ recarga
+      cerrarModalNota();
+    };
+
 
 
     const cargarNotas = async (element: any) => {
@@ -307,12 +342,19 @@ const cargarComentarios = async (element: any) => {
     const initializedRef = React.useRef(false);
 
     React.useEffect(() => {
-      if (!element?.id || !sheetId) return;
-      if (initializedRef.current) return; // ya cargado
-      cargarComentarios(element);
-      cargarNotas(element);
-      initializedRef.current = true;
-    }, [element?.id, sheetId]);
+  if (fieldType !== "textArea") return;
+
+  const elementId = String(element?.id || "").trim();
+  if (!sheetId || !elementId) return;
+
+  if (initializedRef.current) return; // ya cargado para ESTE componente
+
+  cargarComentarios({ ...element, id: elementId });
+  cargarNotas({ ...element, id: elementId });
+
+  initializedRef.current = true;
+}, [fieldType, element?.id, sheetId]);
+
 
 
 
@@ -440,77 +482,155 @@ const cargarComentarios = async (element: any) => {
                 </Box>
 
                 {/* Botones */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => agregarNotaDeReferencia(element)}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "center" }}>
+                {/* Nota */}
+                <Tooltip title={notasCount > 0 ? `Notas (${notasCount})` : "Agregar nota"}>
+                  <Badge
+                    badgeContent={notasCount}
+                    color="primary"
+                    overlap="circular"
+                    invisible={notasCount === 0}
                   >
-                    Nota {notasCount > 0 && `(${notasCount})`}
-                  </Button>
-                  {esAdmin && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => agregarComentario(element)}
+                    <IconButton size="small" onClick={() => agregarNotaDeReferencia(element)}>
+                      <StickyNote2OutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Badge>
+                </Tooltip>
+
+                {/* Comentario (solo admin) */}
+                {esAdmin && (
+                  <Tooltip title="Agregar comentario">
+                    <Badge
+                      badgeContent={comentarios.length}
+                      color="secondary"
+                      overlap="circular"
+                      invisible={comentarios.length === 0}
                     >
-                      Comentario
-                    </Button>
-                  )}
-                </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => agregarComentario(element)}
+                        sx={{ color: "#2528f5ff" }}   // 👈 color distinto (rojo Univalle)
+                      >
+                        <ChatBubbleOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Badge>
+                  </Tooltip>
+                )}
+                {element?.ayuda && (
+                  <Tooltip title="Ayuda">
+                    <IconButton size="small" onClick={handleOpenInfo}>
+                      <HelpOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </Box>
-              {/* Comentarios existentes */}
-              {loadingComentarios && (
-                <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
-                  Cargando comentarios...
+              </Box>
+              <Popover
+                open={openInfo}
+                anchorEl={infoAnchorEl}
+                onClose={handleCloseInfo}
+                anchorOrigin={{ vertical: "center", horizontal: "right" }}
+                transformOrigin={{ vertical: "center", horizontal: "left" }}
+              >
+                <Box
+                  sx={{
+                    p: 1.2,
+                    maxWidth: 260,
+                    fontSize: "0.78rem",
+                    color: "#444",
+                    whiteSpace: "pre-line",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {element?.ayuda || "Sin ayuda disponible."}
                 </Box>
-              )}
+              </Popover>
 
-              {comentarios.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <b style={{ fontSize: '0.8rem' }}>Comentarios:</b>
 
-                  {comentarios.map((c, idx) => (
-                    <Box
-                      key={idx}
-                      sx={{
-                        mt: 1,
-                        p: 1,
-                        background: '#fafafa',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      <div>{c.texto}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 4 }}>
-                        {c.usuario} · {c.fecha}
-                      </div>
-                    </Box>
-                  ))}
-                </Box>
-              )}
               <Show when={!puedeEditar}>
                 <Grid2 className={classes.diableBox} />
               </Show>
 
-              {element?.ayuda && (
-                <Box
-                  sx={{
-                    mt: 1.5,
-                    p: 1.2,
-                    background: "#f7f7f7",
-                    borderRadius: "6px",
-                    border: "1px solid #e0e0e0",
-                    whiteSpace: "pre-line",
-                    fontSize: "0.78rem",
-                    color: "#444",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {element.ayuda}
+              <Box
+                sx={{
+                  mt: 1.5,
+                  p: 1.2,
+                  background: "#f7f7f7",
+                  borderRadius: "6px",
+                  border: "1px solid #e0e0e0",
+                }}
+              >
+
+                {/* Comentarios */}
+                {loadingComentarios ? (
+                <Box sx={{ mt: 1, fontSize: "0.75rem", color: "#888" }}>
+                  Cargando comentarios...
+                </Box>
+              ) : (
+                <Box sx={{ mt: 1 }}>
+                  <b style={{ fontSize: "0.8rem" }}>Comentarios:</b>
+
+                  {comentarios.length === 0 ? (
+                    <Box sx={{ mt: 0.8, fontSize: "0.75rem", color: "#666" }}>
+                      Sin comentarios.
+                    </Box>
+                  ) : (
+                    comentarios.map((c, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          mt: 1,
+                          p: 1,
+                          background: "#fafafa",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "6px",
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        <div>{c.texto}</div>
+                        <div style={{ fontSize: "0.7rem", color: "#666", marginTop: 4 }}>
+                          {c.usuario} · {c.fecha}
+                        </div>
+                      </Box>
+                    ))
+                  )}
                 </Box>
               )}
+
+                {/* Notas */}
+                {loadingNotas && (
+                  <Box sx={{ mt: 1, fontSize: "0.75rem", color: "#888" }}>
+                    Cargando notas...
+                  </Box>
+                )}
+
+                {notas.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <b style={{ fontSize: "0.8rem" }}>Notas:</b>
+
+                    {notas.map((n, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          mt: 1,
+                          p: 1,
+                          background: "#eef7ff",
+                          border: "1px solid #c0d4eb",
+                          borderRadius: "6px",
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        <div><b>Archivo:</b> {n.archivo}</div>
+                        <div><b>Páginas:</b> {n.paginas}</div>
+                        <div style={{ fontSize: "0.7rem", color: "#666", marginTop: 4 }}>
+                          {n.usuario} · {n.fecha}
+                        </div>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+
             </Grid2>
             <Dialog
               open={modalComentario.open}
@@ -555,54 +675,22 @@ const cargarComentarios = async (element: any) => {
 
               <DialogContent>
                 <TextField
-  fullWidth
-  label="Nombre del archivo"
-  placeholder="Ej. evidencia.pdf"
-  value={modalNota.archivo || ""}
-  onChange={(e) => setModalNota({ ...modalNota, archivo: e.target.value })}
-  sx={{ mb: 2, fontSize: '1rem' }} 
-/>
+                  fullWidth
+                  label="Nombre del archivo"
+                  placeholder="Ej. evidencia.pdf"
+                  value={modalNota.archivo || ""}
+                  onChange={(e) => setModalNota({ ...modalNota, archivo: e.target.value })}
+                  sx={{ mb: 2, fontSize: '1rem' }} 
+                />
 
-<TextField
-  fullWidth
-  label="Número de la(s) página(s)"
-  placeholder="Ej. Pág. 45 - 46"
-  value={modalNota.paginas || ""}
-  onChange={(e) => setModalNota({ ...modalNota, paginas: e.target.value })}
-  sx={{ fontSize: '1rem' }} 
-/>
-
-                                {loadingNotas && (
-                  <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
-                    Cargando notas...
-                  </Box>
-                )}
-
-                {notas.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <b style={{ fontSize: '0.8rem' }}>Notas existentes:</b>
-
-                    {notas.map((n, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          mt: 1,
-                          p: 1,
-                          background: '#eef7ff',
-                          border: '1px solid #c0d4eb',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                        }}
-                      >
-                        <div><b>Archivo:</b> {n.archivo}</div>
-                        <div><b>Páginas:</b> {n.paginas}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 4 }}>
-                          {n.usuario} · {n.fecha}
-                        </div>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
+                <TextField
+                  fullWidth
+                  label="Número de la(s) página(s)"
+                  placeholder="Ej. Pág. 45 - 46"
+                  value={modalNota.paginas || ""}
+                  onChange={(e) => setModalNota({ ...modalNota, paginas: e.target.value })}
+                  sx={{ fontSize: '1rem' }} 
+                />
 
               </DialogContent>
 
