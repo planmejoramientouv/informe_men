@@ -84,13 +84,24 @@ export default function Panel() {
       const dataFilter = dataActive.filter(item => 
         !ROL_ADMIN_SISTEM.includes(String(item?.rol || '').toLowerCase())
       )
-      setDataFor(dataFilter)
+
+      const seen = new Set<string>()
+      const uniqueByPrograma = dataFilter.filter(item => {
+        const key = String(item?.programa || '').trim().toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
+      setDataFor(uniqueByPrograma)
       return
     }
 
     // Director (u otros): ver TODOS los programas asociados a su correo
-    const allowedPrograms = new Set(rowsUser.map(r => r.programa))
-    const dataFilter = dataActive.filter(item => allowedPrograms.has(item.programa))
+    // const allowedPrograms = new Set(rowsUser.map(r => r.programa))
+    const allowedKeys = new Set(rowsUser.map(r => `${r.programa}|${r.nivel}`))
+    // const dataFilter = dataActive.filter(item => allowedPrograms.has(item.programa))
+    const dataFilter = dataActive.filter(item => allowedKeys.has(`${item.programa}|${item.nivel}`))
     setDataFor(dataFilter)
     return
   }
@@ -140,7 +151,10 @@ export default function Panel() {
           className={classes.forItemsPanel}
         >
           <Typography style={{ color }} variant="h2">
-            {`${element?.programa} - ${element?.proceso} ${element?.year}`}
+            {`${element?.programa}`}
+          </Typography>
+          <Typography style={{ color }} variant="h2">
+            {`${element?.proceso} ${element?.year}`}
           </Typography>
         </Grid2>
       </React.Fragment>

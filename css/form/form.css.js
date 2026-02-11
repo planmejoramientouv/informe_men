@@ -173,21 +173,24 @@ export default makeStyles(() => ({
     containerForPanel: {
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '20px',
-        '@media (max-width: 700px)': {
-            justifyContent:  'center',
-        },
+        gap: '16px',
+        justifyContent:  'center',
+        alignItems: 'center',
+        // '@media (max-width: 700px)': {
+        //     justifyContent:  'center',
+        // },
+        // comentado porque se ve mal en desktop, pero se puede activar para mejorar la vista en mobile
     },
     forItemsPanel: {
-        display: 'flex',
-        alignItems: 'center',
+        display: 'inline-grid',
+        alignItems: 'end',
         justifyContent:  'center',
         width: '160px',
         height: '160px',
         padding: '10px',
         borderRadius: '4px',
         background: '#fff',
-        boxShadow: '0px 4px 30px rgba(0, 0, 0, 0.12)',
+        boxShadow: '0px 4px 9px rgba(0, 0, 0, 0.12)',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         '&:hover': {
