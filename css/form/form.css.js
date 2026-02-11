@@ -363,13 +363,19 @@ export default makeStyles(() => ({
         scrollBehavior: 'smooth',
     },
     blinkHighlight: {
-        animation: '$blinkHighlight 1s ease-in-out',
+        animation: '$blinkHighlight 0.8s ease-in-out',
         borderRadius: '6px',
+        '&:is(h1, h2, h3, h4, h5, h6)': {
+            animation: 'none !important',
+            borderRadius: 'unset !important',
+            boxShadow: 'none !important',
+            backgroundColor: 'transparent !important',
+        }
     },
     '@keyframes blinkHighlight': {
         '0%':   { boxShadow: '0 0 0 14px rgba(25,118,210,0.0)', backgroundColor: 'rgba(25,118,210,0.0)' },
         '30%':  { boxShadow: '0 0 0 10px rgba(25,118,210,0.1)', backgroundColor: 'rgba(25,118,210,0.1)' },
-        '60%':  { boxShadow: '0 0 0 6px rgba(25, 118, 210, 0.03)',  backgroundColor: 'rgba(25, 118, 210, 0.03)' },
+        '60%':  { boxShadow: '0 0 0 6px rgba(25, 118, 210, 0.15)',  backgroundColor: 'rgba(25, 118, 210, 0.15)' },
         '100%': { boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.0)', backgroundColor: 'rgba(25, 118, 210, 0.0)' },
     },
     dialogContent: {
