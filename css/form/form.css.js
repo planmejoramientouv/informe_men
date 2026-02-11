@@ -219,7 +219,11 @@ export default makeStyles(() => ({
     },
     ColapsableTwo: {
         width: '100%',
-        marginBottom: '20px'
+        marginBottom: '20px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        backgroundColor: '#fff',
     },
     buttonSave: {
         margin: 'auto',
@@ -357,6 +361,16 @@ export default makeStyles(() => ({
         flexGrow: 1,
         padding: 3,
         scrollBehavior: 'smooth',
+    },
+    blinkHighlight: {
+        animation: '$blinkHighlight 1s ease-in-out',
+        borderRadius: '6px',
+    },
+    '@keyframes blinkHighlight': {
+        '0%':   { boxShadow: '0 0 0 14px rgba(25,118,210,0.0)', backgroundColor: 'rgba(25,118,210,0.0)' },
+        '30%':  { boxShadow: '0 0 0 10px rgba(25,118,210,0.1)', backgroundColor: 'rgba(25,118,210,0.1)' },
+        '60%':  { boxShadow: '0 0 0 6px rgba(25, 118, 210, 0.03)',  backgroundColor: 'rgba(25, 118, 210, 0.03)' },
+        '100%': { boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.0)', backgroundColor: 'rgba(25, 118, 210, 0.0)' },
     },
     dialogContent: {
         display: 'flex',

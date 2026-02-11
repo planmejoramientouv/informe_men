@@ -308,6 +308,7 @@ const styles = {
 }
 
 export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) => {
+    const classes = useStyles();
     const [value, setValue] = React.useState(-1);
     const [activeMenu, setActiveMenu] = React.useState(0)
     const [expandedMenus, setExpandedMenus] = React.useState<number[]>([0])
@@ -391,8 +392,15 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
 
     const scrollToAnchor = React.useCallback((id: string) => {
       const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, []);
+      if (el){
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add(classes?.blinkHighlight);
+        const t = window.setTimeout(() => {
+          el.classList.remove(classes?.blinkHighlight);
+        }, 1200);
+        return () => window.clearTimeout(t);
+      } 
+    }, [classes]);
 
     React.useEffect(() => {
       if (!pendingAnchor) return;
@@ -400,7 +408,13 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
       const t = setInterval(() => {
         const el = document.getElementById(pendingAnchor);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          el.classList.add(classes?.blinkHighlight);
+          window.setTimeout(() => {
+            el.classList.remove(classes?.blinkHighlight);
+          }, 1200);
+
           clearInterval(t);
           setPendingAnchor(null);
         }
@@ -411,7 +425,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
         }
       }, 100);
       return () => clearInterval(t);
-    }, [pendingAnchor, activeMenu]);
+    }, [pendingAnchor, activeMenu, classes]);
 
 
     const handleMenuClick = (menuId: string, hasSubmenu: boolean, index: number) => {
