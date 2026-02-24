@@ -49,7 +49,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission(element?.primary)}>
-            <Grid2  className={classes.tabContentPanel} sx={{ border: `1px solid ${element?.primary?.background}` }}>
+            <Grid2  className={classes.tabContentPanel}>
                 <Grid2 className={classes.listFormSection}>
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
@@ -59,7 +59,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                         sx={{ scrollMarginTop: '88px' }}> 
                         {element?.primary?.texto}
                     </Typography>
-                    <hr />
+              
                   </Grid2>
                   {/* <For func={printFields} list={element.data} shared={element.data}/> */}
                   {

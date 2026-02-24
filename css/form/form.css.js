@@ -8,12 +8,12 @@ export default makeStyles(() => ({
         zIndex: 1,
         display: 'flex',
         padding: '20px',
-        alignItems: 'flex-start',
+        // alignItems: 'center',
         justifyContent: 'center',
         flexWrap: 'wrap',
-        gap: '20px',
+        gap: '10px',
         width: '100%',
-        height: 'calc(100vh - 80px)',
+        height: 'calc(100vh - 70px)',
         '@media (max-width: 700px)': {
             marginLeft: 'unset',
             width: '100%'
@@ -103,6 +103,7 @@ export default makeStyles(() => ({
         fontSize: '1.5em !important', 
         fontWeight: '700 !important',
         marginTop: '20px !important',
+        marginBottom: '10px !important',
         '@media (max-width: 700px)': {
             fontSize: '1.2em !important',
         }
@@ -176,6 +177,7 @@ export default makeStyles(() => ({
         gap: '16px',
         justifyContent:  'center',
         alignItems: 'center',
+        paddingBottom: '20%',
         // '@media (max-width: 700px)': {
         //     justifyContent:  'center',
         // },
@@ -224,6 +226,8 @@ export default makeStyles(() => ({
         top: 0,
         zIndex: 10,
         backgroundColor: '#fff',
+        boxShadow: '0 0 0 2px #fff',
+        borderBottom: '2px solid #000',        
     },
     buttonSave: {
         margin: 'auto',

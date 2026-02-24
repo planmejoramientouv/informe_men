@@ -713,7 +713,7 @@ const CustomTabPanel = (props) => {
 
 const PrintBodyTab = ({ element, index, onSaveValues, onSaveChecks, saving }) => {
   return (
-    <Box sx={{ height: '100%', overflow: 'auto'}} key={index}>
+    <Box sx={{ height: '100%', overflow: 'auto', border: `1px solid ${element?.primary?.background}`, borderRadius: '4px' }} key={index}>
       <PrintAccordion 
         element={element}
         index={index}
