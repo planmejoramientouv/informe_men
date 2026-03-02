@@ -40,17 +40,33 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
         setOpen(false)
     }
 
+    // Bloquear sección por DACA
+    const [sectionLocked, setSectionLocked] = React.useState(
+      toSheetBool(element?.primary?.checkbox_daca)
+    );
+
     React.useEffect(() => {
         setHydrated(true);
     }, []);
-  
+
+    React.useEffect(() => {
+      setSectionLocked(toSheetBool(element?.primary?.checkbox_daca));
+    }, [element?.primary?.checkbox_daca]);
+
     if (!hydrated) return null;
     
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission(element?.primary)}>
             <Grid2  className={classes.tabContentPanel}>
-                <Grid2 className={classes.listFormSection}>
+                <Grid2 
+                className={classes.listFormSection}
+                sx={
+                  sectionLocked
+                  ? { pointerEvents: 'none', opacity: 0.5, transition: 'all .2s ease' }
+                  : undefined
+                }
+                >
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
                         variant="h1"
@@ -77,7 +93,12 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                       />)
                   }
                 </Grid2>
-                <CheckboxesWithText data={element?.primary} globalState={globalState}/>
+                <CheckboxesWithText 
+                data={element?.primary} 
+                globalState={globalState}
+                onDacaChange={setSectionLocked}
+                locked={sectionLocked}
+                />
               </Grid2>
         </Show>
       </React.Fragment>
@@ -249,7 +270,7 @@ const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, 
  
 const toSheetBool = (v: any) => String(v ?? '').trim().toLowerCase() === 'true';
 
-const CheckboxesWithText = ({ data, globalState }) => {
+const CheckboxesWithText = ({ data, globalState, onDacaChange = () => {}, locked = false }) => {
   const permisoKey = String(data?.groups_fields || '').split('-')[0]; 
   const [checkedDirector, setCheckedDirector] = React.useState(toSheetBool(data?.checkbox_director));
   const [checkedDaca, setCheckedDaca] = React.useState(toSheetBool(data?.checkbox_daca));
@@ -264,13 +285,16 @@ const CheckboxesWithText = ({ data, globalState }) => {
     const value = checked ? 'TRUE' : 'FALSE';
 
     if (type === 'M') setCheckedDirector(checked);
-    if (type === 'N') setCheckedDaca(checked);
+    if (type === 'N') {
+      setCheckedDaca(checked);
+      onDacaChange(checked);
+    }
 
     if (type === 'N') data.checkbox_daca = value;
     if (type === 'M') data.checkbox_director = value;
 
 
-    const dataSheet = [{ ...data, checkbox: value }];
+    const dataSheet = [{ ...data, checkbox: checked }];
 
     // let dataSheet = []
     // data.checkbox = (e.target).checked
@@ -315,7 +339,7 @@ const CheckboxesWithText = ({ data, globalState }) => {
           <Checkbox
             // defaultChecked={data?.checkbox_director !== 'FALSE'}
             checked={checkedDirector}
-            disabled={!canEditDirector}
+            disabled={!canEditDirector || locked}
             onChange={(e) => handlerChange(e, 'M')}
           />
         }

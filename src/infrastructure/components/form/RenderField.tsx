@@ -82,9 +82,17 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
 
     const { cookie } = useRouteCookie();
     const cookieData = getCookieData("data");
-    const rol = (cookieData.rol || "").toLowerCase();
-    const nivel = cookie.nivel || "";
+    
+    const rol = String(cookie?.rol || cookieData?.rol || "").toLowerCase();
+    const nivel = String(cookie.nivel || "");
 
+    const nivelesUsuario = nivel.split(",").map(n => n.trim()).filter(Boolean);
+    const menuNumber = String(getMenuNumber(element)).trim();
+    
+    const esAdmin = ROL_ADMIN_SISTEM.includes(rol);
+    const esDirector = ROL_DIRECTOR.includes(rol);
+    const puedeEditar = esAdmin || esDirector || nivelesUsuario.includes(menuNumber);
+    
     const [modalComentario, setModalComentario] = useState({
       open: false,
       element: null,
@@ -271,13 +279,13 @@ const handleCloseInfo = () => {
     const match = String(raw).match(/^\d+/);
     return match ? match[0] : "";
   }
-  const nivelesUsuario = nivel.split(",").map(n => n.trim());
-  const menuNumber = String(getMenuNumber(element)).trim();
-    const esAdmin = ROL_ADMIN_SISTEM.includes(rol);
-    const esDirector = ROL_DIRECTOR.includes(rol);
-    
 
-  const puedeEditar = esAdmin || esDirector || nivelesUsuario.includes(menuNumber);
+  // const nivelesUsuario = nivel.split(",").map(n => n.trim()).filter(Boolean);
+  // const menuNumber = String(getMenuNumber(element)).trim();
+  
+  // const esAdmin = ROL_ADMIN_SISTEM.includes(rol);
+  // const esDirector = ROL_DIRECTOR.includes(rol);
+  // const puedeEditar = esAdmin || esDirector || nivelesUsuario.includes(menuNumber);
 
   // console.log("nivel del usuario:", nivel);
 
