@@ -83,7 +83,7 @@ export default ({ fieldType, labelText, value, element, shared, iframeView, setO
     const { cookie } = useRouteCookie();
     const cookieData = getCookieData("data");
     
-    const rol = String(cookie?.rol || cookieData?.rol || "").toLowerCase();
+    const rol = String(cookieData?.rol || cookie?.rol || "").toLowerCase();
     const nivel = String(cookie.nivel || "");
 
     const nivelesUsuario = nivel.split(",").map(n => n.trim()).filter(Boolean);
