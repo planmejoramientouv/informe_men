@@ -586,7 +586,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                     <ListItemButton
                                         sx={{
                                             ...styles.submenuItem,
-                                            backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#55ff0000' : undefined
+                                            backgroundColor: getEditorSectionColor(idx)
                                           }}
                                         onClick={() => {
                                           handleSubMenuClick(
@@ -632,7 +632,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                           >
                                             <ListItemButton
                                               sx={{...styles.subsubmenuItem, 
-                                                backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c000' : undefined,
+                                                backgroundColor: getEditorSectionColor(idx)
                                               }}
                                               onClick={() => {
                                               
