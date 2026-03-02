@@ -96,7 +96,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                 <CheckboxesWithText 
                 data={element?.primary} 
                 globalState={globalState}
-                onDacaChange={setSectionLocked}
+                onDacaChange={(checked) => setSectionLocked(checked)}
                 locked={sectionLocked}
                 />
               </Grid2>
@@ -270,8 +270,14 @@ const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, 
  
 const toSheetBool = (v: any) => String(v ?? '').trim().toLowerCase() === 'true';
 
-const CheckboxesWithText = ({ data, globalState, onDacaChange = () => {}, locked = false }) => {
-  const permisoKey = String(data?.groups_fields || '').split('-')[0]; 
+const toNivelKey = (raw: any) => {
+  const s = String(raw ?? '').trim();
+  const m = s.match(/^(\d+)(?:\.\d+)?/);
+  return m ? m[1] : s;
+};
+
+const CheckboxesWithText = ({ data, globalState, onDacaChange = (checked: boolean) => {}, locked = false }) => {
+  const permisoKey = toNivelKey(data?.groups_fields);
   const [checkedDirector, setCheckedDirector] = React.useState(toSheetBool(data?.checkbox_director));
   const [checkedDaca, setCheckedDaca] = React.useState(toSheetBool(data?.checkbox_daca));
   
@@ -292,7 +298,6 @@ const CheckboxesWithText = ({ data, globalState, onDacaChange = () => {}, locked
 
     if (type === 'N') data.checkbox_daca = value;
     if (type === 'M') data.checkbox_director = value;
-
 
     const dataSheet = [{ ...data, checkbox: checked }];
 
@@ -315,7 +320,7 @@ const CheckboxesWithText = ({ data, globalState, onDacaChange = () => {}, locked
       });
 
       // Notifica a Docs para recalcular progreso por sección
-      if (type === 'N' && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && (type === 'N' || type === 'M')) {
         window.dispatchEvent(
           new CustomEvent('section-progress-updated', {
             detail: { section: permisoKey, type, checked }

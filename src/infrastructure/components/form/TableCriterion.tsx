@@ -136,8 +136,14 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId , pu
                   </TableCell>
   
                   <TableCell component="th" scope="row">
-                  <FormControl className={classes.selectInTable} variant="outlined" onClick={e => e.stopPropagation()}>
-                    <InputLabel shrink>Grado de Cumplimiento</InputLabel>
+                  <FormControl
+                    className={classes.selectInTable}
+                    sx={{ width: '100%', margin: 0 }}
+                    fullWidth
+                    variant="outlined"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <InputLabel>Grado de Cumplimiento</InputLabel>
                     <Select
                       disabled={!puedeEditar}
                       value={values[index] || ''}

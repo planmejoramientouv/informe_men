@@ -60,6 +60,8 @@ import {
   ExpandLess,
   ExpandMore,
   Cloud,
+  BorderLeft,
+  BorderLeftRounded,
 } from "@mui/icons-material"
 
 import Info from '@mui/icons-material/Info'
@@ -190,7 +192,7 @@ const styles = {
   },
   listItemButtonActive: {
     backgroundColor: "#e3f2fd",
-    borderLeft: "4px solid #1976d2",
+    borderLeft: "10px solid #1976d2",
     "&:hover": {
       backgroundColor: "#e3f2fd",
     },
@@ -314,6 +316,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const [expandedMenus, setExpandedMenus] = React.useState<number[]>([0])
     const [expandedSubMenus, setExpandedSubMenus] = React.useState<string[]>([]);
     const [hydrated, setHydrated] = React.useState(false);
+    const [sectionDoneByNivel, setSectionDoneByNivel] = React.useState<Record<string, boolean>>({});
 
     const getNivelFromGroup = (groups_fields) => {
     const s = String(groups_fields || '').trim()
@@ -321,37 +324,64 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     return m ? m[1] : ''
   }
 
-    const subMenuItems = (data) => {
-      if (!Array.isArray(data)) return [];
+  const nivelKeyFromItem = React.useCallback((item: any, idx: number) => {
+    return getNivelFromGroup(item?.primary?.groups_fields || item?.groups_fields) || String(idx + 1);
+  }, []);
 
-      const itemFiltered = data.filter((item) => item?.menu);
-      const itemFilteredDominacion = data.filter((item) => item?.menu === `${(item?.menu)?.replace("-", "")}-`);
+  React.useEffect(() => {
+    const init: Record<string, boolean> = {};
+    (element || []).forEach((item, idx) => {
+      const key = nivelKeyFromItem(item, idx);
+      const done = String(item?.primary?.checkbox_director ?? item?.checkbox_director ?? '')
+        .trim()
+        .toLowerCase() === 'true';
+      init[key] = done;
+    });
+    setSectionDoneByNivel(init);
+  }, [element, nivelKeyFromItem]);
 
-      const subMenu = itemFilteredDominacion.map((subItem) => {
-        const rawMenuKey = (subItem?.menu || "").replace("-", "");
-        const children = itemFiltered.filter(
-          (cand) => cand?.menu === `${rawMenuKey}.1`
-        );
-
-        return {
-          id: subItem.id,
-          label: subItem.variables,
-          primary: subItem.primary,
-          secondary: subItem.secondary,
-          menu: subItem.menu,
-          children: children.map((child) => ({
-            id: child.id,
-            label: child?.texto,
-            primary: child.primary,
-            secondary: child.secondary,
-            menu: child.menu,
-          })),
-          hasChildren: children.length > 0,
-        };
-      });
-
-      return subMenu;
+  React.useEffect(() => {
+    const onProgress = (e: any) => {
+      const raw = String(e?.detail?.section || '').trim();
+      const section = getNivelFromGroup(raw) || raw; // normaliza a "1", "2", ...
+      if (!section || e?.detail?.type !== 'M') return;
+      setSectionDoneByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
     };
+    window.addEventListener('section-progress-updated', onProgress);
+    return () => window.removeEventListener('section-progress-updated', onProgress);
+  }, []);
+
+  const subMenuItems = (data) => {
+    if (!Array.isArray(data)) return [];
+
+    const itemFiltered = data.filter((item) => item?.menu);
+    const itemFilteredDominacion = data.filter((item) => item?.menu === `${(item?.menu)?.replace("-", "")}-`);
+
+    const subMenu = itemFilteredDominacion.map((subItem) => {
+      const rawMenuKey = (subItem?.menu || "").replace("-", "");
+      const children = itemFiltered.filter(
+        (cand) => cand?.menu === `${rawMenuKey}.1`
+      );
+
+      return {
+        id: subItem.id,
+        label: subItem.variables,
+        primary: subItem.primary,
+        secondary: subItem.secondary,
+        menu: subItem.menu,
+        children: children.map((child) => ({
+          id: child.id,
+          label: child?.texto,
+          primary: child.primary,
+          secondary: child.secondary,
+          menu: child.menu,
+        })),
+        hasChildren: children.length > 0,
+      };
+    });
+
+    return subMenu;
+  };
 
     const menuItems = element?.map((item, idx) => ({
       id: String(idx),
@@ -460,8 +490,18 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const { cookie } = useRouteCookie();
     const cookieData = getCookieData("data");
     const nivelesUsuario = String(cookie?.nivel || ''); // por ejemplo: "1,2,3"
-    const nivelesArray = nivelesUsuario.split(',');      // ["1","2","3"]
-    
+    const nivelesArray = String(cookie?.nivel || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+      
+    const getEditorSectionColor = (idx: number) => {
+      if (!esEditor) return undefined;
+      const key = nivelKeyFromItem(element?.[idx], idx);
+      if (!nivelesArray.includes(String(key))) return undefined;
+      return sectionDoneByNivel[String(key)] ? '#d7f7d4' : '#f0c0c0';
+    };
+
     const rolUsuario = (cookieData?.rol || '').toLowerCase();
     const esEditor = ROL_EDITOR_SISTEM.includes(rolUsuario);
     const esAdminODirector = ROL_ADMIN_SISTEM.includes(rolUsuario) || ROL_DIRECTOR.includes(rolUsuario);
@@ -506,7 +546,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                             ...(activeMenu === idx
                               ? styles.listItemButtonActive
                               : {}),
-                              backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined
+                              backgroundColor: getEditorSectionColor(idx)
                           }}
                           onClick={() => {
                             handleMenuClick(item.id, item.hasSubmenu, idx)
@@ -546,7 +586,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                     <ListItemButton
                                         sx={{
                                             ...styles.submenuItem,
-                                            backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined
+                                            backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#55ff0000' : undefined
                                           }}
                                         onClick={() => {
                                           handleSubMenuClick(
@@ -592,7 +632,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                           >
                                             <ListItemButton
                                               sx={{...styles.subsubmenuItem, 
-                                                backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c0' : undefined,
+                                                backgroundColor: esEditor && nivelesArray.includes(String(idx + 1)) ? '#d0f0c000' : undefined,
                                               }}
                                               onClick={() => {
                                               
