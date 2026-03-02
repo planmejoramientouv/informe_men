@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { appendRowsToSheet, getSheetValues } from '../../libs/googlesheet';
+import { ensureSheetExists, appendRowsToSheet, getSheetValues } from '../../libs/googlesheet';
 import { SHEET_COMENTARIOS } from '../../libs/utils/const';
+
 
 // Tipo de comentario
 interface Comentario {
@@ -34,14 +35,14 @@ export default async function handler(
       if (!rows || rows.length === 0) return res.status(200).json({ status: true, data: [] });
 
       const comentarios: Comentario[] = rows
-  .filter(row => String(row[0]) === String(elementId))
-  .map(row => ({
-    element_id: row[0],
-    tipo: row[1],
-    texto: row[2],
-    fecha: row[3],
-    usuario: row[4],
-  }));
+        .filter(row => String(row[0]) === String(elementId))
+        .map(row => ({
+          element_id: row[0],
+          tipo: row[1],
+          texto: row[2],
+          fecha: row[3],
+          usuario: row[4],
+        }));
 
 
       return res.status(200).json({ status: true, data: comentarios });
@@ -60,16 +61,22 @@ export default async function handler(
     const { sheetId, elementId, tipo, texto, usuario } = req.body;
 
     if (!sheetId) return res.status(400).json({ status: false, error: 'Missing sheetId' });
-    if (!elementId || !texto || !usuario) return res.status(400).json({ status: false, error: 'Missing required fields' });
+    if (!elementId || !texto || !usuario) {
+      return res.status(400).json({ status: false, error: 'Missing required fields' });
+    }
 
     try {
       const newComentario = [
         String(elementId),
-        tipo || '',       // columna tipo
+        tipo || '',
         String(texto),
         new Date().toISOString(),
         String(usuario),
       ];
+
+      await ensureSheetExists(sheetId, SHEET_COMENTARIOS, [
+        'element_id', 'tipo', 'texto', 'fecha', 'usuario'
+      ]);
 
       await appendRowsToSheet(sheetId, SHEET_COMENTARIOS, [newComentario]);
 

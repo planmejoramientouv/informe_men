@@ -150,11 +150,16 @@ export const updateCheckbox = async ({ data, sheetId, gid, row_ }) => {
         const range = `${title}!${row_}${rowIndex}`;
 
         const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+        const boolValue=
+          updatedData?.checkbox === 'TRUE' || 
+          String(updatedData?.checkbox).trim().toLowerCase() === 'true'
+
         await sheets.spreadsheets.values.update({
           spreadsheetId: sheetId,
           range,
-          valueInputOption: 'RAW',
-          resource: { values: [[updatedData?.checkbox ?? '']] }
+          valueInputOption: 'USER_ENTERED',
+          resource: { values: [[boolValue]] }
         });
         console.log("✅ Checkbox actualizado para ID:", row_);
       }
@@ -978,20 +983,27 @@ export async function ensureSheetExists(spreadsheetId, title, headers = []) {
   }
 }
 
+function quoteSheetTitle(title) {
+  const t = String(title || '');
+  if (t.startsWith("'") && t.endsWith("'")) return t;
+  const escaped = t.replace(/'/g, "''"); // escape comillas simples
+  return `'${escaped}'`;
+}
+
 export async function appendRowsToSheet(spreadsheetId, title, rows) {
   console.log('[appendRowsToSheet]', title, rows);
 
   const auth = await getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
 
+  const safeTitle = quoteSheetTitle(title);
+
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${title}!A1`,
+    range: `${safeTitle}!A1`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
-    requestBody: {
-      values: rows,
-    },
+    requestBody: { values: rows },
   });
 }
 

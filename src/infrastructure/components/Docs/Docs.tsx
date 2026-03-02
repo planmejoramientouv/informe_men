@@ -20,6 +20,8 @@ import Box from '@mui/material/Box';
 import { Typography, TextField, Grid2, Button } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import LinearProgress from "@mui/material/LinearProgress";
+import { useGlobalState } from "../../../../hooks/context";
 
 // Dialog
 import Dialog from '@mui/material/Dialog';
@@ -137,11 +139,19 @@ function generateSelectedOptionsFromData(dataFilter) {
   return selectedOptions;
 }
 
+function normalizeSectionKey(raw: any) {
+  const m = String(raw ?? '').trim().match(/^(\d+)-/);
+  return m ? m[1] : null;
+}
 
+function isDacaApproved(v: any) {
+  return String(v ?? '').trim().toLowerCase() === 'true';
+}
 
 // Generate Doc
 export default () => {
     const classes = useStyles();
+    const { globalState } = useGlobalState();
     const [cookie , setCokkie] = React.useState(null)
     const [loading , setLoading] = React.useState(false)
     const [open, setOpen] = React.useState(false)
@@ -149,6 +159,7 @@ export default () => {
     const [textError, setTextError] = React.useState("")
     const [IsActiveRequest, setIsActiveRequest] = React.useState(false)
     const [isError, setIsError] = React.useState(false)
+    const [dacaOverrides, setDacaOverrides] = React.useState<Record<string, boolean>>({});
 
 
     const onHandlerClick = async () => {
@@ -206,6 +217,38 @@ export default () => {
         if (IsActiveRequest) execute()
     },[IsActiveRequest])
 
+    React.useEffect(() => {
+      const onProgress = (e: any) => {
+        const section = String(e?.detail?.section || '');
+        if (!section || e?.detail?.type !== 'N') return;
+        setDacaOverrides(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
+      };
+
+      window.addEventListener('section-progress-updated', onProgress);
+      return () => window.removeEventListener('section-progress-updated', onProgress);
+    }, [])
+
+    const progress = React.useMemo(() => {
+      const formdata = globalState?.data?.formdata || [];
+      const sections = (formdata || []).filter((s: any) =>
+        normalizeSectionKey(s?.primary?.groups_fields)
+      );
+
+      const total = sections.length;
+      if (!total) return { total: 0, done: 0, percent: 0 };
+
+      const done = sections.reduce((acc: number, s: any) => {
+        const key = normalizeSectionKey(s?.primary?.groups_fields);
+        const approved = key && key in dacaOverrides
+          ? dacaOverrides[key]
+          : isDacaApproved(s?.primary?.checkbox_daca);
+
+        return acc + (approved ? 1 : 0);
+      }, 0);
+
+      return { total, done, percent: Math.round((done * 100) / total) };
+    }, [globalState?.data?.formdata, dacaOverrides]);
+
     const params = {
       open: openSnak,
       setOpen: setOpenSnak,
@@ -216,16 +259,30 @@ export default () => {
     return (
         <Show when={true}>
             <React.Fragment>
-              <Box className={classes.contFormDoc}>
-                <Box>
-                    <Button 
-                        disabled={loading} 
-                        onClick={onHandlerClick} 
-                        className={classes.buttonDownloadDocs} 
-                        variant="contained"> 
-                        { loading? 'Generando' : "Generar Documento" }
-                    </Button>
+              <Box className={classes.contFormDoc} sx={{ marginBottom: "10px", display: 'block' }}>
+                {/* <Box> */}
+
+                <Box sx={{ mb: 1.2 }}>
+                  <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                    Avance del formulario: {progress.done}/{progress.total} secciones 
+                    {/* ({progress.percent}%) */}
+                  </Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={progress.percent}
+                    sx={{ height: 8, borderRadius: 10 }}
+                  />
                 </Box>
+                <Button 
+                    fullWidth
+                    disabled={loading} 
+                    onClick={onHandlerClick} 
+                    className={classes.buttonDownloadDocs} 
+                    variant="contained"
+                    > 
+                    { loading? 'Generando' : "Generar Documento" }
+                </Button>
+                {/* </Box> */}
                 <AlertDialog {...{open, setOpen, setIsActiveRequest}}/>
                 <SnackbarAlert {...params}/>
               </Box>

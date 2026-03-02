@@ -246,23 +246,62 @@ const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, 
         </React.Fragment>
     )
 }
-  
+ 
+const toSheetBool = (v: any) => String(v ?? '').trim().toLowerCase() === 'true';
+
 const CheckboxesWithText = ({ data, globalState }) => {
+  const permisoKey = String(data?.groups_fields || '').split('-')[0]; 
+  const [checkedDirector, setCheckedDirector] = React.useState(toSheetBool(data?.checkbox_director));
+  const [checkedDaca, setCheckedDaca] = React.useState(toSheetBool(data?.checkbox_daca));
   
+  React.useEffect(() => {
+    setCheckedDirector(toSheetBool(data?.checkbox_director));
+    setCheckedDaca(toSheetBool(data?.checkbox_daca));
+  }, [data?.checkbox_director, data?.checkbox_daca]);
+
   const handlerChange = async (e:  React.ChangeEvent<HTMLInputElement>, type: string) => {
-      let dataSheet = []
-      data.checkbox = (e.target).checked
-      dataSheet.push(data)
-      console.log(globalState.data,data,data.checkbox)
-      const update = await updateCheckboxClient({
+    const checked = (e.target).checked;
+    const value = checked ? 'TRUE' : 'FALSE';
+
+    if (type === 'M') setCheckedDirector(checked);
+    if (type === 'N') setCheckedDaca(checked);
+
+    if (type === 'N') data.checkbox_daca = value;
+    if (type === 'M') data.checkbox_director = value;
+
+
+    const dataSheet = [{ ...data, checkbox: value }];
+
+    // let dataSheet = []
+    // data.checkbox = (e.target).checked
+    // dataSheet.push(data)
+    // console.log(globalState.data,data,data.checkbox)
+    // const update = await updateCheckboxClient({
+    //   sheetId: globalState.data.sheetId,
+    //   gid: globalState.data.gid,
+    //   data: dataSheet,
+    //   row_: type
+    // })
+    try {
+      await updateCheckboxClient({
         sheetId: globalState.data.sheetId,
         gid: globalState.data.gid,
         data: dataSheet,
-        row_: type
-      })
-  }
+        row_: type,
+      });
 
-  const permisoKey = String(data?.groups_fields || '').split('-')[0]; // ej: "1-".split('-')[0] => "1"
+      // Notifica a Docs para recalcular progreso por sección
+      if (type === 'N' && typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('section-progress-updated', {
+            detail: { section: permisoKey, type, checked }
+          })
+        );
+      }
+    } catch (err) {
+      console.error('Error actualizando checkbox', err);
+    }
+  };
 
   // Permisos por checkbox
   const canEditDirector = checkboxLevelPermission(permisoKey, 'director'); // Sección Finalizada
@@ -274,7 +313,8 @@ const CheckboxesWithText = ({ data, globalState }) => {
       <FormControlLabel
         control={
           <Checkbox
-            defaultChecked={data?.checkbox_director !== 'FALSE'}
+            // defaultChecked={data?.checkbox_director !== 'FALSE'}
+            checked={checkedDirector}
             disabled={!canEditDirector}
             onChange={(e) => handlerChange(e, 'M')}
           />
@@ -289,7 +329,8 @@ const CheckboxesWithText = ({ data, globalState }) => {
       <FormControlLabel
         control={
           <Checkbox
-            defaultChecked={data?.checkbox_daca !== 'FALSE'}
+            // defaultChecked={data?.checkbox_daca !== 'FALSE'}
+            checked={checkedDaca}
             disabled={!canEditDaca}
             onChange={(e) => handlerChange(e, 'N')}
           />
