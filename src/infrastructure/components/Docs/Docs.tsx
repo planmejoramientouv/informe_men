@@ -249,6 +249,8 @@ export default () => {
       return { total, done, percent: Math.round((done * 100) / total) };
     }, [globalState?.data?.formdata, dacaOverrides]);
 
+    const canGenerate = progress.total > 0 && progress.percent === 100;
+
     const params = {
       open: openSnak,
       setOpen: setOpenSnak,
@@ -275,10 +277,17 @@ export default () => {
                 </Box>
                 <Button 
                     fullWidth
-                    disabled={loading} 
+                    disabled={loading || !canGenerate} 
                     onClick={onHandlerClick} 
-                    className={classes.buttonDownloadDocs} 
+                    // className={classes.buttonDownloadDocs} 
                     variant="contained"
+                    sx={{
+                      backgroundColor: canGenerate ? '#1976d2' : '#9e9e9e', // azul sistema / gris
+                      color: '#fff',
+                      '&:hover': {
+                        backgroundColor: canGenerate ? '#1565c0' : '#757575',
+                      },
+                    }}
                     > 
                     { loading? 'Generando' : "Generar Documento" }
                 </Button>
