@@ -81,18 +81,22 @@ export const checkboxLevelPermission = (permisoKey = '', tipo = '') => {
   const cookieData = getCookieData("data") || {};
   const cookie = routeCookie.cookie || {};
   
-  const rol = String(cookie.rol || cookieData?.rol || '').toLowerCase();
-  const niveles = String(cookie.nivel || cookieData?.nivel || '');
+  const rolRoute = String(cookie?.rol || '').toLowerCase();
+  const rolGlobal = String(cookieData?.rol || '').toLowerCase();
+
+  const niveles = String(cookie?.nivel || cookieData?.nivel || '');
   const nivelesArray = niveles.split(',').map(s => s.trim()).filter(Boolean);
 
   // Admin puede todo
-  if (ROL_ADMIN_SISTEM.includes(rol)) return true;
+  if (ROL_ADMIN_SISTEM.includes(rolRoute) || ROL_ADMIN_SISTEM.includes(rolGlobal)) return true;
+
+  const rol = rolRoute || rolGlobal;
 
   // Director solo checkbox "director"
   if (ROL_DIRECTOR.includes(rol)) return tipo === 'director';
 
   // Editor solo puede checkbox director si su nivel incluye el permiso
-  if (ROL_EDITOR_SISTEM.includes(cookieData.rol)) {
+  if (ROL_EDITOR_SISTEM.includes(rol)) {
     return tipo === 'director' && nivelesArray.includes(String(permisoKey).trim());
   }
 
