@@ -33,9 +33,9 @@ import { useRouter } from 'next/router';
 // Const
 const BORDER_COLORS = [
   '#C8102E',
-  '#FFCD00',
-  '#0051BA',
-  '#A7A8AA',
+  // '#FFCD00',
+  // '#0051BA',
+  // '#A7A8AA',
 ]
 
 export default function Panel() {
