@@ -277,15 +277,17 @@ export default () => {
                 </Box>
                 <Button 
                     fullWidth
-                    disabled={loading || !canGenerate} 
+                    // disabled={loading || !canGenerate} //temporal
                     onClick={onHandlerClick} 
                     // className={classes.buttonDownloadDocs} 
                     variant="contained"
                     sx={{
-                      backgroundColor: canGenerate ? '#1976d2' : '#9e9e9e', // azul sistema / gris
+                      backgroundColor: '#1565c0',
+                      // backgroundColor: canGenerate ? '#1976d2' : '#9e9e9e', // azul sistema / gris
                       color: '#fff',
                       '&:hover': {
-                        backgroundColor: canGenerate ? '#1565c0' : '#757575',
+                        backgroundColor: '#1565c0',
+                        // backgroundColor: canGenerate ? '#1565c0' : '#757575',
                       },
                     }}
                     > 

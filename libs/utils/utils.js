@@ -162,6 +162,11 @@ export function canEditMenu(element, nivelStr) {
   const raw = element?.groups_fields || element?.primary?.groups_fields || "";
   const match = String(raw).match(/^\d+/);
   const menuNumber = match ? match[0] : "";
+  const niveles = String(nivelStr || "")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
 
-  return can;
+  return niveles.includes(menuNumber);
+  // return can;
 }

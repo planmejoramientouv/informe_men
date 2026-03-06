@@ -75,7 +75,7 @@ import DownloadDoc from '../Docs/Docs'
 import ImportarTablas from '../../components/panel/ImportarTablas'
 
 // Hooks
-import { setCookieRRC, getCookieData,firstLevelPermission, useRouteCookie } from '../../../../libs/utils/utils'
+import { setCookieRRC, getCookieData,firstLevelPermission, useRouteCookie, canEditMenu } from '../../../../libs/utils/utils'
 import { ROL_ADMIN_SISTEM, ROL_DIRECTOR, ROL_EDITOR_SISTEM } from "../../../../libs/utils/const.js"
 
 const theme = createTheme({
@@ -489,7 +489,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     
     const { cookie } = useRouteCookie();
     const cookieData = getCookieData("data");
-    const nivelesUsuario = String(cookie?.nivel || ''); // por ejemplo: "1,2,3"
+    const nivelesUsuario = String(cookie?.nivel || '');  // por ejemplo: "1,2,3"
     const nivelesArray = String(cookie?.nivel || '')
       .split(',')
       .map(s => s.trim())
@@ -499,7 +499,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
       if (!esEditor) return undefined;
       const key = nivelKeyFromItem(element?.[idx], idx);
       if (!nivelesArray.includes(String(key))) return undefined;
-      return sectionDoneByNivel[String(key)] ? '#d7f7d4' : '#f0c0c0';
+      return sectionDoneByNivel[String(key)] ? '#d7f7d4' : '#f0c0c000';
     };
 
     const rolUsuario = (cookieData?.rol || '').toLowerCase();
@@ -536,17 +536,18 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
               </Box>
               <Box sx={styles.drawerContainer}>
                 <List>
-                  {menuItems.map((item, idx) => (
+                  {menuItems.map((item, idx) => {
+                    const puedeEditar = canEditMenu(element?.[idx], nivelesUsuario);
+                    return (
                     <React.Fragment key={item.id}>
                       {/* === Menú Principal === */}
                       <ListItem sx={styles.listItem}>
                         <ListItemButton
                           sx={{
                             ...styles.listItemButton,
-                            ...(activeMenu === idx
-                              ? styles.listItemButtonActive
-                              : {}),
-                              backgroundColor: getEditorSectionColor(idx)
+                            ...(activeMenu === idx ? styles.listItemButtonActive: {}),
+                              backgroundColor: getEditorSectionColor(idx),
+                            ...(puedeEditar ? {} : { opacity: 0.6}),
                           }}
                           onClick={() => {
                             handleMenuClick(item.id, item.hasSubmenu, idx)
@@ -657,7 +658,8 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                         </Collapse>
                       )}
                     </React.Fragment>
-                  ))}
+                  );
+              })}
                 </List>
               </Box>
             </Drawer>
@@ -708,7 +710,7 @@ const printLabelsTabs = (element, index,shared) => {
       let additionalStyles = {} as any
 
       if (!firstLevelPermission(element?.primary)) {
-          additionalStyles.opacity= "0.1 !important"
+          additionalStyles.opacity= "0.6 !important"
           additionalStyles.cursor = "not-allowed"
       }
 
