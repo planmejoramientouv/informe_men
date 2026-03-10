@@ -71,6 +71,9 @@ import Build from '@mui/icons-material/Build'
 import People from '@mui/icons-material/People'
 import HomeWork from '@mui/icons-material/HomeWork'
 import AccountBalance from '@mui/icons-material/AccountBalance'
+import VerifiedIcon from '@mui/icons-material/Verified';
+import Tooltip from '@mui/material/Tooltip';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DownloadDoc from '../Docs/Docs'
 import ImportarTablas from '../../components/panel/ImportarTablas'
 
@@ -100,6 +103,28 @@ const theme = createTheme({
 const drawerWidth = 280
 
 const styles = {
+  verifiedIconOverlay: {
+    position: 'absolute',
+    bottom: -6,
+    right: -2,
+    color: '#43a047',
+    background: '#fff',
+    borderRadius: '50%',
+    boxShadow: '0 0 2px #888',
+    fontSize: 20,
+    zIndex: 2,
+  },
+  waitingIconOverlay: {
+    position: 'absolute',
+    bottom: -6,
+    right: -2,
+    color: '#fbc02d', // amarillo
+    background: '#fff',
+    borderRadius: '50%',
+    boxShadow: '0 0 2px #888',
+    fontSize: 20,
+    zIndex: 2,
+  },
   editableItem: {
     backgroundColor: "#d7f7d4 !important", // verde claro
   },
@@ -317,6 +342,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const [expandedSubMenus, setExpandedSubMenus] = React.useState<string[]>([]);
     const [hydrated, setHydrated] = React.useState(false);
     const [sectionDoneByNivel, setSectionDoneByNivel] = React.useState<Record<string, boolean>>({});
+    const [sectionDacaByNivel, setSectionDacaByNivel] = React.useState<Record<string, boolean>>({});
 
     const getNivelFromGroup = (groups_fields) => {
     const s = String(groups_fields || '').trim()
@@ -341,11 +367,37 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
   }, [element, nivelKeyFromItem]);
 
   React.useEffect(() => {
+    const init: Record<string, boolean> = {};
+    (element || []).forEach((item, idx) => {
+      const key = nivelKeyFromItem(item, idx);
+      const approved = String(item?.primary?.checkbox_daca ?? item?.checkbox_daca ?? '')
+        .trim()
+        .toLowerCase() === 'true';
+      init[key] = approved;
+    });
+    setSectionDacaByNivel(init);
+  }, [element, nivelKeyFromItem]);
+
+  React.useEffect(() => {
     const onProgress = (e: any) => {
       const raw = String(e?.detail?.section || '').trim();
       const section = getNivelFromGroup(raw) || raw; // normaliza a "1", "2", ...
       if (!section || e?.detail?.type !== 'M') return;
       setSectionDoneByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
+    };
+    window.addEventListener('section-progress-updated', onProgress);
+    return () => window.removeEventListener('section-progress-updated', onProgress);
+  }, []);
+
+  React.useEffect(() => {
+    const onProgress = (e: any) => {
+      const raw = String(e?.detail?.section || '').trim();
+      const section = getNivelFromGroup(raw) || raw;
+      if (!section) return;
+      if (e?.detail?.type === 'N') {
+        setSectionDacaByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
+      }
+      // ...ya tienes el de type 'M' para sectionDoneByNivel...
     };
     window.addEventListener('section-progress-updated', onProgress);
     return () => window.removeEventListener('section-progress-updated', onProgress);
@@ -537,7 +589,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
               <Box sx={styles.drawerContainer}>
                 <List>
                   {menuItems.map((item, idx) => {
-                    const puedeEditar = canEditMenu(element?.[idx], nivelesUsuario);
+                    const puedeEditar = esAdminODirector || canEditMenu(element?.[idx], nivelesUsuario);
                     return (
                     <React.Fragment key={item.id}>
                       {/* === Menú Principal === */}
@@ -554,7 +606,54 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                           }}
                         >
                           <ListItemIcon sx={styles.listItemIcon}>
-                            {iconList[idx]}
+                            <span style={{ position: 'relative', display: 'inline-block', width: 32, height: 32 }}>
+                              {iconList[idx]}
+                              {/* Icono de DACA aprobado */}
+                              {sectionDacaByNivel[nivelKeyFromItem(element?.[idx], idx)] && (
+                                <Tooltip
+                                  title="Sección aprobada por DACA"
+                                  placement="bottom-end"
+                                  arrow
+                                  PopperProps={{
+                                    modifiers: [
+                                      {
+                                        name: 'offset',
+                                        options: {
+                                          offset: [-16, 4],
+                                        },
+                                      },
+                                    ],
+                                  }}
+                                >
+                                  <span>
+                                    <VerifiedIcon sx={styles.verifiedIconOverlay} />
+                                  </span>
+                                </Tooltip>
+                              )}
+                              {!sectionDacaByNivel[nivelKeyFromItem(element?.[idx], idx)] &&
+                                sectionDoneByNivel[nivelKeyFromItem(element?.[idx], idx)] && (
+                                  <Tooltip
+                                    title="Esperando aprobación de DACA"
+                                    placement="bottom-end"
+                                    arrow
+                                    PopperProps={{
+                                      modifiers: [
+                                        {
+                                          name: 'offset',
+                                          options: {
+                                            offset: [-16, 4],
+                                          },
+                                        },
+                                      ],
+                                    }}
+                                  >
+                                    <span>
+                                      <AccessTimeIcon sx={styles.waitingIconOverlay} />
+                                    </span>
+                                  </Tooltip>
+                                )
+                              }
+                            </span>
                           </ListItemIcon>
                           <ListItemText
                             primary={item.label}
