@@ -790,7 +790,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
 }
 
 
-const printLabelsTabs = (element, index,shared) => {
+const printLabelsTabs = (element, index,shared, getSectionBorderColor) => {
     const classes = useStyles();
     function a11yProps(index: number) {
       return {
@@ -805,17 +805,14 @@ const printLabelsTabs = (element, index,shared) => {
     }
 
     const disabledClassSx = () => {
-
       let additionalStyles = {} as any
-
       if (!firstLevelPermission(element?.primary)) {
-          additionalStyles.opacity= "0.6 !important"
-          additionalStyles.cursor = "not-allowed"
+        additionalStyles.opacity= "0.6 !important"
+        additionalStyles.cursor = "not-allowed"
       }
-
       return {
         ...additionalStyles,
-        backgroundColor: `${getSectionBorderColor(idx)} !important`, 
+        backgroundColor: `${getSectionBorderColor(element)} !important`, 
         backgroundImage: `${getUrlBackground()}`,
       }
     }
