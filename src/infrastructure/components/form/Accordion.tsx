@@ -270,7 +270,7 @@ const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, 
  
 const toSheetBool = (v: any) => String(v ?? '').trim().toLowerCase() === 'true';
 
-const toNivelKey = (raw: any) => {
+export const toNivelKey = (raw: any) => {
   const s = String(raw ?? '').trim();
   const m = s.match(/^(\d+)(?:\.\d+)?/);
   return m ? m[1] : s;

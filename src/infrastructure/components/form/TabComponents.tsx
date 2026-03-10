@@ -76,6 +76,7 @@ import Tooltip from '@mui/material/Tooltip';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DownloadDoc from '../Docs/Docs'
 import ImportarTablas from '../../components/panel/ImportarTablas'
+import { toNivelKey } from './Accordion';
 
 // Hooks
 import { setCookieRRC, getCookieData,firstLevelPermission, useRouteCookie, canEditMenu } from '../../../../libs/utils/utils'
@@ -381,23 +382,14 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
   React.useEffect(() => {
     const onProgress = (e: any) => {
       const raw = String(e?.detail?.section || '').trim();
-      const section = getNivelFromGroup(raw) || raw; // normaliza a "1", "2", ...
-      if (!section || e?.detail?.type !== 'M') return;
-      setSectionDoneByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
-    };
-    window.addEventListener('section-progress-updated', onProgress);
-    return () => window.removeEventListener('section-progress-updated', onProgress);
-  }, []);
-
-  React.useEffect(() => {
-    const onProgress = (e: any) => {
-      const raw = String(e?.detail?.section || '').trim();
       const section = getNivelFromGroup(raw) || raw;
       if (!section) return;
       if (e?.detail?.type === 'N') {
         setSectionDacaByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
       }
-      // ...ya tienes el de type 'M' para sectionDoneByNivel...
+      if (e?.detail?.type === 'M') {
+        setSectionDoneByNivel(prev => ({ ...prev, [section]: !!e?.detail?.checked }));
+      }
     };
     window.addEventListener('section-progress-updated', onProgress);
     return () => window.removeEventListener('section-progress-updated', onProgress);
@@ -552,6 +544,13 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
       const key = nivelKeyFromItem(element?.[idx], idx);
       if (!nivelesArray.includes(String(key))) return undefined;
       return sectionDoneByNivel[String(key)] ? '#d7f7d4' : '#f0c0c000';
+    };
+
+    const getSectionBorderColor = (element) => {
+      const key = toNivelKey(element?.groups_fields || element?.primary?.groups_fields);
+      if (sectionDacaByNivel[key]) return '#43a047'; // Verde
+      if (sectionDoneByNivel[key]) return '#fbc02d'; // Amarillo
+      return '#C8102E'; // Rojo por defecto
     };
 
     const rolUsuario = (cookieData?.rol || '').toLowerCase();
@@ -780,6 +779,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                     onSaveValues={onSaveValues}
                     onSaveChecks={onSaveChecks}
                     saving={saving}
+                    getSectionBorderColor={getSectionBorderColor} 
                   />
                 ))
               )}
@@ -815,7 +815,7 @@ const printLabelsTabs = (element, index,shared) => {
 
       return {
         ...additionalStyles,
-        backgroundColor: `${element?.primary?.background} !important`, 
+        backgroundColor: `${getSectionBorderColor(idx)} !important`, 
         backgroundImage: `${getUrlBackground()}`,
       }
     }
@@ -852,9 +852,9 @@ const CustomTabPanel = (props) => {
     );
 }
 
-const PrintBodyTab = ({ element, index, onSaveValues, onSaveChecks, saving }) => {
+const PrintBodyTab = ({ element, index, onSaveValues, onSaveChecks, saving, getSectionBorderColor }) => {
   return (
-    <Box sx={{ height: '100%', overflow: 'auto', border: `1px solid ${element?.primary?.background}`, borderRadius: '4px' }} key={index}>
+    <Box sx={{ height: '100%', overflow: 'auto', border: `1px solid ${getSectionBorderColor(element)}`, borderRadius: '4px' }} key={index}>
       <PrintAccordion 
         element={element}
         index={index}
