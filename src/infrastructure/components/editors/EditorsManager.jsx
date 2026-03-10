@@ -6,7 +6,11 @@ import {
   TextField, Typography, IconButton, Table, TableHead, TableRow, TableCell, TableBody,
   Stack, Tooltip, Chip
 } from "@mui/material"
-import { Add, Delete, Edit, Restore, Save, Close } from "@mui/icons-material"
+import { Add, Delete, Edit, Restore, Save, Close, PersonAdd } from "@mui/icons-material"
+import useStyles from '../../../../css/form/form.css.js'
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert'; 
+import CircularProgress from '@mui/material/CircularProgress';
 
 const isUnivalleEmail = (s) =>
   /@correounivalle\.edu\.co$/i.test(String(s || "").trim())
@@ -47,7 +51,9 @@ export default function EditorsManager({
   onClose = () => {},
   contextOverride = null,
   defaultNivel = "",
+  sectionName = "",
 }) {
+  const classes = useStyles();
   const cookie = useProcesoContext(contextOverride)
 
   const [rows, setRows] = React.useState([])
@@ -55,12 +61,26 @@ export default function EditorsManager({
 
   // Crear en línea (sin sub-modal)
   const [email, setEmail] = React.useState("")
+  const [errorMessage, setErrorMessage] = React.useState("");
+  const [touched, setTouched] = React.useState(false);
 
   // Editar correo inline
   const [editEmailId, setEditEmailId] = React.useState(null)
   const [editEmailValue, setEditEmailValue] = React.useState("")
 
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = React.useState('success'); // o 'error', 'info', 'warning'
+
+  // Handler para cerrar el snackbar
+  const handleSnackbarClose = () => setSnackbarOpen(false);
+
   const nivelFiltro = normalizeNivel(defaultNivel)
+
+  const handleChange = (e) => {
+    setEmail(e.target.value);
+    setErrorMessage(""); // Opcional: limpia el error al escribir
+  };
 
   const fetchList = React.useCallback(async () => {
     if (!cookie?.programa || !cookie?.proceso || !cookie?.year) return
@@ -202,37 +222,59 @@ export default function EditorsManager({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
-        Editores – {cookie?.programa} · {cookie?.proceso} {cookie?.year} {nivelFiltro ? `· Nivel ${nivelFiltro}` : ""}
+        Editores – {cookie?.programa} · {cookie?.proceso} {cookie?.year}  
+        <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <Close />
+        </IconButton>
+        <Box sx={{ mb: 0, mt: 1 }}>
+          <span style={{ fontSize: 16, color: '#444' }}>
+            
+            Gestiona o añade los editores asignados para la sección:{" "}
+            <b>{sectionName || nivelFiltro} (Nivel {nivelFiltro})</b>
+          </span>
+        </Box>
       </DialogTitle>
-
-      <DialogContent dividers>
-        <Box sx={{ mb: 2 }}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
-            <Typography variant="body2" sx={{ textAlign: { xs: "center", md: "left" } }}>
-              Se listan editores de cualquier fila cuyo <b>nivel</b> incluya <b>{nivelFiltro || "(sin nivel)"}</b>.
-            </Typography>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="center" sx={{ width: "100%", maxWidth: 760 }}>
+      <DialogContent>
+        <Box sx={{ p: 2, background: "#fafafa", borderRadius: 2, mb: 2 }}>
+          <form onSubmit={handleCreate}>
+            <Stack direction="row" spacing={2} alignItems="stretch">
               <TextField
+                className={classes.inputText}
                 label="Correo del editor"
                 type="email"
-                size="medium"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
+                onBlur={() => setTouched(true)}
+                error={touched && !isUnivalleEmail(email)}
+                helperText={
+                  touched && !isUnivalleEmail(email)
+                    ? "Debe ser un correo @correounivalle.edu.co"
+                    : ""
+                }
                 fullWidth
-                sx={{ minWidth: 420, maxWidth: 640 }}
+                size="medium"
               />
               <Button
+                type="submit"
                 variant="contained"
-                startIcon={<Add />}
-                onClick={handleCreate}
+                color="primary"
+                startIcon={<PersonAdd />}
                 disabled={!email || !nivelFiltro || loading}
+                sx={{
+                  minWidth: 120,
+                  height: 50, // igual al input estándar de MUI (puedes ajustar)
+                  alignSelf: 'flex-start'
+                }}
               >
-                Asignar
+                {loading ? <CircularProgress size={20} /> : "Asignar"}
               </Button>
             </Stack>
-          </Stack>
+          </form>
         </Box>
+        {/* Tabla y búsqueda aquí */}
+        <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={handleSnackbarClose}>
+          <Alert severity={snackbarSeverity}>{snackbarMessage}</Alert>
+        </Snackbar>
 
         <Table size="small">
           <TableHead>
@@ -330,9 +372,9 @@ export default function EditorsManager({
         </Table>
       </DialogContent>
 
-      <DialogActions>
+      {/* <DialogActions>
         <Button onClick={onClose}>Cerrar</Button>
-      </DialogActions>
+      </DialogActions> */}
     </Dialog>
   )
 }

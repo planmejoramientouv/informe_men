@@ -767,7 +767,14 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
               {/* <DownloadDoc /> */}
               
               <div style={{ margin: '8px 0' }}>
-                 <EditorsManagerLauncher defaultNivel={String(nivelSugerido || '')} />
+                <EditorsManagerLauncher
+                  defaultNivel={String(nivelSugerido || '')}
+                  sectionName={
+                    element?.[activeMenu]?.texto ||
+                    element?.[activeMenu]?.primary?.texto ||
+                    ""
+                  }
+                />
               </div>
 
               {element?.[activeMenu] != null && (

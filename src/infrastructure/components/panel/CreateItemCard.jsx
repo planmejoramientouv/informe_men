@@ -201,18 +201,23 @@ export default function CreateItemCard({
 
       {/* Modal */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>Crear proceso</DialogTitle>
+        <DialogTitle>Crear nuevo proceso</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          {/* TIPO */}
-          <FormControl fullWidth margin="normal" error={errors.tipo}>
-            <InputLabel id="tipo-label">Tipo</InputLabel>
+          <FormControl
+            fullWidth
+            margin="normal"
+            error={errors.tipo}
+            sx={{ minHeight: 56, justifyContent: 'center' }}
+          >
+            <InputLabel id="tipo-label">Tipo de proceso</InputLabel>
             <Select
               labelId="tipo-label"
-              label="Tipo"
+              label="Tipo de proceso"
               value={tipo}
-              onChange={(e) => setTipo(e.target.value)} // 'rrc' | 'raac'
-              onBlur={() => setTouched(true)}
-              size="small"
+              onChange={(e) => setTipo(e.target.value)}
+              // onBlur={() => setTouched(true)}
+              size="medium"
+              sx={{ minHeight: 56, display: 'flex', alignItems: 'center' }}
             >
               <MenuItem value="rrc">RRC</MenuItem>
               <MenuItem value="raac">RAAC</MenuItem>
@@ -220,15 +225,22 @@ export default function CreateItemCard({
             {errors.tipo && <FormHelperText>Selecciona un tipo.</FormHelperText>}
           </FormControl>
 
-          {/* SEDE (dependiente del tipo) */}
-          <FormControl fullWidth margin="normal" error={errors.sede} disabled={!tipo}>
+          <FormControl
+            fullWidth
+            margin="normal"
+            error={errors.sede}
+            disabled={!tipo}
+            sx={{ minHeight: 56, justifyContent: 'center' }}
+          >
             <InputLabel id="sede-label">Sede</InputLabel>
             <Select
               labelId="sede-label"
               label="Sede"
               value={sede}
-              onChange={(e) => setSede(e.target.value)} // 'Regionales'/'Cali' o 'Ampliación'/'Cali'
-              onBlur={() => setTouched(true)}
+              onChange={(e) => setSede(e.target.value)}
+              // onBlur={() => setTouched(true)}
+              size="medium"
+              sx={{ minHeight: 56, display: 'flex', alignItems: 'center' }}
             >
               {sedesList.map((s) => (
                 <MenuItem key={s} value={s}>{s}</MenuItem>
@@ -237,55 +249,43 @@ export default function CreateItemCard({
             {errors.sede && <FormHelperText>Selecciona una sede.</FormHelperText>}
           </FormControl>
 
-        {/* PROGRAMA (buscable con Autocomplete) */}
-        <Autocomplete
-        disabled={!sede}
-        options={programasOpts}
-        value={programa ? { program: programa, period: periodo } : null}
-        getOptionLabel={(opt) => {
-          if (!opt) return '';
-          // si la opción es string (caso fallback), devolverla
-          if (typeof opt === 'string') return opt;
-          // opción como objeto: mostrar "program period"
-          return `${opt.program} - ${opt.period ?? ''}`.trim();
-        }}
-        onChange={(_, opt) => {
-        if (!opt) { setPrograma(''); setPeriodo(''); return; }
-        setPrograma(opt.program);
-        setPeriodo(opt.period); // <- guardamos el periodo seleccionado
-        }}
-        loading={loadingPrograms}
-        autoHighlight
-        blurOnSelect
-        disablePortal
-        open={openAuto}                          // <-- controlar apertura
-        onOpen={() => setOpenAuto(true)}         // <--
-        onClose={() => setOpenAuto(false)}       // <--
-        ListboxProps={{ style: { maxHeight: 240, overflowY: 'auto' } }}
-        sx={{ mt: 2 }}
-        renderInput={(params) => (
-            <TextField
-            {...params}
-            label="Programa"
-            size="small"
-            margin="normal"
-            error={errors.programa}
-            helperText={errors.programa ? 'Selecciona un programa.' : ''}
-            InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                <>
-                    {openAuto && loadingPrograms ? <CircularProgress size={18} /> : null}
-                    {params.InputProps.endAdornment}
-                </>
-                ),
+          <Autocomplete
+            disabled={!sede}
+            options={programasOpts}
+            getOptionLabel={(opt) => {
+              if (!opt) return '';
+              if (typeof opt === 'string') return opt;
+              return `${opt.program} - ${opt.period ?? ''}`.trim();
             }}
-            />
-        )}
-        />
+            value={programa ? { program: programa, period: periodo } : null}
+            onChange={(_, opt) => {
+              if (!opt) { setPrograma(''); setPeriodo(''); return; }
+              setPrograma(opt.program);
+              setPeriodo(opt.period);
+            }}
+            loading={loadingPrograms}
+            loadingText="Cargando programas..."
+            autoHighlight
+            blurOnSelect
+            disablePortal
+            sx={{ minHeight: 56 }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Programa académico"
+                size="medium"
+                margin="normal"
+                error={errors.programa}
+                helperText={errors.programa ? 'Selecciona un programa.' : ''}
+                sx={{ minHeight: 56 }}
+                InputProps={{
+                  ...params.InputProps,
+                  style: { minHeight: 56 }
+                }}
+              />
+            )}
+          />
 
-
-          {/* EMAIL */}
           <TextField
             fullWidth
             margin="normal"
@@ -300,10 +300,10 @@ export default function CreateItemCard({
                 ? 'Usa un correo @correounivalle.edu.co válido (ej: nombre.apellido@correounivalle.edu.co).'
                 : ''
             }
+            size="medium"
+            sx={{ minHeight: 56, display: 'flex' }}
             inputProps={{
-              inputMode: 'email',
-              spellCheck: 'false',
-              autoCorrect: 'off',
+              style: { minHeight: 56, display: 'flex' }
             }}
           />
         </DialogContent>

@@ -29,6 +29,7 @@ function useUserRole() {
 
 export default function EditorsManagerLauncher({
   defaultNivel = "",
+  sectionName = "",
   contextOverride = null,
   buttonVariant = "outlined",
   buttonSize = "small",
@@ -58,6 +59,7 @@ export default function EditorsManagerLauncher({
             open={open}
             onClose={() => setOpen(false)}
             defaultNivel={defaultNivel}
+            sectionName={sectionName}
             contextOverride={contextOverride}
           />
         )}

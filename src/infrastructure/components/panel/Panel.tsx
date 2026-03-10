@@ -32,7 +32,7 @@ import { useRouter } from 'next/router';
 
 // Const
 const BORDER_COLORS = [
-  '#C8102E',
+  '#5b4646',
   // '#FFCD00',
   // '#0051BA',
   // '#A7A8AA',
