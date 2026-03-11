@@ -21,6 +21,8 @@ import { postUpdateRRC, postUpdateCheckboxRRC } from '../../../../hooks/fecth/ha
 // Hoosk
 import { useGlobalState } from '../../../../hooks/context'
 
+import Box from '@mui/material/Box';
+
 // Def
 export default () => {
   const [formData, setFormData] = React.useState([])
@@ -97,13 +99,16 @@ export default () => {
   return (
     <React.Fragment>
       <Show when={formData.length > 0 && hydrated}>
-        <ComponentsTab
-          element={formData}
-          index={null}
-          onSaveValues={handleSaveValues}
-          onSaveChecks={handleSaveChecks} // si aún no usas checks, puedes omitirla
-          saving={saving}
-        />
+        <Box sx={{ position: 'relative' }}>
+          {/* Todo el formulario */}
+          <ComponentsTab
+            element={formData}
+            index={null}
+            onSaveValues={handleSaveValues}
+            onSaveChecks={handleSaveChecks}
+            saving={saving}
+          />
+        </Box>
       </Show>
     </React.Fragment>
   )

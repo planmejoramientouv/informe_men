@@ -625,7 +625,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                   }}
                                 >
                                   <span>
-                                    <VerifiedIcon sx={styles.verifiedIconOverlay} />
+                                    <VerifiedIcon sx={styles.verifiedIconOverlay} className={classes.popIn} />
                                   </span>
                                 </Tooltip>
                               )}
@@ -647,7 +647,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                                     }}
                                   >
                                     <span>
-                                      <AccessTimeIcon sx={styles.waitingIconOverlay} />
+                                      <AccessTimeIcon sx={styles.waitingIconOverlay} className={classes.popIn} />
                                     </span>
                                   </Tooltip>
                                 )

@@ -382,6 +382,14 @@ export default makeStyles(() => ({
         '60%':  { boxShadow: '0 0 0 6px rgba(25, 118, 210, 0.15)',  backgroundColor: 'rgba(25, 118, 210, 0.15)' },
         '100%': { boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.0)', backgroundColor: 'rgba(25, 118, 210, 0.0)' },
     },
+    popIn: {
+        animation: '$popInAnim 0.4s cubic-bezier(0.23, 1.15, 0.32, 1)',
+    },
+    '@keyframes popInAnim': {
+        '0%':   { transform: 'scale(0.2)', opacity: 0 },
+        '60%':  { transform: 'scale(1.2)', opacity: 1 },
+        '100%': { transform: 'scale(1)', opacity: 1 },
+    },
     dialogContent: {
         display: 'flex',
         flexDirection: 'column',

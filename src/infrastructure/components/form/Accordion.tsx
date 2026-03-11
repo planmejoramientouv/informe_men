@@ -16,7 +16,7 @@ import RenderField from './RenderField'
 
 // Material - IU
 import Box from '@mui/material/Box';
-import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel, CircularProgress} from '@mui/material';
 
 // Hooks
 import { useGlobalState } from '../../../../hooks/context'
@@ -36,14 +36,15 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const [hydrated, setHydrated] = React.useState(false);
     const [openDialog, setOpenDialog] = React.useState({});
 
-    const handleClose = () => {
-        setOpen(false)
-    }
-
     // Bloquear sección por DACA
     const [sectionLocked, setSectionLocked] = React.useState(
       toSheetBool(element?.primary?.checkbox_daca)
     );
+
+    // --- NUEVO: estados de loading global ---
+    const [loadingDirector, setLoadingDirector] = React.useState(false);
+    const [loadingDaca, setLoadingDaca] = React.useState(false);
+    const loadingGlobal = loadingDirector || loadingDaca;
 
     React.useEffect(() => {
         setHydrated(true);
@@ -58,14 +59,38 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     return (
       <React.Fragment key={index}>
         <Show when={firstLevelPermission(element?.primary)}>
-            <Grid2  className={classes.tabContentPanel}>
+          <Box sx={{ position: 'relative' }}>
+            {/* Overlay global */}
+            {loadingGlobal && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  zIndex: 20,
+                  right: 24,         
+                  bottom: 24,         
+                  width: 'auto',      
+                  height: 'auto',      
+                  bgcolor: 'rgba(255,255,255,0.7)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%', 
+                  p: 2,               
+                  pointerEvents: 'all',
+                }}
+              >
+                <CircularProgress size={56} thickness={5} />
+              </Box>
+            )}
+
+            <Grid2  className={classes.tabContentPanel} sx={{ opacity: loadingGlobal ? 0.5 : 1, pointerEvents: loadingGlobal ? 'none' : 'auto' }}>
                 <Grid2 
-                className={classes.listFormSection}
-                sx={
-                  sectionLocked
-                  ? { pointerEvents: 'none', opacity: 0.5, transition: 'all .2s ease' }
-                  : undefined
-                }
+                  className={classes.listFormSection}
+                  sx={
+                    sectionLocked
+                    ? { pointerEvents: 'none', opacity: 0.5, transition: 'all .2s ease' }
+                    : undefined
+                  }
                 >
                   <Grid2 className={classes.ColapsableTwo}>
                     <Typography
@@ -75,9 +100,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                         sx={{ scrollMarginTop: '88px' }}> 
                         {element?.primary?.texto}
                     </Typography>
-              
                   </Grid2>
-                  {/* <For func={printFields} list={element.data} shared={element.data}/> */}
                   {
                     element?.data?.map((el, idx) => 
                       <PrintFields 
@@ -94,12 +117,15 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                   }
                 </Grid2>
                 <CheckboxesWithText 
-                data={element?.primary} 
-                globalState={globalState}
-                onDacaChange={(checked) => setSectionLocked(checked)}
-                locked={sectionLocked}
+                  data={element?.primary} 
+                  globalState={globalState}
+                  onDacaChange={(checked) => setSectionLocked(checked)}
+                  locked={sectionLocked}
+                  setLoadingDirector={setLoadingDirector}
+                  setLoadingDaca={setLoadingDaca}
                 />
-              </Grid2>
+            </Grid2>
+          </Box>
         </Show>
       </React.Fragment>
     )
@@ -276,73 +302,120 @@ export const toNivelKey = (raw: any) => {
   return m ? m[1] : s;
 };
 
-const CheckboxesWithText = ({ data, globalState, onDacaChange = (checked: boolean) => {}, locked = false }) => {
+const CheckboxesWithText = ({
+  data,
+  globalState,
+  onDacaChange = (checked: boolean) => {},
+  locked = false,
+  setLoadingDirector = (loading: boolean) => {},
+  setLoadingDaca = (loading: boolean) => {},
+}) => {
   const permisoKey = toNivelKey(data?.groups_fields);
   const [checkedDirector, setCheckedDirector] = React.useState(toSheetBool(data?.checkbox_director));
   const [checkedDaca, setCheckedDaca] = React.useState(toSheetBool(data?.checkbox_daca));
-  
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [pendingChecked, setPendingChecked] = React.useState(false);
+
   React.useEffect(() => {
     setCheckedDirector(toSheetBool(data?.checkbox_director));
     setCheckedDaca(toSheetBool(data?.checkbox_daca));
   }, [data?.checkbox_director, data?.checkbox_daca]);
 
-  const handlerChange = async (e:  React.ChangeEvent<HTMLInputElement>, type: string) => {
-    const checked = (e.target).checked;
-    const value = checked ? 'TRUE' : 'FALSE';
+  // Permisos por checkbox
+  const canEditDirector = checkboxLevelPermission(permisoKey, 'director'); // Sección Finalizada
+  const canEditDaca = checkboxLevelPermission(permisoKey, 'admin');         // Aprobado Daca
 
-    if (type === 'M') setCheckedDirector(checked);
-    if (type === 'N') {
-      setCheckedDaca(checked);
-      onDacaChange(checked);
-    }
-
-    if (type === 'N') data.checkbox_daca = value;
-    if (type === 'M') data.checkbox_director = value;
-
+  // Actualiza el checkbox y notifica
+  const updateDirectorCheck = async (checked: boolean) => {
+    setLoadingDirector(true);
+    setCheckedDirector(checked);
+    data.checkbox_director = checked ? 'TRUE' : 'FALSE';
     const dataSheet = [{ ...data, checkbox: checked }];
-
-    // let dataSheet = []
-    // data.checkbox = (e.target).checked
-    // dataSheet.push(data)
-    // console.log(globalState.data,data,data.checkbox)
-    // const update = await updateCheckboxClient({
-    //   sheetId: globalState.data.sheetId,
-    //   gid: globalState.data.gid,
-    //   data: dataSheet,
-    //   row_: type
-    // })
     try {
       await updateCheckboxClient({
         sheetId: globalState.data.sheetId,
         gid: globalState.data.gid,
         data: dataSheet,
-        row_: type,
+        row_: 'M',
       });
-
-      // Notifica a Docs para recalcular progreso por sección
-      if (typeof window !== 'undefined' && (type === 'N' || type === 'M')) {
+      if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('section-progress-updated', {
-            detail: { section: permisoKey, type, checked }
+            detail: { section: permisoKey, type: 'M', checked }
           })
         );
       }
     } catch (err) {
       console.error('Error actualizando checkbox', err);
+    } finally {
+      setLoadingDirector(false);
     }
   };
 
-  // Permisos por checkbox
-  const canEditDirector = checkboxLevelPermission(permisoKey, 'director'); // Sección Finalizada
-  const canEditDaca = checkboxLevelPermission(permisoKey, 'admin');         // Aprobado Daca
+  // Actualiza el checkbox DACA y notifica
+  const updateDacaCheck = async (checked: boolean) => {
+    setLoadingDaca(true);
+    setCheckedDaca(checked);
+    onDacaChange(checked);
+    data.checkbox_daca = checked ? 'TRUE' : 'FALSE';
+    const dataSheet = [{ ...data, checkbox: checked }];
+    try {
+      await updateCheckboxClient({
+        sheetId: globalState.data.sheetId,
+        gid: globalState.data.gid,
+        data: dataSheet,
+        row_: 'N',
+      });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('section-progress-updated', {
+            detail: { section: permisoKey, type: 'N', checked }
+          })
+        );
+      }
+    } catch (err) {
+      console.error('Error actualizando checkbox', err);
+    } finally {
+      setLoadingDaca(false);
+    }
+  };
+
+  // Handler para el cambio de los checkboxes
+  const handlerChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    const checked = e.target.checked;
+    if (type === 'M' && checked) {
+      setPendingChecked(true);
+      setConfirmOpen(true);
+      return;
+    }
+    if (type === 'M') {
+      await updateDirectorCheck(checked);
+      return;
+    }
+    if (type === 'N') {
+      await updateDacaCheck(checked);
+      return;
+    }
+  };
+
+  // Confirmación del diálogo
+  const handleConfirm = async () => {
+    setConfirmOpen(false);
+    await updateDirectorCheck(true);
+  };
+
+  // Cancelar el diálogo
+  const handleCancel = () => {
+    setConfirmOpen(false);
+    setPendingChecked(false);
+  };
 
   return (
-    <Box sx={{ marginTop: '20px'}}>
+    <Box sx={{ marginTop: '20px' }}>
       {/* Checkbox Director */}
       <FormControlLabel
         control={
           <Checkbox
-            // defaultChecked={data?.checkbox_director !== 'FALSE'}
             checked={checkedDirector}
             disabled={!canEditDirector || locked}
             onChange={(e) => handlerChange(e, 'M')}
@@ -358,7 +431,6 @@ const CheckboxesWithText = ({ data, globalState, onDacaChange = (checked: boolea
       <FormControlLabel
         control={
           <Checkbox
-            // defaultChecked={data?.checkbox_daca !== 'FALSE'}
             checked={checkedDaca}
             disabled={!canEditDaca}
             onChange={(e) => handlerChange(e, 'N')}
@@ -369,6 +441,23 @@ const CheckboxesWithText = ({ data, globalState, onDacaChange = (checked: boolea
       <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
         Confirmar si Daca revisó y aprobó los cambios finales.
       </Typography>
+
+      {/* Dialog de confirmación */}
+      <Dialog open={confirmOpen} onClose={handleCancel}>
+        <DialogTitle>Confirmar acción</DialogTitle>
+        <DialogContent>
+          Al realizar esta acción se le notificará a la DACA para revisar la sección: <b>{data?.texto || data?.variables || 'esta sección'}</b>.<br />
+          ¿Está seguro de hacerlo?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancel} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirm} color="primary" autoFocus>
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
