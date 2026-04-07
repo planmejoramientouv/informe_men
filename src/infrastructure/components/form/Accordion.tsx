@@ -16,8 +16,7 @@ import RenderField from './RenderField'
 
 // Material - IU
 import Box from '@mui/material/Box';
-import { Dialog, DialogTitle, DialogContent, DialogActions,  Typography, TextField, Grid2, Button,Checkbox, FormControlLabel, CircularProgress} from '@mui/material';
-
+import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, TextField, Grid2, Button, Checkbox, FormControlLabel, CircularProgress, RadioGroup, Radio } from '@mui/material';
 // Hooks
 import { useGlobalState } from '../../../../hooks/context'
 // import { updateCheckbox } from '../../../../libs/googlesheet'
@@ -25,7 +24,8 @@ import { useGlobalState } from '../../../../hooks/context'
 import { updateCheckboxClient } from '../../../../hooks/fecth/handlers/handlers'
 
 // Hooks
-import { firstLevelPermission, checkboxLevelPermission } from '../../../../libs/utils/utils'
+import { firstLevelPermission, checkboxLevelPermission, getCookieData } from '../../../../libs/utils/utils'
+import { ROL_ADMIN_SISTEM } from '../../../../libs/utils/const.js';
 
 // Print Accordion
 export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) => {
@@ -36,23 +36,28 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
     const [hydrated, setHydrated] = React.useState(false);
     const [openDialog, setOpenDialog] = React.useState({});
 
-    // Bloquear sección por DACA
+    // Bloquear sección
     const [sectionLocked, setSectionLocked] = React.useState(
-      toSheetBool(element?.primary?.checkbox_daca)
+      toSheetBool(element?.primary?.checkbox_director)
     );
 
-    // --- NUEVO: estados de loading global ---
+    // estados de loading global
     const [loadingDirector, setLoadingDirector] = React.useState(false);
     const [loadingDaca, setLoadingDaca] = React.useState(false);
     const loadingGlobal = loadingDirector || loadingDaca;
+        
+    const authData = getCookieData('data') || {};
+    const rol = String(authData.rol || '').toLowerCase();
+    const isAdmin = ROL_ADMIN_SISTEM.includes(rol);
+    const effectiveSectionLocked = sectionLocked && !isAdmin;
 
     React.useEffect(() => {
         setHydrated(true);
     }, []);
 
     React.useEffect(() => {
-      setSectionLocked(toSheetBool(element?.primary?.checkbox_daca));
-    }, [element?.primary?.checkbox_daca]);
+      setSectionLocked(toSheetBool(element?.primary?.checkbox_director));
+    }, [element?.primary?.checkbox_director]);
 
     if (!hydrated) return null;
     
@@ -87,7 +92,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                 <Grid2 
                   className={classes.listFormSection}
                   sx={
-                    sectionLocked
+                    effectiveSectionLocked
                     ? { pointerEvents: 'none', opacity: 0.5, transition: 'all .2s ease' }
                     : undefined
                   }
@@ -102,11 +107,11 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                     </Typography>
                   </Grid2>
                   {
-                    element?.data?.map((el, idx) => 
-                      <PrintFields 
-                        key={idx} 
-                        element={el} 
-                        index={idx} 
+                    element?.data?.map((el, idx) =>
+                      <PrintFields
+                        key={`${String(el?.id ?? 'no-id')}-${String(el?.groups_fields ?? 'no-group')}-${String(el?.tipo ?? 'no-type')}`}
+                        element={el}
+                        index={idx}
                         shared={element.data}
                         openDialog={openDialog}
                         setOpenDialog={setOpenDialog}
@@ -120,7 +125,7 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
                   data={element?.primary} 
                   globalState={globalState}
                   onDacaChange={(checked) => setSectionLocked(checked)}
-                  locked={sectionLocked}
+                  locked={effectiveSectionLocked}
                   setLoadingDirector={setLoadingDirector}
                   setLoadingDaca={setLoadingDaca}
                 />
@@ -223,7 +228,7 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog, onSa
             if (el.tipo !== "tabla_aspectos") {
               return (
                 <RenderColapsable
-                  key={idx}
+                  key={`${String(el?.id ?? idx)}-${String(el?.groups_fields ?? '')}-${String(el?.tipo ?? '')}`}
                   element={el}
                   shared={shared}
                   index={idx}
@@ -242,7 +247,7 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog, onSa
             if (isFirstAspect) {
               return (
                 <RenderColapsable
-                  key={idx}
+                  key={`${String(el?.id ?? idx)}-${String(el?.groups_fields ?? '')}-${String(el?.tipo ?? '')}`}
                   element={el}
                   shared={shared}
                   index={idx}
@@ -313,35 +318,65 @@ const CheckboxesWithText = ({
   const permisoKey = toNivelKey(data?.groups_fields);
   const [checkedDirector, setCheckedDirector] = React.useState(toSheetBool(data?.checkbox_director));
   const [checkedDaca, setCheckedDaca] = React.useState(toSheetBool(data?.checkbox_daca));
+  const [dacaDecision, setDacaDecision] = React.useState('');
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [pendingChecked, setPendingChecked] = React.useState(false);
 
+  const authData = getCookieData('data') || {};
+  const processData = getCookieData('rrc') || getCookieData('raac') || {};
+  const rol = String(authData?.rol || '').toLowerCase();
+  const isAdmin = ROL_ADMIN_SISTEM.includes(rol);
+
   React.useEffect(() => {
-    setCheckedDirector(toSheetBool(data?.checkbox_director));
-    setCheckedDaca(toSheetBool(data?.checkbox_daca));
+    const directorChecked = toSheetBool(data?.checkbox_director);
+    const dacaChecked = toSheetBool(data?.checkbox_daca);
+    setCheckedDirector(directorChecked);
+    setCheckedDaca(dacaChecked);
+    setDacaDecision(dacaChecked ? 'approve' : '');
   }, [data?.checkbox_director, data?.checkbox_daca]);
 
-  // Permisos por checkbox
-  const canEditDirector = checkboxLevelPermission(permisoKey, 'director'); // Sección Finalizada
-  const canEditDaca = checkboxLevelPermission(permisoKey, 'admin');         // Aprobado Daca
+  const canEditDirector = checkboxLevelPermission(permisoKey, 'director');
+  const canEditDaca = checkboxLevelPermission(permisoKey, 'admin');
 
-  // Actualiza el checkbox y notifica
+  const notifyContext = {
+    context: {
+      programa: String(processData?.programa || authData?.programa || '').trim(),
+      proceso: String(processData?.proceso || '').trim(),
+      year: String(processData?.year || '').trim(),
+    },
+    actor: {
+      email: String(authData?.email || '').trim().toLowerCase(),
+      name: String(authData?.name || '').trim(),
+      rol: String(authData?.rol || '').trim().toLowerCase(),
+    },
+    nivel: String(permisoKey || '').trim(),
+    sectionName: String(data?.texto || data?.variables || `Nivel ${permisoKey || ''}`).trim(),
+  };
+
   const updateDirectorCheck = async (checked: boolean) => {
+    onDacaChange(checked);
     setLoadingDirector(true);
     setCheckedDirector(checked);
     data.checkbox_director = checked ? 'TRUE' : 'FALSE';
     const dataSheet = [{ ...data, checkbox: checked }];
+
     try {
-      await updateCheckboxClient({
+      const json = await updateCheckboxClient({
         sheetId: globalState.data.sheetId,
         gid: globalState.data.gid,
         data: dataSheet,
         row_: 'M',
+        notify: notifyContext,
       });
+
+      if (json?.notification?.error) {
+        console.warn('Checkbox M guardado, pero falló notificación:', json.notification.error);
+      }
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('section-progress-updated', {
-            detail: { section: permisoKey, type: 'M', checked }
+            detail: { section: permisoKey, type: 'M', checked },
           })
         );
       }
@@ -352,24 +387,30 @@ const CheckboxesWithText = ({
     }
   };
 
-  // Actualiza el checkbox DACA y notifica
   const updateDacaCheck = async (checked: boolean) => {
     setLoadingDaca(true);
     setCheckedDaca(checked);
-    onDacaChange(checked);
+    setDacaDecision(checked ? 'approve' : 'reject');
     data.checkbox_daca = checked ? 'TRUE' : 'FALSE';
     const dataSheet = [{ ...data, checkbox: checked }];
+
     try {
-      await updateCheckboxClient({
+      const json = await updateCheckboxClient({
         sheetId: globalState.data.sheetId,
         gid: globalState.data.gid,
         data: dataSheet,
         row_: 'N',
+        notify: notifyContext,
       });
+
+      if (json?.notification?.error) {
+        console.warn('Checkbox N guardado, pero falló notificación:', json.notification.error);
+      }
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('section-progress-updated', {
-            detail: { section: permisoKey, type: 'N', checked }
+            detail: { section: permisoKey, type: 'N', checked },
           })
         );
       }
@@ -380,55 +421,96 @@ const CheckboxesWithText = ({
     }
   };
 
-  // Handler para el cambio de los checkboxes
-  const handlerChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  // const handlerChange = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  //   const checked = e.target.checked;
+
+  //   if (type === 'M' && checked) {
+  //     setPendingChecked(true);
+  //     setConfirmOpen(true);
+  //     return;
+  //   }
+
+  //   if (type === 'M') {
+  //     await updateDirectorCheck(checked);
+  //     return;
+  //   }
+
+  //   if (type === 'N') {
+  //     await updateDacaCheck(checked);
+  //     return;
+  //   }
+  // };
+
+  const handlerDirectorChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
-    if (type === 'M' && checked) {
+
+    if (checked) {
       setPendingChecked(true);
       setConfirmOpen(true);
       return;
     }
-    if (type === 'M') {
-      await updateDirectorCheck(checked);
+  await updateDirectorCheck(false);
+  };
+
+  const handlerDacaDecision = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const decision = e.target.value;
+    setDacaDecision(decision);
+
+    if (decision === 'approve') {
+      await updateDacaCheck(true);
       return;
     }
-    if (type === 'N') {
-      await updateDacaCheck(checked);
-      return;
+
+    await updateDacaCheck(false);
+
+    if (checkedDirector) {
+      await updateDirectorCheck(false);
     }
   };
 
-  // Confirmación del diálogo
   const handleConfirm = async () => {
     setConfirmOpen(false);
     await updateDirectorCheck(true);
   };
 
-  // Cancelar el diálogo
   const handleCancel = () => {
     setConfirmOpen(false);
     setPendingChecked(false);
   };
 
+  const finalizationLabel = checkedDaca
+    ? 'Sección finalizada y aprobada'
+    : (checkedDirector
+      ? 'Sección marcada como finalizada'
+      : 'Finalizar esta sección');
+
+  const finalizationHelpText = checkedDaca
+    ? 'Esta sección ya se encuentra aprobada por DACA y no requiere modificaciones.'
+    : (checkedDirector
+      ? 'En este momento la sección se encuentra en proceso de aprobación. Se le notificará por correo el resultado.'
+      : 'Confirmar si la sección actual ya ha sido diligenciada en su totalidad.');
+
   return (
     <Box sx={{ marginTop: '20px' }}>
-      {/* Checkbox Director */}
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={checkedDirector}
-            disabled={!canEditDirector || locked}
-            onChange={(e) => handlerChange(e, 'M')}
+      {!isAdmin && (
+        <>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={checkedDirector}
+                disabled={!canEditDirector || locked}
+                onChange={handlerDirectorChange}
+              />
+            }
+            label={finalizationLabel}
           />
-        }
-        label="Sección Finalizada"
-      />
-      <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
-        Confirmar si el director revisó y aprobó los cambios finales.
-      </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
+            {finalizationHelpText}
+          </Typography>
+        </>
+      )}
 
-      {/* Checkbox Daca */}
-      <FormControlLabel
+      {/* <FormControlLabel
         control={
           <Checkbox
             checked={checkedDaca}
@@ -437,23 +519,71 @@ const CheckboxesWithText = ({
           />
         }
         label="Aprobado Daca"
-      />
-      <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '32px' }}>
-        Confirmar si Daca revisó y aprobó los cambios finales.
-      </Typography>
+      /> */}
+      {isAdmin && checkedDirector && (
+        <>
+          <Typography
+            variant="body2"
+            sx={{ mt: 2, fontWeight: 600, marginBottom: '10px' }}
+          >
+            Revisión DACA
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '0px' }}>
+            Selecciona si deseas aprobar esta sección. En cualquier caso, <b>se notificará</b> a los editores correspondientes.
+          </Typography>
 
-      {/* Dialog de confirmación */}
+          <RadioGroup
+            row
+            value={dacaDecision}
+            onChange={handlerDacaDecision}
+            sx={{ mt: 1, ml: 2 }}
+          >
+            <FormControlLabel
+              value="approve"
+              control={<Radio disabled={!canEditDaca} />}
+              label="Aprobar"
+              sx={{ mr: 3 }}
+            />
+
+            <FormControlLabel
+              value="reject"
+              control={<Radio disabled={!canEditDaca} />}
+              label="No aprobar"
+            />
+          </RadioGroup>
+        </>
+      )}
+
+      {/* <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 1, ml: 4 }}
+      >
+        Si seleccionas No aprobar, se desmarca automáticamente Sección Finalizada.
+      </Typography> */}
+
+
       <Dialog open={confirmOpen} onClose={handleCancel}>
-        <DialogTitle>Confirmar acción</DialogTitle>
+        <DialogTitle>Marcar como finalizada</DialogTitle>
         <DialogContent>
-          Al realizar esta acción se le notificará a la DACA para revisar la sección: <b>{data?.texto || data?.variables || 'esta sección'}</b>.<br />
-          ¿Está seguro de hacerlo?
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Estás a punto de finalizar la sección: <b>{data?.texto || data?.variables || 'esta sección'}</b>
+          </Typography>
+
+          <Typography variant="body2">
+            Esta acción deshabilitará completamente la sección y notificará a DACA para su revisión.
+          </Typography>
+
+          <Typography variant="body2" sx={{ mt: 2 }}>
+            ¿Deseas continuar?
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel} color="primary">
+          <Button onClick={handleCancel}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} color="primary" autoFocus>
+
+          <Button onClick={handleConfirm} color="primary" variant="contained" autoFocus>
             Confirmar
           </Button>
         </DialogActions>

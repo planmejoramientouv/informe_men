@@ -115,7 +115,7 @@ export default ({ element,shared, autoSave = () => {},setOpenDialog, htmlId , pu
             <TableBody>
               {printFields?.length > 0 && printFields.map((row, index) => (
                 <TableRow
-                  key={index}
+                  key={`${String(row?.id ?? index)}-${String(row?.groups_fields ?? '')}`}
                   sx={{ 
                     '&:last-child td, &:last-child th': { border: 0 },
                     cursor: 'pointer',

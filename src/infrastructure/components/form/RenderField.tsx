@@ -159,15 +159,29 @@ const guardarComentario = async () => {
   }
 
   try {
+    const commentNivel = String(getMenuNumber(modalComentario.element) || '').trim();
+
     const res = await fetch('/api/comments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sheetId: globalState.data.sheetId, // ✅ ahora usamos la constante definida arriba
+        sheetId: globalState.data.sheetId,
+        gid: globalState.data.gid,
         elementId: modalComentario.element.id,
         texto: modalComentario.texto,
         usuario: cookieData?.email || 'desconocido',
         fecha: new Date().toISOString(),
+
+        programa: cookie?.programa || cookieData?.programa || '',
+        proceso: cookie?.proceso || '',
+        year: String(cookie?.year || ''),
+        nivel: commentNivel,
+        sectionName: String(
+          modalComentario?.element?.menu ||
+          modalComentario?.element?.texto ||
+          `Nivel ${commentNivel || ''}`
+        ).trim(),
+        actorName: cookieData?.name || '',
       }),
     });
 
@@ -178,8 +192,12 @@ const guardarComentario = async () => {
       return;
     }
 
+    if (json?.notification?.error) {
+      console.warn('Comentario guardado, pero fallo notificación:', json.notification.error);
+    }
+
     cerrarModalComentario();
-    cargarComentarios(modalComentario.element); // recarga los comentarios
+    cargarComentarios(modalComentario.element);
   } catch (err) {
     console.error('Error guardando comentario', err);
   }

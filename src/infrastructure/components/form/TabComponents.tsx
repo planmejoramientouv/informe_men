@@ -778,17 +778,19 @@ export default ({ element, index, onSaveValues, onSaveChecks, saving = false }) 
               </div>
 
               {element?.[activeMenu] != null && (
-                [element[activeMenu]]?.map((el, idx) => (
-                  <PrintBodyTab
-                    key={idx}
-                    element={el}
-                    index={idx}
-                    onSaveValues={onSaveValues}
-                    onSaveChecks={onSaveChecks}
-                    saving={saving}
-                    getSectionBorderColor={getSectionBorderColor} 
-                  />
-                ))
+                <PrintBodyTab
+                  key={String(
+                    element?.[activeMenu]?.primary?.id ||
+                    element?.[activeMenu]?.primary?.groups_fields ||
+                    activeMenu
+                  )}
+                  element={element[activeMenu]}
+                  index={activeMenu}
+                  onSaveValues={onSaveValues}
+                  onSaveChecks={onSaveChecks}
+                  saving={saving}
+                  getSectionBorderColor={getSectionBorderColor}
+                />
               )}
             </Box>
           </Box>

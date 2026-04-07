@@ -81,7 +81,7 @@ return (
             <TableBody>
               {printFields?.length > 0 && printFields?.map((row, index) => (
                 <TableRow
-                  key={index}
+                  key={`${String(row?.id ?? index)}-${String(row?.groups_fields ?? '')}`}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">

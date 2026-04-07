@@ -1,55 +1,54 @@
-// pages/api/sendEmail.jsx
-import { google } from 'googleapis';
+import { sendEmail } from '../../libs/server/mail/sendEmail';
+
+function normalizeToList(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { to, subject, body } = req.body;
-
-  if (!to || !subject || !body) {
-    return res.status(400).json({ error: 'Missing parameters' });
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ status: false, error: 'Method not allowed' });
   }
 
   try {
-    const oAuth2Client = new google.auth.OAuth2(
-      process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE,
-      process.env.NEXT_PUBLIC_API_KEY,
-      "https://developers.google.com/oauthplayground" // redirect_uri
-    );
-
-    oAuth2Client.setCredentials({
-      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
-    });
-
-    const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
-
-    const messageParts = [
-      `To: ${to}`,
-      'Content-Type: text/html; charset=UTF-8',
-      `Subject: ${subject}`,
-      '',
+    const {
+      to,
+      cc = [],
+      bcc = [],
+      subject,
+      html,
       body,
-    ];
-    const message = messageParts.join('\n');
+      from,
+    } = req.body || {};
 
-    const encodedMessage = Buffer.from(message)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    const toList = normalizeToList(to);
+    const htmlBody = html || body;
 
-    await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage,
-      },
+    const result = await sendEmail({
+      to: toList,
+      cc,
+      bcc,
+      subject,
+      html: htmlBody,
+      from,
     });
 
-    res.status(200).json({ status: 'ok' });
+    return res.status(200).json({
+      status: true,
+      data: result,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('[api/sendEmail] error:', error);
+    return res.status(500).json({
+      status: false,
+      error: error?.message || 'Internal Server Error',
+    });
   }
 }
