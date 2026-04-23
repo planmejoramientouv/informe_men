@@ -71,8 +71,8 @@ export const updateCheckboxClient = (data) => {
 export const createDocumentGoogle = (data) => {
     return fetchPostGeneral({
         dataSend: data, 
-        // urlEndPoint: `https://google-doc-api-553236746574.us-central1.run.app/execute`
-        urlEndPoint: `http://localhost:3001/execute`
+        urlEndPoint: `https://google-doc-api-553236746574.us-central1.run.app/execute`
+        // urlEndPoint: `http://localhost:3001/execute`
     })
 }
 

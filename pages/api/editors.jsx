@@ -4,6 +4,8 @@ import {
   appendPermissionRowWithUrls,
   updatePermissionRowById,
 } from '../../libs/googlesheet'
+import { google } from 'googleapis'
+import { notifyByEvent, NOTIFICATION_EVENTS } from '../../libs/server/notifications/notificationService'
 
 const isUnivalleEmail = (s) =>
   /@correounivalle\.edu\.co$/i.test(String(s || '').trim())
@@ -79,6 +81,54 @@ function normalizeNivelList(s) {
     .filter(Boolean)
 }
 
+function extractSpreadsheetId(url = '') {
+  const value = String(url || '').trim()
+  if (!value) return ''
+  const m = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+  return m?.[1] || ''
+}
+
+function isAlreadyPermissionError(err) {
+  const msg = String(err?.message || err?.response?.data?.error?.message || '').toLowerCase()
+  return msg.includes('already') && (msg.includes('permission') || msg.includes('access'))
+}
+
+async function grantEditorOnSpreadsheet({ fileId, email }) {
+  if (!fileId || !email) {
+    return { attempted: false, granted: false, reason: 'Missing fileId/email' }
+  }
+
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL
+  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || process.env.NEXT_PUBLIC_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+
+  const jwt = new google.auth.JWT(
+    clientEmail,
+    null,
+    privateKey,
+    ['https://www.googleapis.com/auth/drive']
+  )
+
+  const drive = google.drive({ version: 'v3', auth: jwt })
+
+  try {
+    await drive.permissions.create({
+      fileId,
+      sendNotificationEmail: false,
+      requestBody: {
+        type: 'user',
+        role: 'writer',
+        emailAddress: String(email).trim().toLowerCase(),
+      },
+    })
+    return { attempted: true, granted: true }
+  } catch (err) {
+    if (isAlreadyPermissionError(err)) {
+      return { attempted: true, granted: true, reason: 'Already had permission' }
+    }
+    throw err
+  }
+}
+
 export default async function handler(req, res) {
   try {
     // LIST
@@ -124,6 +174,16 @@ export default async function handler(req, res) {
       const contextAny = findAnyActiveContextRow(all || [], { programa, proceso, year })
       const url_carpeta = contextAny?.url_carpeta ?? ''
       const url_exel    = contextAny?.url_exel ?? ''
+      const spreadsheetId = extractSpreadsheetId(url_exel)
+
+      let notification = {
+        attempted: false,
+        sent: false,
+      }
+      let spreadsheetAccess = {
+        attempted: false,
+        granted: false,
+      }
 
       if (!existing) {
         const created = await appendPermissionRowWithUrls({
@@ -137,9 +197,54 @@ export default async function handler(req, res) {
           url_carpeta,
           url_exel,
         })
-        return res.status(201).json({ ok: true, created })
+
+        try {
+          spreadsheetAccess = await grantEditorOnSpreadsheet({
+            fileId: spreadsheetId,
+            email: String(email).trim().toLowerCase(),
+          })
+        } catch (accessErr) {
+          console.error('[api/editors] spreadsheet access error (create):', accessErr)
+          spreadsheetAccess = {
+            attempted: true,
+            granted: false,
+            error: accessErr?.message || 'Failed granting spreadsheet access',
+          }
+        }
+
+        try {
+          const result = await notifyByEvent({
+            eventType: NOTIFICATION_EVENTS.EDITOR_ASSIGNED,
+            context: {
+              programa,
+              proceso,
+              year,
+              nivel: normalizedNivel,
+            },
+            payload: {
+              assignedEditorEmail: String(email).trim().toLowerCase(),
+            },
+          })
+          notification = {
+            attempted: true,
+            sent: true,
+            reason: 'Editor created and notified',
+            count: Number(result?.count || 0),
+          }
+        } catch (notifyErr) {
+          console.error('[api/editors] notify error (create):', notifyErr)
+          notification = {
+            attempted: true,
+            sent: false,
+            error: notifyErr?.message || 'Notification failed',
+          }
+        }
+
+        return res.status(201).json({ ok: true, created, notification, spreadsheetAccess })
       }
 
+      const existingNiveles = normalizeNivelList(existing.nivel)
+      const nivelAlreadyAssigned = existingNiveles.includes(normalizedNivel)
       const mergedNivel = mergeNiveles(existing.nivel, normalizedNivel)
 
       await updatePermissionRowById({
@@ -153,7 +258,60 @@ export default async function handler(req, res) {
         year: existing.year,
         estado: 'Activo',
       })
-      return res.status(200).json({ ok: true, reactivated: existing.id, nivel: mergedNivel })
+
+      if (!nivelAlreadyAssigned) {
+        try {
+          spreadsheetAccess = await grantEditorOnSpreadsheet({
+            fileId: extractSpreadsheetId(existing.url_exel || url_exel),
+            email: String(existing.email).trim().toLowerCase(),
+          })
+        } catch (accessErr) {
+          console.error('[api/editors] spreadsheet access error (reactivate/add-level):', accessErr)
+          spreadsheetAccess = {
+            attempted: true,
+            granted: false,
+            error: accessErr?.message || 'Failed granting spreadsheet access',
+          }
+        }
+      }
+
+      if (!nivelAlreadyAssigned) {
+        try {
+          const result = await notifyByEvent({
+            eventType: NOTIFICATION_EVENTS.EDITOR_ASSIGNED,
+            context: {
+              programa: existing.programa,
+              proceso: existing.proceso,
+              year: existing.year,
+              nivel: normalizedNivel,
+            },
+            payload: {
+              assignedEditorEmail: String(existing.email).trim().toLowerCase(),
+            },
+          })
+          notification = {
+            attempted: true,
+            sent: true,
+            reason: 'Editor level added and notified',
+            count: Number(result?.count || 0),
+          }
+        } catch (notifyErr) {
+          console.error('[api/editors] notify error (reactivate/add-level):', notifyErr)
+          notification = {
+            attempted: true,
+            sent: false,
+            error: notifyErr?.message || 'Notification failed',
+          }
+        }
+      } else {
+        notification = {
+          attempted: false,
+          sent: false,
+          reason: 'No new level assignment to notify',
+        }
+      }
+
+      return res.status(200).json({ ok: true, reactivated: existing.id, nivel: mergedNivel, notification, spreadsheetAccess })
     }
 
     // UPDATE (soporta cambiar email/nivel/estado)

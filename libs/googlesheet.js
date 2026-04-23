@@ -256,9 +256,187 @@ export const generateVarSaveDoc = async ({ sheetId, gid }) => {
 async function readPermisosRaw(sheets) {
   const { data } = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${SHEET_PERMISOS}!A:H`,
+    range: `${SHEET_PERMISOS}!A:J`,
   });
   return data.values || [];
+}
+
+function extractDriveIdFromUrl(url = '') {
+  const value = String(url || '').trim();
+  if (!value) return null;
+
+  const patterns = [
+    /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/,
+    /\/document\/d\/([a-zA-Z0-9-_]+)/,
+    /\/drive\/folders\/([a-zA-Z0-9-_]+)/,
+    /[?&]id=([a-zA-Z0-9-_]+)/,
+  ];
+
+  for (const rx of patterns) {
+    const m = value.match(rx);
+    if (m?.[1]) return m[1];
+  }
+
+  return null;
+}
+
+async function deleteDriveFileById({ drive, fileId }) {
+  if (!fileId) return { deleted: false, reason: 'no-file-id' };
+
+  try {
+    await drive.files.delete({ fileId });
+    return { deleted: true };
+  } catch (e) {
+    const code = Number(e?.code || e?.response?.status || 0);
+    if (code === 404) {
+      return { deleted: false, reason: 'not-found' };
+    }
+    throw e;
+  }
+}
+
+async function getSheetIdByTitle({ sheets, spreadsheetId, title }) {
+  const { data } = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties(sheetId,title)',
+  });
+
+  const hit = (data.sheets || []).find(
+    (s) => String(s?.properties?.title || '') === String(title)
+  );
+
+  return hit?.properties?.sheetId ?? null;
+}
+
+function isProtectedRangeError(err) {
+  const msg = String(
+    err?.message || err?.response?.data?.error?.message || ''
+  ).toLowerCase();
+  return msg.includes('protected cell') || msg.includes('protected');
+}
+
+async function softDeletePermissionRow({ sheets, targetRow, rowValues }) {
+  const row = [
+    String(rowValues?.[1] || ''),
+    String(rowValues?.[2] || ''),
+    String(rowValues?.[3] || ''),
+    String(rowValues?.[4] || ''),
+    String(rowValues?.[5] || ''),
+    String(rowValues?.[6] || ''),
+    'Eliminado',
+    '',
+    '',
+  ];
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${SHEET_PERMISOS}!B${targetRow}:J${targetRow}`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [row] },
+  });
+}
+
+export async function deleteProcessByPermissionId({ id, removeFolder = true }) {
+  if (!id && id !== 0) throw new Error('Falta id');
+
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const drive = google.drive({ version: 'v3', auth });
+
+  const values = await readPermisosRaw(sheets);
+  let targetRow = -1;
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i]?.[0] || '') === String(id)) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    throw new Error(`No se encontró fila con ID=${id}`);
+  }
+
+  const rowValues = values[targetRow - 1] || [];
+  const urlCarpeta = rowValues[8] || '';
+  const urlExcel = rowValues[9] || '';
+
+  const folderId = extractDriveIdFromUrl(urlCarpeta);
+  const fileId = extractDriveIdFromUrl(urlExcel);
+
+  const deletedFile = await deleteDriveFileById({ drive, fileId });
+  const deletedFolder = removeFolder
+    ? await deleteDriveFileById({ drive, fileId: folderId })
+    : { deleted: false, reason: 'folder-delete-disabled' };
+
+  const permisosSheetId = await getSheetIdByTitle({
+    sheets,
+    spreadsheetId: SPREADSHEET_ID,
+    title: SHEET_PERMISOS,
+  });
+
+  let rowAction = {
+    ok: false,
+    mode: 'none',
+    warning: null,
+  };
+
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: permisosSheetId ?? 0,
+                dimension: 'ROWS',
+                startIndex: targetRow - 1,
+                endIndex: targetRow,
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    rowAction = {
+      ok: true,
+      mode: 'delete-row',
+      warning: null,
+    };
+  } catch (e) {
+    if (!isProtectedRangeError(e)) throw e;
+
+    try {
+      await softDeletePermissionRow({ sheets, targetRow, rowValues });
+      rowAction = {
+        ok: true,
+        mode: 'soft-delete',
+        warning: 'La fila en PERMISOS estaba protegida; se marcó como Eliminado y se limpiaron URLs.',
+      };
+    } catch (softErr) {
+      rowAction = {
+        ok: false,
+        mode: 'none',
+        warning: `No se pudo borrar ni actualizar la fila en PERMISOS: ${softErr?.message || 'error desconocido'}`,
+      };
+    }
+  }
+
+  return {
+    id: String(id),
+    deletedFile,
+    deletedFolder,
+    removedRow: rowAction.ok ? targetRow : null,
+    rowAction,
+    meta: {
+      urlExcel,
+      urlCarpeta,
+      fileId,
+      folderId,
+    },
+  };
 }
 
 /**
@@ -491,6 +669,21 @@ async function getSheetGidByTitle({ spreadsheetId, title }) {
   return hit?.properties?.sheetId ?? null;
 }
 
+async function getSheetRowCountById({ spreadsheetId, sheetId }) {
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const { data } = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties(sheetId,gridProperties.rowCount)',
+  });
+
+  const hit = (data.sheets || []).find(
+    (s) => String(s.properties?.sheetId) === String(sheetId)
+  );
+
+  return Number(hit?.properties?.gridProperties?.rowCount || 0);
+}
+
 // Construye URL con gid
 function buildSheetUrl({ spreadsheetId, gid }) {
   return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?gid=${gid}#gid=${gid}`;
@@ -590,8 +783,12 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   }
 
   // 7) LIMPIAR COLUMNA G EN LA HOJA RENOMBRADA
-  const keepRows = [49, 50, 101, 123, 141, 142, 143, 158, 159, 160, 174, 175, 185, 191, 203, 204];
+  const keepRows = [48, 101, 153, 175, 193, 194, 195, 210, 211, 212, 226, 227, 237, 243, 255, 256, 290, 291];
   const colToClear = CLEAR_COL_BY_TIPO[String(tipo).toUpperCase()] || null;
+  const dynamicEndRow = gid
+    ? await getSheetRowCountById({ spreadsheetId: file.id, sheetId: gid })
+    : 0;
+  const endRow = dynamicEndRow > 0 ? dynamicEndRow : 321;
 
   if (colToClear) {
     await clearColumnExcept({
@@ -600,7 +797,7 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
       column: colToClear,
       keepRows: keepRows,
       startRow: 2,
-      endRow: 270,
+      endRow,
     });
   }
 
@@ -796,7 +993,7 @@ function makeSafeTitle(base) {
 export async function importTablesFromLinks({
   spreadsheetId,
   gid,
-  keepRows = [49, 50, 101, 123, 141, 142, 143, 158, 159, 160, 174, 175, 185, 191, 203, 204],
+  keepRows = [48, 101, 153, 175, 193, 194, 195, 210, 211, 212, 226, 227, 237, 243, 255, 256, 290, 291],
 }) {
   if (!spreadsheetId) throw new Error('Falta spreadsheetId');
   if (!gid) throw new Error('Falta gid de la hoja principal');

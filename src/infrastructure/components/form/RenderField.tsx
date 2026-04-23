@@ -43,6 +43,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 // Quicks
 import dynamic from 'next/dynamic'; // Importación dinámica
+// @ts-ignore
 import 'react-quill/dist/quill.snow.css'; // Tema por defecto
 
 // Carga ReactQuill solo en el cliente
@@ -706,7 +707,11 @@ const cargarComentarios = async (element: any) => {
                   placeholder="Ej. evidencia.pdf"
                   value={modalNota.archivo || ""}
                   onChange={(e) => setModalNota({ ...modalNota, archivo: e.target.value })}
-                  sx={{ mb: 2, fontSize: '1rem' }} 
+                  size="medium"
+                  sx={{ mb: 2, fontSize: '1rem', mt: 1 }} 
+                  inputProps={{
+                    style: { minHeight: 56, display: 'flex' }
+                  }}
                 />
 
                 <TextField
@@ -716,6 +721,9 @@ const cargarComentarios = async (element: any) => {
                   value={modalNota.paginas || ""}
                   onChange={(e) => setModalNota({ ...modalNota, paginas: e.target.value })}
                   sx={{ fontSize: '1rem' }} 
+                  inputProps={{
+                    style: { minHeight: 56, display: 'flex' }
+                  }}
                 />
 
               </DialogContent>
@@ -737,9 +745,27 @@ const cargarComentarios = async (element: any) => {
       case "TableExtra":
         return (
           <>
-          <Grid2 id={htmlId} sx={classDisabledTableExtra()}>
+          <Grid2
+            id={htmlId}
+            sx={{
+              ...classDisabledTableExtra(),
+              width: '100%',
+            }}
+          >
             <Show when={puedeEditar}>
-              <Button sx={{ background: '#C8102E', color: 'white'}} onClick={() => setOpen(true)}>
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  width: '100%',
+                  backgroundColor: '#70777f',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#4f6175',
+                  },
+                }}
+                onClick={() => setOpen(true)}
+              >
                   <label><b>{labelText}</b></label>
               </Button>
             </Show>

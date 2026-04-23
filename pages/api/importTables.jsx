@@ -1,5 +1,6 @@
 // pages/api/importTables.jsx
 import { importTablesFromLinks } from '../../libs/googlesheet';
+import { applyPostImportFormulas } from '../../libs/postImportFormulas';
 
 export default async function handler(req, res) {
   try {
@@ -29,9 +30,18 @@ export default async function handler(req, res) {
       // keepRows: puedes omitir, usa el arreglo por defecto 49..204
     });
 
+    const formulas = await applyPostImportFormulas({
+      spreadsheetId,
+      mainSheetTitle: data?.sheetTitle,
+      importResults: data?.results || [],
+    });
+
     return res.status(200).json({
       status: true,
-      data,
+      data: {
+        ...data,
+        formulas,
+      },
     });
   } catch (e) {
     console.error('Error en /api/importTables:', e);

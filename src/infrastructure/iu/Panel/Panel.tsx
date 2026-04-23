@@ -8,10 +8,11 @@ import useStyles from '../../../../css/form/form.css.js'
 import Show from '../../../../share/utils/Show'
 import PanelItems from '../../components/panel/Panel'
 import CreateItemCard from '../../components/panel/CreateItemCard';
+import DeleteProcessCard from '../../components/panel/DeleteProcessCard';
 
 // Para manejar cookies y roles
 import { getCookieData } from '../../../../libs/utils/utils'
-import {  ROL_EDITOR_SISTEM } from '../../../../libs/utils/const'
+import { ROL_ADMIN_SISTEM, ROL_EDITOR_SISTEM } from '../../../../libs/utils/const'
 
 
 // Material - IU
@@ -27,6 +28,10 @@ export default () => {
     const canCreate = React.useMemo(() => {
         // Mostrar botón SOLO a admin o director
         return !ROL_EDITOR_SISTEM.includes(role);
+    }, [role]);
+
+    const isAdmin = React.useMemo(() => {
+        return ROL_ADMIN_SISTEM.includes(role);
     }, [role]);
 
     React.useEffect(() => {
@@ -66,6 +71,12 @@ export default () => {
                     <Grid2 className={classes.containerFields}>
                         <Grid2 className={classes.containerPanel}>
                             {canCreate && <CreateItemCard onSave={handleCreateSave} />}
+                            {isAdmin && (
+                                <DeleteProcessCard
+                                    role={role}
+                                    onDeleted={() => setRefreshKey((k) => k + 1)}
+                                />
+                            )}
                             <Box sx={{
                                 maxHeight: '100vh',
                                 overflowY: 'auto',

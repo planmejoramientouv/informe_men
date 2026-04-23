@@ -6,6 +6,7 @@ export const NOTIFICATION_EVENTS = {
   SECTION_FINALIZED: 'SECTION_FINALIZED',
   DACA_APPROVED: 'DACA_APPROVED',
   DACA_DISAPPROVED: 'DACA_DISAPPROVED',
+  EDITOR_ASSIGNED: 'EDITOR_ASSIGNED',
 };
 
 function norm(s) {
@@ -196,6 +197,31 @@ async function buildJobsForDacaDisapproved({ context, payload }) {
   ];
 }
 
+async function buildJobsForEditorAssigned({ context, payload }) {
+  const assignedEditorEmail = norm(payload?.assignedEditorEmail).toLowerCase();
+  if (!assignedEditorEmail) return [];
+
+  return [
+    {
+      key: 'editor-assigned',
+      to: [assignedEditorEmail],
+      subject: `[Informe MEN] Asignacion como editor (${context.programa} - ${context.proceso})`,
+      html: htmlLayout({
+        title: 'Asignacion de editor',
+        subtitle: `Programa ${context.programa} / ${context.proceso} ${context.year}`,
+        lines: [
+          'Has sido designado como editor en el sistema de informe MEN.',
+          `<b>Nivel asignado:</b> ${context.nivel}`,
+          `<b>Correo:</b> ${assignedEditorEmail}`,
+        ],
+      }),
+      meta: {
+        audience: 'assigned-editor',
+      },
+    },
+  ];
+}
+
 async function buildNotificationJobs({ eventType, context, actor, payload }) {
   switch (eventType) {
     case NOTIFICATION_EVENTS.COMMENT_ADDED:
@@ -206,6 +232,8 @@ async function buildNotificationJobs({ eventType, context, actor, payload }) {
       return buildJobsForDacaApproved({ context, payload });
     case NOTIFICATION_EVENTS.DACA_DISAPPROVED:
       return buildJobsForDacaDisapproved({ context, payload });
+    case NOTIFICATION_EVENTS.EDITOR_ASSIGNED:
+      return buildJobsForEditorAssigned({ context, payload });
     default:
       throw new Error(`Unsupported eventType: ${eventType}`);
   }

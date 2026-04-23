@@ -18,7 +18,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Button, Collapse } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 // Global Const
@@ -53,25 +53,28 @@ export default ({ element, shared,htmlId  }) => {
     if (!hydrated) return null;
   
 return (
-  <>
+  <Box sx={{ width: '100%', position: 'relative' }}>
     <Button
       variant="contained"
-      onClick={() => setOpen(true)}
-      sx={{ mb: 2, backgroundColor: '#d32f2f', color: 'white', '&:hover': { backgroundColor: '#721212ff' } }}
+      onClick={() => setOpen((prev) => !prev)}
+      sx={{ width: '100%', mb: 2, backgroundColor: '#1565c0', color: 'white', '&:hover': { backgroundColor: '#0f498c' } }}
       startIcon={<VisibilityIcon sx={{ fontSize: 20 }} />}
     >
-      MOSTRAR ASPECTOS A EVALUAR ({printFields.length})
+      {open ? 'OCULTAR' : 'MOSTRAR'} ASPECTOS A EVALUAR ({printFields.length})
     </Button>
 
-    <Dialog
-      open={open}
-      onClose={() => setOpen(false)}
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle>Aspectos</DialogTitle>
-      <DialogContent>
-        <TableContainer id={htmlId} sx={{ scrollMarginTop: '88px' }} className="tabla_aspectos" component={Paper}>
+    <Collapse in={open} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
+      <Paper elevation={2} sx={{ mb: 2, width: '100%', overflow: 'hidden' }}>
+        <TableContainer
+          id={htmlId}
+          sx={{
+            scrollMarginTop: '88px',
+            maxHeight: '45vh',
+            overflowY: 'auto',
+          }}
+          className="tabla_aspectos"
+          component={Box}
+        >
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -92,11 +95,8 @@ return (
             </TableBody>
           </Table>
         </TableContainer>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpen(false)}>Cerrar</Button>
-      </DialogActions>
-    </Dialog>
-  </>
+      </Paper>
+    </Collapse>
+  </Box>
 );
 }

@@ -107,7 +107,8 @@ export default function EditorsManager({
     if (open) fetchList()
   }, [open, fetchList])
 
-  const handleCreate = async () => {
+  const handleCreate = async (e) => {
+    e?.preventDefault?.()
     if (!email) return
     if (!isUnivalleEmail(email)) {
       alert("El correo debe ser @correounivalle.edu.co.")
@@ -132,7 +133,7 @@ export default function EditorsManager({
         }),
       })
       const json = await res.json()
-      if (!json?.ok) throw new Error(json?.error || "Error creando editor")
+      if (!res.ok || !json?.ok) throw new Error(json?.error || `Error creando editor (${res.status})`)
       setEmail("")
       await fetchList()
     } catch (e) {

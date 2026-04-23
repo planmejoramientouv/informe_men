@@ -184,6 +184,24 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog, onSa
     console.log(element,shared)
     const classes = useStyles();  
     const colapsable2 = element?.data?.find( item => item.tipo  ===  'Colapsable2')
+    const firstAspectIndex = element?.data?.findIndex((item) => item.tipo === 'tabla_aspectos');
+
+    const orderedModalItems = (element?.data || [])
+      .map((item, idx) => ({ item, idx }))
+      .filter(({ item, idx }) => item.tipo !== 'tabla_aspectos' || idx === firstAspectIndex)
+      .sort((a, b) => {
+        const getPriority = (tipo) => {
+          if (tipo === 'tabla_aspectos') return 0;
+          if (tipo === 'TablaExtra') return 2;
+          return 1;
+        };
+
+        const pa = getPriority(a.item?.tipo);
+        const pb = getPriority(b.item?.tipo);
+
+        if (pa !== pb) return pa - pb;
+        return a.idx - b.idx;
+      });
 
     const handleOpen = () => {
       setOpenDialog({
@@ -223,45 +241,17 @@ const RenderFieldColapsable = ({element, shared, openDialog, setOpenDialog, onSa
         </DialogTitle>
 
         <DialogContent className={classes.dialogContent}>
-          {element?.data?.map((el, idx) => {
-            // Si no es tabla_aspectos, muéstralo normal
-            if (el.tipo !== "tabla_aspectos") {
-              return (
-                <RenderColapsable
-                  key={`${String(el?.id ?? idx)}-${String(el?.groups_fields ?? '')}-${String(el?.tipo ?? '')}`}
-                  element={el}
-                  shared={shared}
-                  index={idx}
-                  /* NUEVO */
-                  onSaveValues={onSaveValues}
-                  onSaveChecks={onSaveChecks}
-                  saving={saving}
-                />
-                    );
-              }
-
-            // Si es tabla_aspectos, mostrar solo el primero
-            const isFirstAspect = element.data.findIndex(
-              (item) => item.tipo === "tabla_aspectos"
-            ) === idx;
-            if (isFirstAspect) {
-              return (
-                <RenderColapsable
-                  key={`${String(el?.id ?? idx)}-${String(el?.groups_fields ?? '')}-${String(el?.tipo ?? '')}`}
-                  element={el}
-                  shared={shared}
-                  index={idx}
-                  /* NUEVO */
-                  onSaveValues={onSaveValues}
-                  onSaveChecks={onSaveChecks}
-                  saving={saving}
-                />
-              );
-            }
-
-            // Ignorar los demás
-            return null;
-          })}
+          {orderedModalItems.map(({ item, idx }) => (
+            <RenderColapsable
+              key={`${String(item?.id ?? idx)}-${String(item?.groups_fields ?? '')}-${String(item?.tipo ?? '')}`}
+              element={item}
+              shared={shared}
+              index={idx}
+              onSaveValues={onSaveValues}
+              onSaveChecks={onSaveChecks}
+              saving={saving}
+            />
+          ))}
         </DialogContent>
 
 
@@ -289,7 +279,6 @@ const RenderColapsable = ({ element, index, shared, onSaveValues, onSaveChecks, 
                 element={element} 
                 shared={shared}
                 iframeView={shared[0]?.iframeView}
-                /* NUEVO */
                 onSaveValues={onSaveValues}
                 onSaveChecks={onSaveChecks}
                 saving={saving}
