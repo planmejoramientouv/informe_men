@@ -550,6 +550,8 @@ export async function updatePermissionRowById({
  * Si no tienes un helper global para auth, crea uno:
  */
 async function getAuth() {
+  if (getAuth.cachedAuth) return getAuth.cachedAuth;
+
   // Usa las mismas vars y scopes que ya usas en este archivo (SERVICE ACCOUNT)
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.NEXT_PUBLIC_CLIENT_EMAIL;
   const privateKey  = (process.env.GOOGLE_PRIVATE_KEY || process.env.NEXT_PUBLIC_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -564,6 +566,7 @@ async function getAuth() {
     ]
   );
   await jwt.authorize();
+  getAuth.cachedAuth = jwt;
   return jwt;
 }
 
@@ -757,14 +760,24 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
     parentId: folder.id,
   });
 
+  const auth = await getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+
   // 3) Determinar título de la hoja a usar
   const baseTitle =
     String(tipo).toUpperCase() === 'RRC'
       ? 'Datos Generales RRC'
       : 'Datos Generales RAAC';
 
-  // 4) Obtener sheetId (gid) de esa hoja
-  let gid = await getSheetGidByTitle({ spreadsheetId: file.id, title: baseTitle });
+  // 4) Leer una sola vez las metadatas de la copia para obtener gid, hoja opuesta y rowCount
+  const { data: copiedSpreadsheet } = await sheets.spreadsheets.get({
+    spreadsheetId: file.id,
+    fields: 'sheets.properties(sheetId,title,gridProperties.rowCount)',
+  });
+
+  let gid = (copiedSpreadsheet.sheets || []).find(
+    (s) => String(s?.properties?.title || '') === String(baseTitle)
+  )?.properties?.sheetId ?? null;
 
   // 5) Renombrar la pestaña seleccionada a "<programa> - <periodo> - <tipo>"
   const newSheetTitle = `${programa} - ${periodo || ''} - ${tipo.toUpperCase()}`.trim();
@@ -777,7 +790,9 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   }
 
     // 6) borrar la hoja opuesta si existe
-  const oppositeGid = await getSheetGidByTitle({ spreadsheetId: file.id, title: oppositeTitle });
+  const oppositeGid = (copiedSpreadsheet.sheets || []).find(
+    (s) => String(s?.properties?.title || '') === String(oppositeTitle)
+  )?.properties?.sheetId ?? null;
   if (oppositeGid) {
     await deleteSheetById({ spreadsheetId: file.id, sheetId: oppositeGid });
   }
@@ -786,7 +801,9 @@ export async function createProgramAssets({ programa, tipo, sede, periodo }) {
   const keepRows = [48, 101, 153, 175, 193, 194, 195, 210, 211, 212, 226, 227, 237, 243, 255, 256, 290, 291];
   const colToClear = CLEAR_COL_BY_TIPO[String(tipo).toUpperCase()] || null;
   const dynamicEndRow = gid
-    ? await getSheetRowCountById({ spreadsheetId: file.id, sheetId: gid })
+    ? Number((copiedSpreadsheet.sheets || []).find(
+        (s) => String(s?.properties?.sheetId) === String(gid)
+      )?.properties?.gridProperties?.rowCount || 0)
     : 0;
   const endRow = dynamicEndRow > 0 ? dynamicEndRow : 321;
 
